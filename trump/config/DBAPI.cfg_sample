@@ -1,0 +1,9 @@
+[explicit]
+user: username
+password: password123
+port: 5432
+name: adatabase
+
+[partial]
+user: username
+password: password123

@@ -1,0 +1,7 @@
+;for reference, a SQLAlchemy's connection string is of the form dialect[+driver]://user:password@host/dbname[?key=value..]
+[dbone]
+engine: {dialect}://{user}:{password}@{host}:{port}/{databasename}
+
+[dbtwo]
+engine: postgresql+psycopg2://user:pass@localhost:5432/adb
+
