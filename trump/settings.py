@@ -16,14 +16,6 @@ def read_configuration():
         cp.read(os.path.join(config_dir,fil))
         for section in cp.sections():
             config[src][section] = dict(cp.items(section))
-            section_args = list(config[src][section].keys())
-            for arg in section_args:
-                if arg != 'password':
-                    lu = {'TRUE' : True, 'FALSE' : False}
-                    if config[src][section][arg].upper() in lu.keys():
-                        config[src][section][arg] = lu[config[src][section][arg].upper()]
-                    elif config[src][section][arg].isdigit():
-                        config[src][section][arg] = int(config[src][section][arg])
     
     trumpcfg = config['trump']
     del config['trump']
