@@ -81,11 +81,44 @@ Coming soon.
 
 Installation
 =============
-Check back March 22nd or slightly after.
+Check back March 22nd or slightly after.  See the configuration section of the documentation,
+for the instructions to follow post install.
+
+
+trump.cfg
+---------
+This file should be renamed to trump.cfg.  These are the settings for connecting to a database with a user that has
 
 Documentation
 =============
 Check back March 22nd or slightly after.  For now, see the pdf in the prototype branch.
+
+Configuration
+-------------
+
+Configuring Trump
+-----------------
+Trump needs at the very least, a SQL Alchemy connection string with read+write-level access to the
+database where it can install itself.  This can be populated in config/trump.cfg.
+
+Configuring Data Sources
+------------------------
+
+Sources of data feeds map to their respective case sensitive file *.cfg file in the configuration folder.
+Trump will use parameters for a source in the following order:
+
+1. Specified explicitly when a template is used. (Eg. table name)
+2. Specified implicitly using logic derived in the template based on the template itself or argument values passed. (Eg. Database Names)
+3. Specified implicitly using a argument's default value. (Eg. database host, port)
+4. Specified on disk via the source's configuration file. (Eg. authentication keys and passwords)
+5. Specified on disk encrypted sources via an encrypted config file. (Eg. top-secret passwords) (Not yet implemented)
+
+If it relies on #4 or #5, the info will not be stored in the database.  Instead, it will be looked
+up at runtime from the config file.  This means that the config file values can be changed 
+post symbol creation, but the specific arguments can not be.
+
+There is nothing in stone, saying that a password can't be hardcoded into a template, just the 
+same as there is nothing in stone, dictating that a tablename can't be included in a config file.
 
 Contributing
 ============
