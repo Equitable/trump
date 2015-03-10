@@ -12,8 +12,9 @@ v = '0.0.1'
 setup(
   name = 'Trump',
   version = v,
-  packages = ['trump','smuggle','pandas','SQLAlchemy'],
+  packages = ['trump'],
   description = 'Objectified Indexed Data',
+  install_requires=['smuggle','pandas','SQLAlchemy']
   long_description=(read('README.rst')),
   author = 'Jeffrey McLarty',
   author_email = 'jeffrey.mclarty@gmail.com',
@@ -27,6 +28,4 @@ setup(
                  'Topic :: Office/Business',
                  'Topic :: Scientific/Engineering',
                  'Operating System :: OS Independent',             
-                 'Programming Language :: Python :: 2.7',
-                 'Programming Language :: Python :: 3.3',
-                 'Programming Language :: Python :: 3.4'])
+                 'Programming Language :: Python :: 2.7'])

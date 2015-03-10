@@ -6,25 +6,22 @@ Created on Sat Dec 20 15:50:37 2014
 """
 
 import pandas as pd
-
 import datetime as dt
 
-from sqlalchemy import event, Table, Column, ForeignKey, ForeignKeyConstraint
-from sqlalchemy import String, Integer, Float, DateTime, MetaData
-from sqlalchemy import func
+from sqlalchemy import event, Table, Column, ForeignKey, ForeignKeyConstraint,\
+                       String, Integer, Float, DateTime, MetaData, \
+                       func
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+
+from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm.session import object_session
+
 from sqlalchemy.exc import ProgrammingError
 
 from sqlalchemy.sql.expression import insert, delete
-
-
 from sqlalchemy.sql import and_
 
-from sqlalchemy.orm.session import object_session
-
-from sqlalchemy.orm import sessionmaker
 from tools import ReprMixin, ProxyDict, isinstanceofany
 from sqlalchemy import create_engine
 
