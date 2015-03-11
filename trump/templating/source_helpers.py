@@ -45,3 +45,9 @@ class mixin_dbIns(object):
         self.datecol = datecol
         self.valuecol = valuecol
         return self
+
+class mixin_attr_check(object):
+    def attr_check(self):
+        if hasattr(self,'table'):
+            if self.table == 'UNSPECIFIEDTABLE':
+                raise Exception("Unspecified table in tFeed-like object's sourcing argument.")

@@ -10,6 +10,8 @@ class _ListConverter(object):
     def as_list(self):
         if hasattr(self,'cust_list'):
             return self.cust_list
+        if hasattr(self,'attr_check'):
+            self.attr_check()
         class_builtins = set(dir(self.__class__))
         return [a for a in dir(self) if a not in class_builtins and getattr(self,a)]
         
@@ -22,6 +24,8 @@ class _DictConverter(object):
     def as_dict(self):
         if hasattr(self,'cust_dict'):
             return self.cust_dict
+        if hasattr(self,'attr_check'):
+            self.attr_check()
         class_builtins = set(dir(self.__class__))
         return {a : getattr(self,a) for a in dir(self) if a not in class_builtins}
         
@@ -32,6 +36,8 @@ class _OrderedDictConverter(object):
     def as_odict(self):
         if hasattr(self,'cust_odict'):
             return self.cust_odict
+        if hasattr(self,'attr_check'):
+            self.attr_check()
         od = odict()
         for attr in self.attrorder:
             od[attr] = getattr(self,attr)
