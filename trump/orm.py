@@ -28,9 +28,11 @@ from sqlalchemy import create_engine
 from extensions.symbol_aggs import apply_row, choose_col
 from extensions.feed_munging import munging_methods
 
-from templates import tFeed
+from templating import tFeed
 
-engine = create_engine(r'postgresql://TODO:TODO@localhost/TrumpORM')
+from options import read_config
+
+engine = create_engine(read_config()['readwrite']['engine'])
 
 Base = declarative_base()
 Base.metadata.bind = engine
