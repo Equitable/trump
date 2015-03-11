@@ -74,6 +74,7 @@ class bMunging(_OrderedDictConverter):
 class bSource(_DictConverter, mixin_dbCon, mixin_dbIns):
     def __init__(self):
         self.stype = self.__class__.__name__
+        self.sourcing_key = None
                
 """
 *******************************************************************************

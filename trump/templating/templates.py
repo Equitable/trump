@@ -141,10 +141,7 @@ class fSQLAlchemy(bFeed):
 # 1. Read File - read the info from the settings file, store in db with plain text
 #   [Lowest security, easiest to implement]
 #
-# 2. Class Name Attribute - parse the ".", use post the dot to lookup key
-#   [Clever for a moment, dumb in the long-run]
-#
-# 3. Store as an additional attribute.
+# 2. Store as an additional attribute.
 #   [Winner, best in class.]
 #
 ###############################################################################
@@ -155,17 +152,10 @@ class fQuandl(bFeed):
         QuandlAPIKey = read_settings()['Quandl']['userone']['authkey']
         tmp = {'dataset' : dataset, 'authtoken' : QuandlAPIkey}
         self.sourcing = dict(tmp.items() + kwargs.items())
-
-class fQuandl_userone(bFeed):
-    def __init__(self,dataset,**kwargs):
-        super(fQuandl, self).__init__()
-        self.ftype = "fQuandl.userone"
-        tmp = {'dataset' : dataset }
-        self.sourcing = dict(tmp.items() + kwargs.items())
-        
+       
 class fQuandlSecure(bFeed):
     def __init__(self,dataset,**kwargs):
         super(fQuandl, self).__init__()
-        self.seckey = "userone"
         tmp = {'dataset' : dataset }
         self.sourcing = dict(tmp.items() + kwargs.items())
+        self.sourcing['sourcing_key'] = ['userone']
