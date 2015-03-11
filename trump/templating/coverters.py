@@ -22,9 +22,6 @@ class _DictConverter(object):
     def as_dict(self):
         if hasattr(self,'cust_dict'):
             return self.cust_dict
-        if hasattr(self,'table'):
-            if self.table == 'UNSPECIFIEDTABLE':
-                raise Exception("Unspecified table in tFeed-like object's sourcing argument.")
         class_builtins = set(dir(self.__class__))
         return {a : getattr(self,a) for a in dir(self) if a not in class_builtins}
         

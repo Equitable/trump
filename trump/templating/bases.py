@@ -6,7 +6,7 @@ which can then be used in the generalized constructors of Trump's SQLAlchemy
 based ORM system.
 """
 
-from collections import OrderedDict as odict, 
+from collections import OrderedDict as odict
 
 from converters import  _ListConverter, _DictConverter, _OrderedDictConverter
 from source_helpers import mixin_dbCon, mixin_dbIns
@@ -19,15 +19,18 @@ from source_helpers import mixin_dbCon, mixin_dbIns
 * Tag Templates are any object which implements a property called 
 * as_list, which returns a list of strings
 *
+* The Base Template for Tag Templates inherits from _listConverter, which
+* implements as_list().  as_list() looks at the attributes defined and 
+* set to True, in order to include the list of tags.
+*
 *******************************************************************************
 """
 
 class bTags(_ListConverter):
     def __init__(self):
         self.aTag = True
-        self.bTag = True
-        self.cTag = False
-        self.dTag = True
+    def add_tag(self,tag):
+        self.__setattr__(tag,True)
         
 """
 *******************************************************************************
@@ -71,8 +74,6 @@ class bMunging(_OrderedDictConverter):
 class bSource(_DictConverter, mixin_dbCon, mixin_dbIns):
     def __init__(self):
         self.stype = self.__class__.__name__
-
-
                
 """
 *******************************************************************************
@@ -84,7 +85,7 @@ class bSource(_DictConverter, mixin_dbCon, mixin_dbIns):
 *
 *******************************************************************************
 """
-
+               
 class bFeed(object):
     def __init__(self):
         self.ftype = self.__class__.__name__
