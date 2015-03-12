@@ -5,10 +5,10 @@ Created on Sun Jan 04 08:56:07 2015
 @author: Jeffrey
 """
 
-from orm import SymbolManager
+from trump.orm import SymbolManager
 
 
-from templates import fQuandl, mAddFFillMult
+from trump.templating import fQuandl, mAddFFillMult
 
 from datetime import datetime as dt
 

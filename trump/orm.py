@@ -28,11 +28,12 @@ from sqlalchemy import create_engine
 from extensions.symbol_aggs import apply_row, choose_col
 from extensions.feed_munging import munging_methods
 
-from templating import tFeed
+from templating import bFeed
 
 from options import read_config
 
-engine = create_engine(read_config()['readwrite']['engine'])
+engine_str = read_config('readwrite')['engine']
+engine = create_engine(engine_str)
 
 Base = declarative_base()
 Base.metadata.bind = engine
@@ -255,13 +256,13 @@ class Symbol(Base, ReprMixin):
             
         if isinstance(obj,dict):
             raise NotImplemented
-        if isinstance(obj,tFeed):
+        if isinstance(obj,bFeed):
             for kw in kwargs:
                 if kw == 'munging':
                     obj.addMungeTemplate(kwargs[kw])
                 elif kw in munging_methods:
                     obj.addMungeTemplate(kw,kwargs[kw])
-            f = Feed(self,obj.ftype,obj.sourcing,obj.munging,obj.validity,fnum)
+            f = Feed(self,obj.ftype,obj.sourcing,obj.munging,obj.validity,obj.meta,fnum)
         if isinstance(obj,Feed):
             f = obj
         self.feeds.append(f)
@@ -440,7 +441,7 @@ class Feed(Base, ReprMixin):
 
     @property
     def meta(self):
-        return ProxyDict(self, 'sourcing', FeedMeta, 'attr')
+        return ProxyDict(self, 'meta', FeedMeta, 'attr')
      
     @property         
     def source(self):
@@ -613,7 +614,7 @@ if __name__ == '__main__':
     import time
     
     for x in range(3):
-        un = str(x) + dt.now().strftime("%H%M%S")
+        un = str(x) + dt.datetime.now().strftime("%H%M%S")
         print un
         time.sleep(1.1)
         

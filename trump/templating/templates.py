@@ -6,8 +6,6 @@ which can then be used in the generalized constructors of Trump's SQLAlchemy
 based ORM system.
 """
 
-from collections import OrderedDict as odict, 
-
 from bases import  bTags, bMunging, bSource, bFeed
 
 from trump.options import read_settings
@@ -61,12 +59,12 @@ class tSimple(bTags):
 *******************************************************************************
 """
 
-class mFFill(tMunging):
+class mFFill(bMunging):
     def __init__(self,method='ffill'):
         super(mFFill, self).__init__()       
         self.build_ffillna(method=method)
 
-class mAddFFillMult(tMunging):
+class mAddFFillMult(bMunging):
     def __init__(self,add=0.0,method='ffill',mult=1.0):
         super(mAddFFillMult, self).__init__()
         self.build_ffillna(method=method)
@@ -149,7 +147,7 @@ class fSQLAlchemy(bFeed):
 class fQuandl(bFeed):
     def __init__(self,dataset,**kwargs):
         super(fQuandl, self).__init__()
-        QuandlAPIKey = read_settings()['Quandl']['userone']['authkey']
+        QuandlAPIkey = read_settings()['Quandl']['userone']['authtoken']
         tmp = {'dataset' : dataset, 'authtoken' : QuandlAPIkey}
         self.sourcing = dict(tmp.items() + kwargs.items())
        
@@ -158,4 +156,5 @@ class fQuandlSecure(bFeed):
         super(fQuandl, self).__init__()
         tmp = {'dataset' : dataset }
         self.sourcing = dict(tmp.items() + kwargs.items())
-        self.sourcing['sourcing_key'] = ['userone']
+        self.sourcing['sourcing_key'] = 'userone' #All items get picked up, and
+                                                  #override any

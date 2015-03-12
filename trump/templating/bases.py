@@ -94,6 +94,7 @@ class bFeed(object):
         self.sourcing = {}
         self.munging = odict()
         self.validity = {}
+        self.meta = {}
     def addTagTemplate(self,t):
         self.tags.append(t)
     def addSourceTemplate(self,k,v):
