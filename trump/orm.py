@@ -37,6 +37,7 @@ engine = create_engine(engine_str)
 
 Base = declarative_base()
 Base.metadata.bind = engine
+
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
@@ -94,7 +95,7 @@ class Symbol(Base, ReprMixin):
     description = Column('description',String)
     freq =        Column('freq',String)
     units =       Column('units',String)
-    agg_method =   Column('agg_method',String)
+    agg_method =  Column('agg_method',String)
     
     tags =        relationship("SymbolTag",cascade="all, delete-orphan")
     aliases =     relationship("SymbolAlias",cascade="all, delete-orphan")
@@ -114,6 +115,10 @@ class Symbol(Base, ReprMixin):
         self.units = units
         self.agg_method = agg_method
         self.datatable = False
+        
+        #SQLAQ - Is this okay to do? It feels sneaky, dirty and wrong.
+        session.add(self)
+        
     def cache_feed(self,fid):
         raise NotImplemented
     def cache(self):
@@ -318,6 +323,10 @@ class Symbol(Base, ReprMixin):
                   extend_existing=True)
         return t
 
+@event.listens_for(Symbol, 'load')
+def __receive_load(target, context):
+    target.InitializeDataTable()
+    
 class SymbolTag(Base, ReprMixin):
     __tablename__ = '_symbol_tags'
     symname = Column('symname',String,ForeignKey('_symbols.name', **cc),  primary_key = True)
@@ -353,10 +362,6 @@ class SymbolValidity(Base, ReprMixin):
         self.logic = logic
         self.key = key
         self.value = value
-     
-@event.listens_for(Symbol, 'load')
-def __receive_load(target, context):
-    target.InitializeDataTable()
 
 class Feed(Base, ReprMixin):
     __tablename__ = "_feeds"
@@ -381,6 +386,8 @@ class Feed(Base, ReprMixin):
         self.symbol = symbol
         self.data = None
         
+        self._symsess = object_session(symbol)
+        
         if fnum is None:
             existing_fnums = session.query(Feed.fnum).filter(Feed.symname == symbol.name).all()
             existing_fnums = [n[0] for n in existing_fnums]
@@ -392,22 +399,34 @@ class Feed(Base, ReprMixin):
             self.fnum = fnum
             
         def settypesinmeta(t,o):
+            val = 'undefined'
             if o is not None:
                 if t in o:
-                    self.meta.append(FeedMeta(attr=t,value=o[t],feed=self))
+                    val = o[t]
                     del o[t]
-            else:
-                self.meta.append(FeedMeta(attr=t,value='undefined',feed=self))
+
+            tmp = FeedMeta(attr=t,value=val,feed=self)
+            self._symsess.add(tmp)
+            self.meta_map[t] = tmp
+            self._symsess.commit()
         
         settypesinmeta('stype',sourcing)
         settypesinmeta('mtype',munging)
         settypesinmeta('vtype',validity)
 
-        for key in meta:
-            self.meta.append(FeedMeta(attr=key,value=meta[key],feed=self))
-                
-        for key in sourcing:
-            self.sourcing.append(FeedSource(param=key,value=sourcing[key],feed=self))
+        if meta:
+            for key in meta:
+                tmp = FeedMeta(attr=key,value=meta[key],feed=self)
+                self._symsess.add(tmp)
+                self.meta_map[key] = tmp
+                self._symsess.commit()            
+        
+        if sourcing:        
+            for key in sourcing:
+                tmp = FeedSource(param=key,value=sourcing[key],feed=self)
+                self._symsess.add(tmp)
+                self.sourcing_map[key] = tmp
+                self._symsess.commit()   
 
         if munging != None:            
             for i,method in enumerate(munging):
@@ -436,11 +455,11 @@ class Feed(Base, ReprMixin):
             self.data = munging_methods[m.method](self.data,**args)
 
     @property
-    def sourcing(self):
+    def sourcing_map(self):
         return ProxyDict(self, 'sourcing', FeedSource, 'param')
 
     @property
-    def meta(self):
+    def meta_map(self):
         return ProxyDict(self, 'meta', FeedMeta, 'attr')
      
     @property         
@@ -615,37 +634,22 @@ if __name__ == '__main__':
     
     for x in range(3):
         un = str(x) + dt.datetime.now().strftime("%H%M%S")
-        print un
-        time.sleep(1.1)
         
-        NewSymbol = Symbol(name="NewSymbol" + un,description = 'tester chester')
-        NewSymbol.setFreq('D')
+        NewSymbol = Symbol(name="NewSymbol" + un)
         
-        print NewSymbol.tags
-        print NewSymbol.n_tags
+        NewSymbol.description = 'tester chester 2 ' + un
+        NewSymbol.freq = 'D'
+        NewSymbol.units = '$'
         
         NewSymbol.addTag("Alpha")
         NewSymbol.addTags(["Beta","Charlie","Delta"])
         
-        print NewSymbol.tags
-        print NewSymbol.n_tags
-        
-        session.commit()
-        
-        print NewSymbol.tags
-        print NewSymbol.n_tags
-    
-        
         SymbolAlias1 = SymbolAlias(alias="Newish" + un,symbol=NewSymbol)
         SymbolAlias2 = SymbolAlias(alias="Newer" + un,symbol=NewSymbol)
     
-        session.add_all([NewSymbol,SymbolAlias1,SymbolAlias2])
+        session.add_all([SymbolAlias1,SymbolAlias2])
         session.commit()
-        #session.merge(NewSymbol)
-        
-        print NewSymbol.tags
-        print NewSymbol.n_tags
-        
+                
         vals = [SymbolValidity(checkpoint='Exception',logic='NoData',key='arg1',value=1,symbol=NewSymbol),
                 SymbolValidity(checkpoint='Exception',logic='NoData',key='arg2',value=2,symbol=NewSymbol),
                 SymbolValidity(checkpoint='Exception',logic='NoData',key='arg3',value=3,symbol=NewSymbol),
@@ -656,8 +660,7 @@ if __name__ == '__main__':
             session.add(v)
         
         for f in range(4):
-            un = str(x) + dt.now().strftime("%H%M%S")
-            time.sleep(0.25)
+            un = str(x) + dt.datetime.now().strftime("%H%M%S")
             NewFeed = Feed(NewSymbol,"DB",sourcing={'db' : 'General', 'user' : 'TODO'})
     
             vals = [FeedValidity(checkpoint='Exception',logic='NoData',key='arg1',value=1,feed=NewFeed),
@@ -679,4 +682,4 @@ if __name__ == '__main__':
     session.commit()
     
     
-    aSymbol = session.query(Symbol).all()[0]
+    aSymbol = session.query(Symbol).all()[-1]
