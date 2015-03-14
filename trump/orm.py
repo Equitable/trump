@@ -211,7 +211,7 @@ class Symbol(Base, ReprMixin):
                         s.append("      Checkpoint = {}".format(v.checkpoint))
                     s.append("        {} -> {} : {}".format(v.logic,v.key,v.value))        
         return "\n".join(s)
-                   
+                  
     def addTag(self,tag):
         os = object_session(self)
         tmp = SymbolTag(tag=tag,symbol=self)
@@ -641,13 +641,14 @@ if __name__ == '__main__':
         NewSymbol.freq = 'D'
         NewSymbol.units = '$'
         
+        # Nice to have:
+        # NewSymbol.tags = ['Alpha', 'Beta', 'Charlie', 'Delta']
         NewSymbol.addTag("Alpha")
         NewSymbol.addTags(["Beta","Charlie","Delta"])
         
-        SymbolAlias1 = SymbolAlias(alias="Newish" + un,symbol=NewSymbol)
-        SymbolAlias2 = SymbolAlias(alias="Newer" + un,symbol=NewSymbol)
-    
-        session.add_all([SymbolAlias1,SymbolAlias2])
+        NewSymbol.addAlias("Newish")
+        NewSymbol.addAlias("Newer")
+        
         session.commit()
                 
         vals = [SymbolValidity(checkpoint='Exception',logic='NoData',key='arg1',value=1,symbol=NewSymbol),
