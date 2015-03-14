@@ -593,11 +593,9 @@ class FailSafe(Base, ReprMixin):
     user = Column('user',String,nullable=True)
     comment = Column('comment',String,nullable=True)
     
-ts = ['_symbols', '_symbol_validity', '_symbol_tags', '_symbol_aliases', 
-      '_feeds', '_feed_munging', '_feed_sourcing', '_feed_validity']
       
-drops = "".join(["DROP TABLE IF EXISTS {} CASCADE;".format(t) for t in ts])
 
+    
 try:
     Base.metadata.create_all(engine)
     print "Trump is ready."
