@@ -44,7 +44,7 @@ Timing
 
 Finishing the planning phase should be mid-March 2015; the code base is under rapid expansion 
 and changes.  Building the testing framework is planned for April 2015, with the hopes of participating
-in "Adopty py.test".  The first release is optimistically scheduled for early June 2015, with 
+in `Adopty py.test <http://pytest.org/latest/adopt.html>`_.  The first release is optimistically scheduled for early June 2015, with 
 the fractions of the initial goals completed:
 
 - Prioritization
@@ -73,7 +73,7 @@ Dependencies
 Requirements
 =============
 * Python 2.7; Support for Python 3.3 or 3.4 should be do-able, if there was interest.
-* A relational database supported by SQLAlchemy.
+* A relational database supported by SQLAlchemy.  The first database with guaranteed support is PostGreSQL
 
 Basic Usage
 ===========
@@ -84,10 +84,18 @@ Installation
 Check back March 22nd or slightly after.  See the configuration section of the documentation,
 for the instructions to follow post install.
 
+The bare minimum requirement is to create a trump.cfg file from the trump.cfg_sample in /config folder.
+All it needs is a SQLAlchemy engine string where it can store Trump.
 
-trump.cfg
----------
-This file should be renamed to trump.cfg.  These are the settings for connecting to a database with a user that has
+*.cfg files are ignored by this repo.  *.cfg_sample files aren't.
+
+Trump Configuration (/config)
+-----------------------------
+This file should be renamed to trump.cfg.  These are the settings for connecting to a database with a user that has...
+
+Trump Templating Settings (/settings)
+-------------------------------------
+The cfg_sample files need to be renamed to cfg, in here need to be matched with their respective trump template...
 
 Documentation
 =============
