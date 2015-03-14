@@ -428,14 +428,14 @@ class Feed(Base, ReprMixin):
                 self.sourcing_map[key] = tmp
                 self._symsess.commit()   
 
-        if munging != None:            
+        if munging:            
             for i,method in enumerate(munging):
                 fm = FeedMunge(order=i,method=method,feed=self)
                 for arg,value in munging[method].iteritems():
                     fm.methodargs.append(FeedMungeArg(arg,value,feedmunge=fm))
                 self.munging.append(fm)
 
-        if validity is dict:
+        if validity:
             for checkpoint in validity:
                 for logic in checkpoint:
                     for key in logic:
@@ -567,7 +567,6 @@ class FeedValidity(Base, ReprMixin):
         self.key = key
         self.value = value     
 
-
 class Override(Base, ReprMixin):
     __tablename__ = '_overrides'
 
@@ -594,44 +593,24 @@ class FailSafe(Base, ReprMixin):
     user = Column('user',String,nullable=True)
     comment = Column('comment',String,nullable=True)
     
-    
-drops = """DROP TABLE IF EXISTS _symbols CASCADE;
-DROP TABLE IF EXISTS _symbol_validity CASCADE;
-DROP TABLE IF EXISTS _symbol_tags CASCADE;
-DROP TABLE IF EXISTS _symbol_aliases CASCADE;
-DROP TABLE IF EXISTS _feeds CASCADE;
-DROP TABLE IF EXISTS _feed_munging CASCADE;
-DROP TABLE IF EXISTS _feed_sourcing CASCADE;
-DROP TABLE IF EXISTS _feed_validity CASCADE;"""
+ts = ['_symbols', '_symbol_validity', '_symbol_tags', '_symbol_aliases', 
+      '_feeds', '_feed_munging', '_feed_sourcing', '_feed_validity']
+      
+drops = "".join(["DROP TABLE IF EXISTS {} CASCADE;".format(t) for t in ts])
 
 try:
     Base.metadata.create_all(engine)
-    print "Done creating"
+    print "Trump is ready."
 except ProgrammingError as e:
     print e.statement
     print e.message
     raise 
-#conn = engine.connect()
-#qry = symbols.insert().values(symbol="test",description="This is a test symbol",freq="B",units="%")
-#result = conn.execute(qry)
-#print result.inserted_primary_key
-#print qry
-
 
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
 
-# A DBSession() instance establishes all conversations with the database
-# and represents a "staging zone" for all the objects loaded into the
-# database session object. Any change made against the objects in the
-# session won't be persisted into the database until you call
-# session.commit(). If you're not happy about the changes, you can
-# revert all of them back to the last commit by calling
-# session.rollback()
 
 if __name__ == '__main__':
-    import time
-    
     for x in range(3):
         un = str(x) + dt.datetime.now().strftime("%H%M%S")
         
@@ -657,13 +636,15 @@ if __name__ == '__main__':
                 SymbolValidity(checkpoint='Exception',logic='NoFeed',key='arg1',value=10,symbol=NewSymbol),
                 SymbolValidity(checkpoint='Exception',logic='NoFeed',key='arg2',value=20,symbol=NewSymbol)]
     
-        for v in vals:
-            session.add(v)
+        session.add_all(vals)
         
         for f in range(4):
             un = str(x) + dt.datetime.now().strftime("%H%M%S")
-            NewFeed = Feed(NewSymbol,"DB",sourcing={'db' : 'General', 'user' : 'TODO'})
-    
+            NewFeed = Feed(NewSymbol,"DB",
+                           sourcing={'stype' : 'DBNonAPICompliant', 'db' : 'General', 'user' : 'TODO'})
+                           #TODO:
+                           #munging={'mtype' : 'pandas', 'pct_change'})
+            
             vals = [FeedValidity(checkpoint='Exception',logic='NoData',key='arg1',value=1,feed=NewFeed),
                     FeedValidity(checkpoint='Exception',logic='NoData',key='arg2',value=2,feed=NewFeed),
                     FeedValidity(checkpoint='Check',logic='NoData',key='arg3',value=3,feed=NewFeed),
@@ -678,8 +659,6 @@ if __name__ == '__main__':
         NewSymbol.InitializeDataTable()
         
         session.commit()
-            
-    
     session.commit()
     
     
