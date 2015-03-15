@@ -149,12 +149,15 @@ class fQuandl(bFeed):
         super(fQuandl, self).__init__()
         QuandlAPIkey = read_settings()['Quandl']['userone']['authtoken']
         tmp = {'dataset' : dataset, 'authtoken' : QuandlAPIkey}
-        self.sourcing = dict(tmp.items() + kwargs.items())
-       
-class fQuandlSecure(bFeed):
+        self.sourcing = dict(tmp.items() + kwargs.items())    
+        self.set_stype()
+    def set_stype(self):
+        self.meta['stype'] = 'Quandl'
+
+class fQuandlSecure(fQuandl):
     def __init__(self,dataset,**kwargs):
         super(fQuandl, self).__init__()
         tmp = {'dataset' : dataset }
         self.sourcing = dict(tmp.items() + kwargs.items())
-        self.sourcing['sourcing_key'] = 'userone' #All items get picked up, and
-                                                  #override any
+        self.set_stype()
+        self.meta['sourcing_key'] = 'userone'

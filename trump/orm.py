@@ -30,7 +30,7 @@ from extensions.feed_munging import munging_methods
 
 from templating import bFeed
 
-from options import read_config
+from options import read_config, read_settings
 
 engine_str = read_config('readwrite')['engine']
 engine = create_engine(engine_str)
@@ -409,18 +409,23 @@ class Feed(Base, ReprMixin):
             self.fnum = fnum
             
         def settypesinmeta(t,o):
-            val = 'undefined'
+            val = None
             if o is not None:
-                if t in o:
+                if t in meta: #if it's defined explicitly in meta, use that.
+                    val = meta[t]
+                    del meta[t]
+                elif t in o: #otherwise fall back to the value used in the sourcing dictionary.
                     val = o[t]
                     del o[t]
-
-            tmp = FeedMeta(attr=t,value=val,feed=self)
-            self._symsess.add(tmp)
-            self.meta_map[t] = tmp
-            self._symsess.commit()
+            
+            if val:
+                tmp = FeedMeta(attr=t,value=val,feed=self)
+                self._symsess.add(tmp)
+                self.meta_map[t] = tmp
+                self._symsess.commit()
         
         settypesinmeta('stype',sourcing)
+        settypesinmeta('sourcing_key',sourcing)
         settypesinmeta('mtype',munging)
         settypesinmeta('vtype',validity)
 
@@ -451,14 +456,42 @@ class Feed(Base, ReprMixin):
                     for key in logic:
                         self.validity.append(FeedValidity(checkpoint,logic,key,logic[key]))
     def cache(self):
-        if self.ftype == 'fQuandl':
-            print "Getting Quandl data for {}".format(self.symbol.name)
-            import Quandl as q
-            self.data = q.get(**self.sourcing_map())
-            self.data = self.data[self.sourcing_map()['fieldname']]
-            self.data.name = "feed" + str(self.fnum+1).zfill(3)
-            print self.data.tail(3)
         
+        # Pull in the database defined sourcing arguments
+        # for now, this is a dictionary of the forms {str : str,}
+        kwargs = self.sourcing_map()
+
+        # Check the source type
+        meta = self.meta_map()
+        stype = meta['stype']
+         
+        # If there is a sourcing key defined, use it to override any database
+        # defined parameters
+        if 'sourcing_key' in meta:
+            sourcing_key = meta['sourcing_key']
+            sourcing_overrides = read_settings()[stype][sourcing_key]
+            for key in sourcing_overrides:
+                kwargs[key] = sourcing_overrides[key]
+
+        # Depending on the feed type, use the kwargs appropriately to
+        # populate a dataframe, self.data.
+        if stype == 'Quandl':
+            import Quandl as q
+            self.data = q.get(**kwargs)
+            self.data = self.data[kwargs['fieldname']]
+        elif stype == 'DBAPI2':
+            pass
+        elif stype == 'SQLAlchemy':
+            pass
+        elif stype == 'pydata':
+            pass
+        else:
+            raise Exception("Unknown Source Type : {}".format(stype))
+        
+        #make sure it's named properly...
+        self.data.name = "feed" + str(self.fnum+1).zfill(3)
+        
+        #munge accordingly...
         for m in self.munging:
             args = {}
             for a in m.methodargs:

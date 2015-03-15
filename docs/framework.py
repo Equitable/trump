@@ -20,12 +20,17 @@ class Feed(object):
         self.ftype = str # Feed type
         
         self.tags = [str,]
-
+        
+        # This is a list of arguments and values that get
+        # passed to whatever API is called out by meta's 'stype' key.
         self.sourcing = {str : str,...}                   # { param : value,}
+        
+        # This is a list any strings that need to be associated with this 
+        # feed. Eg. 'stype'.
         self.meta = {str : str,...}                       # { attr : value,}
         
-        self.validity = {(str, str, str) : str,...}       # { (checkpoint, logic, key) : value,}    
-        self.munging = {(int, str) : {str : str,...},...} # { (order, funcname) : {argument : value,},}
+        #self.validity = {(str, str, str) : str,...}       # { (checkpoint, logic, key) : value,}    
+        #self.munging = {(int, str) : {str : str,...},...} # { (order, funcname) : {argument : value,},}
         
 class Symbol(object):
     def __init__(self):
