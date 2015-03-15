@@ -410,13 +410,12 @@ class Feed(Base, ReprMixin):
             
         def settypesinmeta(t,o):
             val = None
-            if o is not None:
-                if t in meta: #if it's defined explicitly in meta, use that.
-                    val = meta[t]
-                    del meta[t]
-                elif t in o: #otherwise fall back to the value used in the sourcing dictionary.
-                    val = o[t]
-                    del o[t]
+            if meta is not None and t in meta:
+                val = meta[t]
+                del meta[t]
+            elif o is not None and t in o: #otherwise fall back to the value used in the sourcing dictionary.
+                val = o[t]
+                del o[t]
             
             if val:
                 tmp = FeedMeta(attr=t,value=val,feed=self)
@@ -491,7 +490,7 @@ class Feed(Base, ReprMixin):
         #make sure it's named properly...
         self.data.name = "feed" + str(self.fnum+1).zfill(3)
         
-        #munge accordingly...
+        #munge accordingly
         for m in self.munging:
             args = {}
             for a in m.methodargs:

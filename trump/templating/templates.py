@@ -132,18 +132,6 @@ class fSQLAlchemy(bFeed):
         s.set_basic(table)
         self.sourcing = s.as_dict
 
-###############################################################################
-#
-# TODO Implement the one of three flavours of security...
-#
-# 1. Read File - read the info from the settings file, store in db with plain text
-#   [Lowest security, easiest to implement]
-#
-# 2. Store as an additional attribute.
-#   [Winner, best in class.]
-#
-###############################################################################
-
 class fQuandl(bFeed):
     def __init__(self,dataset,**kwargs):
         super(fQuandl, self).__init__()
