@@ -42,9 +42,9 @@ of Trump until user demand justifies it's release.  This is mainly a technical-r
 Timing 
 ------
 
-Finishing the planning phase should be mid-March 2015; the code base is under rapid expansion 
-and changes.  Building the testing framework is planned for April 2015, with the hopes of participating
-in `Adopty py.test <http://pytest.org/latest/adopt.html>`_.  The first release is optimistically scheduled for early June 2015, with 
+Finishing the planning phase should be finished by late-March 2015; the code base is under rapid expansion 
+and changes.  Planning the testing framework is tentatively mid-April 2015, with the hopes of participating
+in `Adopt py.test <http://pytest.org/latest/adopt.html>`_.  The first release is optimistically scheduled for early June 2015, with 
 the fractions of the initial goals completed:
 
 - Prioritization
@@ -60,7 +60,7 @@ the fractions of the initial goals completed:
 - Aggregated
   - Mean
   - Median
-  - Basic Pandas Functions (Eg. pct_change())
+  - Basic Pandas Functionality (Eg. pct_change())
 - Customized
   - Framework ready
 
@@ -69,6 +69,10 @@ Dependencies
 - `Pandas <http://pandas.pydata.org/>`_ (Tested with >= 15.2)
 - `SQLAlchemy <http://sqlalchemy.org/>`_ (Tested with >= 0.9)
 - `Smuggle <https://pypi.python.org/pypi/smuggle>`_ (Tested with >= 0.2.0)
+
+Data Source Dependencies
+========================
+- `Quandl <https://pypi.python.org/pypi/Quandl>`_
 
 Requirements
 =============
@@ -81,38 +85,32 @@ Coming soon.
 
 Installation
 =============
-Check back March 22nd or slightly after.  See the configuration section of the documentation,
-for the instructions to follow post install.
+Check back March 22nd or slightly after.  
 
-The bare minimum requirement is to create a trump.cfg file from the trump.cfg_sample in /config folder.
-All it needs is a SQLAlchemy engine string where it can store Trump.
+.cfg files are ignored by the git repo.  .cfg_sample files aren't.
 
-*.cfg files are ignored by this repo.  *.cfg_sample files aren't.
+Trump Configuration (/config/trump.cfg)
+---------------------------------------
+The .cfg_sample file needs to be renamed to .cfg. 
 
-Trump Configuration (/config)
------------------------------
-This file should be renamed to trump.cfg.  These are the settings for connecting to a database with a user that has...
+Populate the [readwrite] section with appropriate details.
 
-Trump Templating Settings (/settings)
--------------------------------------
-The cfg_sample files need to be renamed to cfg, in here need to be matched with their respective trump template...
+Trump Template Settings (/settings/template.cfg)
+--------------------------------------------------
+The .cfg_sample files need to be renamed to .cfg. 
+
+Each file must match a template class name.  Not because there is a programmatic link, it's
+just for organizational purposes.
 
 Documentation
 =============
 Check back March 22nd or slightly after.  For now, see the pdf in the prototype branch.
 
-Configuration
--------------
-
-Configuring Trump
------------------
-Trump needs at the very least, a SQL Alchemy connection string with read+write-level access to the
-database where it can install itself.  This can be populated in config/trump.cfg.
 
 Configuring Data Sources
 ------------------------
 
-Sources of data feeds map to their respective case sensitive file *.cfg file in the configuration folder.
+Sources of data feeds map to their respective case sensitive file .cfg file in the configuration folder.
 Trump will use parameters for a source in the following order:
 
 1. Specified explicitly when a template is used. (Eg. table name)

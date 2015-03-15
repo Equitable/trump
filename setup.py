@@ -14,13 +14,13 @@ setup(
   version = v,
   packages = ['trump'],
   description = 'Objectified Indexed Data',
-  install_requires=['smuggle','pandas','SQLAlchemy']
+  install_requires=['smuggle','pandas','SQLAlchemy','Quandl'],
   long_description=(read('README.rst')),
   author = 'Jeffrey McLarty',
   author_email = 'jeffrey.mclarty@gmail.com',
-  url = 'https://github.com/Equitable/trump/'
+  url = 'https://github.com/Equitable/trump/',
   download_url = 'https://github.com/Equitable/trump/tarball/' + v,
-  keywords = ['data', 'timeseries', 'time series', 'indexed', 'objectified', 'trump', 'monotonic', 'RDD', 'relational database', 'pandas', 'SQLAlchemy']
+  keywords = ['data', 'timeseries', 'time series', 'indexed', 'objectified', 'trump', 'monotonic', 'RDD', 'relational database', 'pandas', 'SQLAlchemy'],
   classifiers = ['Development Status :: 1 - Planning',
                  'Intended Audience :: System Administrators',
                  'License :: OSI Approved :: BSD License',
