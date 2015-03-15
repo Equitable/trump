@@ -70,7 +70,7 @@ class mAddFFillMult(bMunging):
         self.build_ffillna(method=method)
         self.build_add_const(add)
         self.build_mult_const(mult)
-        
+       
 """
 *******************************************************************************
 * 

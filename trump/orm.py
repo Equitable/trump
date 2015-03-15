@@ -80,7 +80,7 @@ class SymbolManager(object):
         if syms == None:
             raise Exception("Symbol {} does not exist".format(symbol))
         else:
-            return syms[0]
+            return syms
     def try_to_get(self,symbol):
         syms = self.ses.query(Symbol).filter(Symbol.name == symbol).all()
         if len(syms) == 0:
@@ -114,8 +114,8 @@ class Symbol(Base, ReprMixin):
         self.freq = freq
         self.units = units
         self.agg_method = agg_method
-        self.datatable = False
-        
+        self.datatable = None
+        self.datatable_exists = False
         #SQLAQ - Is this okay to do? It feels sneaky, dirty and wrong.
         session.add(self)
         
@@ -160,9 +160,12 @@ class Symbol(Base, ReprMixin):
         elif self.agg_method in choose_col:
             data['final'] = choose_col[self.agg_method](data)
         
-        
+        #TODO: This is hacky, gotta be a better way.
+        if not self.datatable_exists:
+            self.InitializeDataTable()
         delete(self.datatable).execute()
-        
+        self.InitializeDataTable()
+            
         #os = object_session(self)
         #os.execute(self.datatable.delete())
         #os.commit()
@@ -282,7 +285,13 @@ class Symbol(Base, ReprMixin):
     def data(self):
         t = self.datatable
         return session.query(t.c.datetime,t.c.final).all()
-             
+    @property
+    def df(self):
+        data = self.data()
+        df = pd.DataFrame(data)           
+        df.columns = ['dateindex',self.name]
+        df = df.set_index('dateindex')
+        return df
     def delFeed(self):
         raise NotImplemented
 
@@ -311,6 +320,7 @@ class Symbol(Base, ReprMixin):
     def InitializeDataTable(self):
         self.datatable = self._DataTableFactory()
         self.datatable.create(checkfirst=True)
+        self.datatable_exists = True
         
     def _DataTableFactory(self):
         feed_cols = ['feed{0:03d}'.format(i+1) for i in range(self.n_feeds)]
@@ -441,12 +451,13 @@ class Feed(Base, ReprMixin):
                     for key in logic:
                         self.validity.append(FeedValidity(checkpoint,logic,key,logic[key]))
     def cache(self):
-        if self.ftype == 'Quandl':
-            print "Getting Quandle data for {}".format(self.symbol.name)
+        if self.ftype == 'fQuandl':
+            print "Getting Quandl data for {}".format(self.symbol.name)
             import Quandl as q
-            self.data = q.get(**self.sourcing_dict())
-            self.data = self.data[self.sourcing_dict()['fieldname']]
+            self.data = q.get(**self.sourcing_map())
+            self.data = self.data[self.sourcing_map()['fieldname']]
             self.data.name = "feed" + str(self.fnum+1).zfill(3)
+            print self.data.tail(3)
         
         for m in self.munging:
             args = {}
