@@ -5,6 +5,17 @@ Created on Sat Dec 20 15:50:37 2014
 @author: Jeffrey
 """
 
+#SQLAQ - running the uninstall script, then this script, in the same session
+#        causes an error:
+#
+#        sqlalchemy.exc.InvalidRequestError: When initializing mapper 
+#        Mapper|Feed|_feeds, expression 'FeedMeta' failed to locate a name 
+#        ("name 'FeedMeta' is not defined"). If this is a class name, consider
+#        adding this relationship() to the <class 'trump.orm.Feed'> class
+#        after both dependent classes have been defined
+#
+#        Why?
+
 import pandas as pd
 import datetime as dt
 
@@ -160,24 +171,32 @@ class Symbol(Base, ReprMixin):
         elif self.agg_method in choose_col:
             data['final'] = choose_col[self.agg_method](data)
         
-        #TODO: This is hacky, gotta be a better way.
-        if not self.datatable_exists:
-            self.InitializeDataTable()
-        delete(self.datatable).execute()
+        # SQLAQ There are several states to deal with at this point
+        # A) the datatable exists but a feed has been added
+        # B) the datatable doesn't exist and needs to be created
+        # C) the datatable needs to be updated for more or less feeds
+        # D) the datatable_exists flag is incorrect because all edge cases
+        #    haven't been handled yet.
+        #
+        # My logic is that once Trump is more functional, I'll be able to 
+        # eliminate this hacky solution.  But, SQLAlchemy might have 
+        # a more elegant answer.  A check, of somekind prior to deletion?
+         
+        # if not self.datatable_exists:
+        #     self.InitializeDataTable()
+        # delete(self.datatable).execute()
+        # self.InitializeDataTable()
+         
+        # Is this the best way to check?
+        if engine.dialect.has_table(session.connection(), self.name):
+            delete(self.datatable).execute()
         self.InitializeDataTable()
-            
-        #os = object_session(self)
-        #os.execute(self.datatable.delete())
-        #os.commit()
-        #os.execute("ALTER TABLE '{0}.id' AUTO_INCREMENT = 0;".format(self.name))
-        
+                  
         for index, row in data.iterrows():
             vals = {k : row[k] for k in cols}
             vals['datetime'] = index
             insert(self.datatable,vals).execute()
     
-        #self.datatable.
-
 
     #Feed has to fetch
     #Feed has to reindex
@@ -216,6 +235,8 @@ class Symbol(Base, ReprMixin):
         return "\n".join(s)
                   
     def addTag(self,tag):
+        # SQLA Adding a SymbolTag object, feels awkward/uneccessary.
+        # Should I be implementing this functionality a different way?
         os = object_session(self)
         tmp = SymbolTag(tag=tag,symbol=self)
         self.tags.append(tmp)
