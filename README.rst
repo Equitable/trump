@@ -3,6 +3,10 @@ Trump
 =====
 
 ------------------------------------------
+
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/Equitable/trump
+   :target: https://gitter.im/Equitable/trump?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 Persistent Objectification of Indexed Data
 ------------------------------------------
 
