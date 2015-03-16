@@ -478,8 +478,27 @@ class Feed(Base, ReprMixin):
             import Quandl as q
             self.data = q.get(**kwargs)
             self.data = self.data[kwargs['fieldname']]
+        elif stype == 'psycopg2':
+            import psycopg2 as db
+            con_kwargs = {k:v for k,v in kwargs.items() if k in ['dsn','user','password','host','database']}
+            con = db.connect(**con_kwargs)
         elif stype == 'DBAPI2':
-            pass
+            db = __import__(engine.driver)
+            con_kwargs = {k:v for k,v in kwargs.items() if k in ['dsn','user','password','host','database']}
+            con = db.connect(**con_kwargs) 
+            
+            if 'command' in kwargs:
+                results = con.execute(kwargs['command'])
+            elif set(['table','indexcol','datacol']).issubset(kwargs.keys()):
+                
+                i,d,t = kwargs['indexcol'],kwargs['datacol'],kwargs['table']
+                qry = "SELECT {0},{1} FROM {2} ORDER BY {0};".format(i,d,t)
+                results = con.execute(qry)
+            con.close()
+            
+            results = [(row[0],row[1]) for row in results]
+            ind,dat = zip(*results)
+            self.data = pd.DataFrame(dat,ind)
         elif stype == 'SQLAlchemy':
             pass
         elif stype == 'pydata':

@@ -84,19 +84,18 @@ class mAddFFillMult(bMunging):
 *******************************************************************************
 """
 
-class sDBAPI2Connection(bSource):
-    def __init__(self,dsn=None,user=None,password=None,host=None,database=None):
-        super(sDBAPI2Connection,self).__init__()
-        self.set_LocalDB(dsn,user,password,host,database)
-        self.set_basic()
-        return None
+from source_helpers import mixin_dbCon, mixin_dbIns
+
+class sDBAPI(bSource, mixin_dbCon, mixin_dbIns):
+    def __init__(self,dsn=None,user=None,password=None,host=None,database=None,sourcing_key=None):
+        super(sDBAPI,self).__init__()
+        self.set_con_params(dsn,user,password,host,database,sourcing_key)
             
 class sSQLAlchemySession(bSource):
     def __init__(self,enginestr):
         super(sSQLAlchemySession,self).__init__()
         self.enginestr = enginestr
         self.set_basic()
-        return None
                
 """
 *******************************************************************************
@@ -109,28 +108,67 @@ class sSQLAlchemySession(bSource):
 *******************************************************************************
 """
 
-class fDBAPI2(bFeed):
-    def __init__(self,table=None,dsn=None,user=None,password=None,host=None,database=None):
-        super(fDBAPI2, self).__init__()
-        if self.ftype == 'DBAPI2':
-            s = sDBAPI2Connection(dsn,user,password,host,database)
-            s.set_basic(table)
-            self.sourcing = s.as_dict            
+skey = 'explicit'
 
-class fEcon(fDBAPI2):
+class fDBAPI(bFeed):
+    def __init__(self,table=None,indexcol=None,datacol=None,dsn=None,user=None,password=None,host=None,database=None,sourcing_key=None):
+        super(fDBAPI, self).__init__()
+        self.set_stype()
+        if sourcing_key:
+            self.set_sourcing_key(sourcing_key)
+        self.s = sDBAPI(dsn,user,password,host,database,sourcing_key)
+        if self.__class__.__name__ == 'fDBAPI':
+            self.s.set_basic(table,indexcol,datacol)
+            self.sourcing = self.s.as_dict
+    def set_stype(self):
+        self.meta['stype'] = 'DBAPI'
+    def set_sourcing_key(self,sourcing_key):
+        self.meta['sourcing_key'] = sourcing_key
+
+class fExplicitKeyCol(fDBAPI):
+    def __init__(self,table,keycol,key,indexcol,datacol):
+        super(fExplicitKeyCol, self).__init__(sourcing_key=skey)
+        self.s.set_keycol(table,keycol,key,indexcol,datacol)
+        self.sourcing = self.s.as_dict
+       
+class fExplicitBasic(fDBAPI):
+    def __init__(self,table,datacol,indexcol):
+        super(fExplicitBasic, self).__init__(table=table,
+                                             indexcol=indexcol,
+                                             datacol=datacol,
+                                             sourcing_key=skey)
+        self.s.set_basic(table,indexcol,datacol)
+        self.sourcing = self.s.as_dict
+
+class fExplicitCommand(fDBAPI):
+    def __init__(self,command):
+        super(fExplicitCommand, self).__init__(sourcing_key=skey)
+        self.s.set_command(command)
+        self.sourcing = self.s.as_dict
+
+class fEcon(fExplicitKeyCol):
     def __init__(self,key):
-        super(fEcon, self).__init__()
-        s = sDBAPI2Connection()
-        s.set_LocalDB('General')
-        s.set_keycol('econ','name',key,'date','value')
-        self.sourcing = s.as_dict
+        super(fEcon,self).__init__('econ','name',key,'date','value')
 
+class fMyTable(fExplicitBasic):
+    def __init__(self,table,datacol='value',indexcol='date'):
+        super(fMyTable,self).__init__(table,datacol,indexcol)
+        
+class fSQL(fExplicitCommand):
+    pass
+        
 class fSQLAlchemy(bFeed):
     def __init__(self,enginestr,table):
         super(fSQLAlchemy, self).__init__()
         s = sSQLAlchemySession(enginestr)
         s.set_basic(table)
         self.sourcing = s.as_dict
+
+#******************************************************************************
+#
+#   Quandl
+#
+#******************************************************************************
 
 class fQuandl(bFeed):
     def __init__(self,dataset,**kwargs):
@@ -149,3 +187,16 @@ class fQuandlSecure(fQuandl):
         self.sourcing = dict(tmp.items() + kwargs.items())
         self.set_stype()
         self.meta['sourcing_key'] = 'userone'
+
+if __name__ == '__main__':
+    f = fMyTable('atable')
+    print f.sourcing
+    print f.meta
+    
+    f = fEcon('SP500')
+    print f.sourcing
+    print f.meta
+    
+    f = fSQL('SELECT t,data FROM math ORDER BY t;')
+    print f.sourcing
+    print f.meta  

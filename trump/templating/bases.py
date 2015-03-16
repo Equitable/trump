@@ -9,7 +9,6 @@ based ORM system.
 from collections import OrderedDict as odict
 
 from converters import  _ListConverter, _DictConverter, _OrderedDictConverter
-from source_helpers import mixin_dbCon, mixin_dbIns
 
 """
 *******************************************************************************
@@ -28,7 +27,8 @@ from source_helpers import mixin_dbCon, mixin_dbIns
 
 class bTags(_ListConverter):
     def __init__(self):
-        self.aTag = True
+        pass
+        #self.aTag = True
     def add_tag(self,tag):
         self.__setattr__(tag,True)
         
@@ -49,6 +49,11 @@ class bTags(_ListConverter):
 """
 
 class bMunging(_OrderedDictConverter):
+    def __init__(self):
+        super(bMunging,self).__init__()
+        #self.key_one = 'value'
+        #self.key_two = 'value' # This object tracks which order the attributes
+                                # are created.
     def build_add_const(self,n):
         self.add_const = {'n' : n}
     def build_mult_const(self,n):
@@ -71,10 +76,10 @@ class bMunging(_OrderedDictConverter):
 """
 
         
-class bSource(_DictConverter, mixin_dbCon, mixin_dbIns):
+class bSource(_DictConverter):
     def __init__(self):
-        self.stype = self.__class__.__name__
-        self.sourcing_key = None
+        pass
+        #self.key = 'value'
                
 """
 *******************************************************************************
