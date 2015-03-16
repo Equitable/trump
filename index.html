@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Trump by Equitable</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Trump</h1>
+        <p>Persistent Objectification of Indexed Data</p>
+        <p class="view"><a href="https://github.com/Equitable/trump">View the Project on GitHub <small>Equitable/trump</small></a></p>
+        <ul>
+          <li><a href="https://github.com/Equitable/trump/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/Equitable/trump/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/Equitable/trump">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <p>Trump is a framework for objectifying data, with the goal of centralizing the responsibility of 
+managing feeds, munging, calculating and checking data, upstream of any application or user requirement.</p>
+
+<p>Inside the Trump framework, a symbol refers to one or more data feeds, each with their own instructions
+saved for retrieving data.  Once it's retrieved by Trump, depending on the attributes of the symbol,
+it gets munged, aggregated, checked, and cached.  Downstream users are free to query the existing cache,
+force a re-cache, or check any property of the data prior to using it.</p>
+
+<p>System Admins can systematically detect problems in advance, via common integrity checks of the data,
+then optionally schedule the re-cache by tag or symbol name.  Users and admins have the ability to manually
+override problems if they exist, with a specific feed, in a way that is centralized, audited, and backed-up.</p>
+
+<p>With a focus on business processes, Trump's long run goals enable data feeds to be:</p>
+
+<ul>
+<li>
+<strong>Prioritized</strong>, <em>flexibly</em> - a symbol can be associated with multiple data source for a variety of reasons including redundancy, calculations, or optionality.</li>
+<li>
+<strong>Modified</strong>, <em>reliably</em> - a symbol's data feeds can be changed out, without any changes requiring testing to the downstream application or user.</li>
+<li>
+<strong>Verified</strong>, <em>systematically</em> - a variety of common data processing checks are performed as the symbol's data is cached.</li>
+<li>
+<strong>Audited</strong>, <em>quickly</em> - alerts and reports all become possible to assess integrity or inspect where manual over-rides have been performed.</li>
+<li>
+<strong>Aggregated</strong>, <em>intelligently</em> - on a symbol by symbol basis, feeds can be combined and used in an extensible number of ways.</li>
+<li>
+<strong>Customized</strong>, <em>dynamically</em> - extensibility is possible at the templating, munging, aggregation, and validity steps.
+## Current State
+Trump is currently in the planning stage.  Input is welcome, and the API is subject to change.  This page will be updated with a changelog as soon as the planning stage ends.</li>
+</ul>
+
+<h2>
+<a id="basic-usage" class="anchor" href="#basic-usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Basic Usage</h2>
+
+<p>This example dramatically understates the utility of Trump's long term feature set.</p>
+
+<h4>
+<a id="adding-a-symbol" class="anchor" href="#adding-a-symbol" aria-hidden="true"><span class="octicon octicon-link"></span></a>Adding a Symbol</h4>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">from</span> trump.orm <span class="pl-k">import</span> SymbolManager
+<span class="pl-k">from</span> trump.templating <span class="pl-k">import</span> fQuandl, fSQL
+
+sm <span class="pl-k">=</span> SymbolManager()
+
+oil <span class="pl-k">=</span> sm.create(<span class="pl-vpf">name</span> <span class="pl-k">=</span> <span class="pl-s1"><span class="pl-pds">"</span>oil_front_month<span class="pl-pds">"</span></span>,
+                <span class="pl-vpf">description</span> <span class="pl-k">=</span> <span class="pl-s1"><span class="pl-pds">"</span>Crude Oil<span class="pl-pds">"</span></span>,
+                <span class="pl-vpf">freq</span> <span class="pl-k">=</span> <span class="pl-s1"><span class="pl-pds">'</span>D<span class="pl-pds">'</span></span>,
+                <span class="pl-vpf">units</span> <span class="pl-k">=</span> <span class="pl-s1"><span class="pl-pds">'</span>$ / barrel<span class="pl-pds">'</span></span>)
+
+oil.addTags([<span class="pl-s1"><span class="pl-pds">'</span>commodity<span class="pl-pds">'</span></span>,<span class="pl-s1"><span class="pl-pds">'</span>oil<span class="pl-pds">'</span></span>,<span class="pl-s1"><span class="pl-pds">'</span>futures<span class="pl-pds">'</span></span>])
+
+f1 <span class="pl-k">=</span> fQuandl(<span class="pl-s1"><span class="pl-st">r</span><span class="pl-pds">"</span>CHRIS/CME_CL2<span class="pl-pds">"</span></span>,<span class="pl-vpf">fieldname</span><span class="pl-k">=</span><span class="pl-s1"><span class="pl-pds">'</span>Settle<span class="pl-pds">'</span></span>)
+f2 <span class="pl-k">=</span> fSQL(<span class="pl-s1"><span class="pl-pds">"</span><span class="pl-k">SELECT</span> <span class="pl-st">date</span>,data <span class="pl-k">FROM</span> test_oil_data;<span class="pl-pds">"</span></span>)
+
+oil.addFeed(f1)
+oil.addFeed(f2)
+
+oil.cache()
+
+<span class="pl-k">print</span> oil.df.tail()</pre></div>
+
+<h4>
+<a id="using-a-symbol" class="anchor" href="#using-a-symbol" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using a Symbol</h4>
+
+<div class="highlight highlight-python"><pre><span class="pl-k">from</span> trump.orm <span class="pl-k">import</span> SymbolManager
+
+sm <span class="pl-k">=</span> SymbolManager()
+
+oil <span class="pl-k">=</span> sm.get(<span class="pl-s1"><span class="pl-pds">"</span>oil_front_month<span class="pl-pds">"</span></span>)
+
+<span class="pl-c">#optional</span>
+oil.cache()
+
+<span class="pl-k">print</span> oil.df.tail()</pre></div>
+
+<h2>
+<a id="more-information" class="anchor" href="#more-information" aria-hidden="true"><span class="octicon octicon-link"></span></a>More Information</h2>
+
+<p>Checkout the main repo's README <a href="https://github.com/Equitable/trump/blob/master/README.rst">main repo's README</a> for up to date information surrounding planning, installation, and more.</p>
+      </section>
+    </div>
+    <footer>
+      <p>Project maintained by <a href="https://github.com/Equitable">Equitable</a></p>
+      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
+    </footer>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-60795615-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
