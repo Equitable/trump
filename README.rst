@@ -126,9 +126,14 @@ post symbol creation, but the specific arguments can not be.
 There is nothing in stone, saying that a password can't be hardcoded into a template, just the 
 same as there is nothing in stone, dictating that a tablename can't be included in a config file.
 
-Contributing
-============
-Coming soon.
+Communication
+=============
+
+* Help -> Stack Overflow
+* Bugs, Ideas & Requests -> GitHub Issues
+* Contribute Code -> New Branch + GitHub Pull Request
+* Chat - > Gitter (https://gitter.im/Equitable/trump)
+* Other -> e-mail InvTech@equitable.ca
 
 License
 =======

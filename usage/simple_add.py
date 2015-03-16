@@ -27,5 +27,5 @@ oil.addFailSafe(dt(2015,1,6),45.0,user='Jefffs')
 
 df = oil.cache()
 
-#print oil.df.tail()
+print oil.df.tail()
             
