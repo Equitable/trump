@@ -51,7 +51,7 @@ class ProxyDict(object):
         except KeyError:
             pass
         self.collection.append(value)
-
+        
 def _unique(session, cls, hashfunc, queryfunc, constructor, arg, kw):
     cache = getattr(session, '_unique_cache', None)
     if cache is None:

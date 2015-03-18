@@ -30,7 +30,7 @@ class Feed(object):
         self.meta = {str : str,...}                       # { attr : value,}
         
         #self.validity = {(str, str, str) : str,...}       # { (checkpoint, logic, key) : value,}    
-        #self.munging = {(int, str) : {str : str,...},...} # { (order, funcname) : {argument : value,},}
+        self.munging = {(int, str) : {str : str,...},...} # { (order, mtype, method) : {argument : value,},}
         
 class Symbol(object):
     def __init__(self):

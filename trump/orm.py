@@ -196,14 +196,7 @@ class Symbol(Base, ReprMixin):
             vals = {k : row[k] for k in cols}
             vals['datetime'] = index
             insert(self.datatable,vals).execute()
-    
-
-    #Feed has to fetch
-    #Feed has to reindex
-    #Feed has to munge
-    #Feed has to apply
-    #Symbol has to choose or apply
-        
+          
                 
     @property
     def describe(self):
@@ -446,7 +439,7 @@ class Feed(Base, ReprMixin):
         
         settypesinmeta('stype',sourcing)
         settypesinmeta('sourcing_key',sourcing)
-        settypesinmeta('mtype',munging)
+
         settypesinmeta('vtype',validity)
 
         if meta:
@@ -610,17 +603,22 @@ class FeedMunge(Base, ReprMixin):
     symname = Column('symname',String, primary_key = True)
     fnum = Column('fnum',Integer, primary_key = True)
     order =  Column('order',Integer, primary_key = True)
+    mtype = Column('mtype',String)
     method =  Column('method',String)
     
     feed = relationship("Feed")
     
-    methodargs = relationship("FeedMungeArg",lazy="dynamic",cascade="all, delete-orphan")
+    mungeargs = relationship("FeedMungeArg",lazy="dynamic",cascade="all, delete-orphan")
     
     __table_args__ = (ForeignKeyConstraint([symname,fnum],[Feed.symname,Feed.fnum]),{})
-    def __init__(self,order,method,feed):
+    def __init__(self,order,mtype,method,feed):
         self.order = order
         self.method = method
+        self.mtype = mtype
         self.feed = feed
+    @property
+    def munging_map(self):
+        return ProxyDict(self, 'mungeargs', FeedMungeArg, 'arg')
         
 class FeedMungeArg(Base, ReprMixin):
     __tablename__ = "_feed_munging_args"
