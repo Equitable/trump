@@ -31,7 +31,7 @@ class bTags(_ListConverter):
         #self.aTag = True
     def add_tag(self,tag):
         self.__setattr__(tag,True)
-        
+
 """
 *******************************************************************************
 *
@@ -54,13 +54,6 @@ class bMunging(_OrderedDictConverter):
         #self.key_one = 'value'
         #self.key_two = 'value' # This object tracks which order the attributes
                                 # are created.
-    def build_add_const(self,n):
-        self.add_const = {'n' : n}
-    def build_mult_const(self,n):
-        self.multiply_const = {'n' : n}
-    def build_ffillna(self,**kwargs):
-        self.ffillna = kwargs
-
         
 """
 *******************************************************************************

@@ -276,15 +276,13 @@ class Symbol(Base, ReprMixin):
         else:
             fnum = None
             
-        if isinstance(obj,dict):
-            raise NotImplemented
         if isinstance(obj,bFeed):
-            for kw in kwargs:
-                if kw == 'munging':
-                    obj.addMungeTemplate(kwargs[kw])
-                elif kw in munging_methods:
-                    obj.addMungeTemplate(kw,kwargs[kw])
-            f = Feed(self,obj.ftype,obj.sourcing,obj.munging,obj.validity,obj.meta,fnum)
+            munging = obj.munging
+            if 'munging' in kwargs:
+                explicit_munging = kwargs['munging'].as_odict
+                for key in explicit_munging:
+                    munging[key] = explicit_munging[key]                   
+            f = Feed(self,obj.ftype,obj.sourcing,munging,obj.validity,obj.meta,fnum)
         if isinstance(obj,Feed):
             f = obj
         self.feeds.append(f)
@@ -422,7 +420,7 @@ class Feed(Base, ReprMixin):
         else:
             self.fnum = fnum
             
-        def settypesinmeta(t,o):
+        def setinmeta(t,o):
             val = None
             if meta is not None and t in meta:
                 val = meta[t]
@@ -437,10 +435,9 @@ class Feed(Base, ReprMixin):
                 self.meta_map[t] = tmp
                 self._symsess.commit()
         
-        settypesinmeta('stype',sourcing)
-        settypesinmeta('sourcing_key',sourcing)
-
-        settypesinmeta('vtype',validity)
+        setinmeta('stype',sourcing)
+        setinmeta('sourcing_key',sourcing)
+        setinmeta('vtype',validity)
 
         if meta:
             for key in meta:
@@ -457,10 +454,17 @@ class Feed(Base, ReprMixin):
                 self._symsess.commit()   
 
         if munging:            
-            for i,method in enumerate(munging):
-                fm = FeedMunge(order=i,method=method,feed=self)
-                for arg,value in munging[method].iteritems():
-                    fm.methodargs.append(FeedMungeArg(arg,value,feedmunge=fm))
+            for i,meth in enumerate(munging.keys()):
+                print i,meth, munging[meth]
+                fm = FeedMunge(order=i,mtype=munging[meth]['mtype'],method=meth,feed=self)
+                for arg,value in munging[meth]['kwargs'].iteritems():
+                    print arg,value
+                    # TODO making munging arguments dynamically typed
+                    if not isinstance(value,(int,float)):
+                        val = str(value)
+                    else:
+                        val = value
+                    fm.mungeargs.append(FeedMungeArg(arg,val,feedmunge=fm))
                 self.munging.append(fm)
 
         if validity:

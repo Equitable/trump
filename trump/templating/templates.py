@@ -59,17 +59,31 @@ class tSimple(bTags):
 *******************************************************************************
 """
 
-class mFFill(bMunging):
-    def __init__(self,method='ffill'):
-        super(mFFill, self).__init__()       
-        self.build_ffillna(method=method)
+from munging_helpers import mixin_pab, mixin_pnab
 
-class mAddFFillMult(bMunging):
-    def __init__(self,add=0.0,method='ffill',mult=1.0):
-        super(mAddFFillMult, self).__init__()
-        self.build_ffillna(method=method)
-        self.build_add_const(add)
-        self.build_mult_const(mult)
+class mAbs(bMunging, mixin_pab):
+    def __init__(self):
+        super(mAbs, self).__init__()       
+        self.bld_abs()
+
+class mRollingMean(bMunging, mixin_pnab):
+    def __init__(self,**kwargs):
+        super(mRollingMean, self).__init__()       
+        self.bld_rolling_mean(**kwargs)
+
+class mMultiExample(bMunging, mixin_pnab, mixin_pab):
+    def __init__(self,pct_change_kwargs,add_kwargs):
+        super(mMultiExample, self).__init__()       
+        self.bld_pct_change(**pct_change_kwargs)        
+        self.bld_add(**add_kwargs)  
+
+class mSimpleExample(bMunging, mixin_pnab, mixin_pab):
+    def __init__(self,periods,window):
+        super(mSimpleExample, self).__init__()
+        kwargs = {'periods' : periods, 'fill_method' : 'ffill'}
+        self.bld_pct_change(**kwargs)
+        kwargs = {'window' : window, 'min_periods' : 5}
+        self.bld_rolling_mean(**kwargs)      
        
 """
 *******************************************************************************
@@ -199,4 +213,16 @@ if __name__ == '__main__':
     
     f = fSQL('SELECT t,data FROM math ORDER BY t;')
     print f.sourcing
-    print f.meta  
+    print f.meta
+
+    m = mRollingMean(window=5,min_periods=4,center=True)
+    for key in m.as_odict.keys():
+        print key
+        for ins in m.as_odict[key]:
+            print " ", m.as_odict[key][ins]
+
+    m = mSimpleExample(3,5)
+    for key in m.as_odict.keys():
+        print key
+        for ins in m.as_odict[key]:
+            print " ", m.as_odict[key][ins]
