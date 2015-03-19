@@ -2,7 +2,7 @@
 
 from trump.orm import SymbolManager
 from trump.templating import fQuandl, fQuandlSecure, fSQL
-from trump.templating import mRollingMean
+from trump.templating import mFFillRollingMean
 
 from datetime import datetime as dt
 
@@ -20,7 +20,7 @@ f1 = fQuandl(r"CHRIS/CME_CL2",fieldname='Settle')
 f2 = fQuandlSecure(r"CHRIS/CME_CL3",fieldname='Settle')
 f3 = fSQL("SELECT date,data FROM test_oil_data;")
 
-m1 = mRollingMean(window=5,min_periods=10,center=True)
+m1 = mFFillRollingMean(window=5,min_periods=10,center=True)
 
 oil.addFeed(f1,munging=m1)
 oil.addFeed(f2,munging=m1)
