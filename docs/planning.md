@@ -53,11 +53,11 @@ Each munging step is performed in order, according to it's 'mtype', and keyword 
 - [ ] Templates & Extensions
   - [ ] Trump Based Munging Extensions
   - [ ] Pandas Based Munging
-    - [ ] Attribute-based math (Eg. .abs(), .pct_change(), .add())
+    - [X] Attribute-based math (Eg. .abs(), .pct_change(), .add())
     - [ ] Attribute & lambda based math (Eg. .apply(), .groupby())
     - [ ] Mutable munging (eg. .reindex(), .dropna())
     - [ ] Self-referential (eg. .duplicated(), )
-    - [ ] Non-attribute math (eg. rolling_mean(), )
+    - [X] Non-attribute math (eg. rolling_mean(), )
     - [ ] Non-attribute & lambda based math (eg. rolling_apply(), )
 
 # 3.0 Feed Aggregation

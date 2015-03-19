@@ -40,6 +40,7 @@ from extensions.symbol_aggs import apply_row, choose_col
 from extensions.feed_munging import munging_methods
 
 from templating import bFeed
+from templating import pab, pnab
 
 from options import read_config, read_settings
 
@@ -165,6 +166,10 @@ class Symbol(Base, ReprMixin):
               
         for row in ords:
             data.loc[row.dt_ind,'failsafe_feed999'] = row.value
+            
+        print data
+        print self.agg_method
+        print apply_row
 
         if self.agg_method in apply_row:
             data['final'] = data.apply(apply_row[self.agg_method],axis=1)
@@ -530,19 +535,51 @@ class Feed(Base, ReprMixin):
         else:
             raise Exception("Unknown Source Type : {}".format(stype))
 
-        print self.data.tail(5)
-        print type(self.data)
-        print self.data.index
-        print self.data.dtype
+        #print self.data.tail(5)
+        #print type(self.data)
+        #print self.data.index
+        #print self.data.dtype
+
+       
+        #munge accordingly
+        for m in self.munging:
+            print m.mtype
+            mmkeys = m.munging_map.keys()
+            kwargs = {k : m.munging_map[k].value for k in mmkeys}
+            for arg in kwargs:
+                #TODO handle types better.
+                if kwargs[arg].isnumeric():
+                    tmp = float(kwargs[arg])
+                    if (tmp % 1) == 0: #then, probably an int.
+                        kwargs[arg] = int(tmp)
+                    else:
+                        kwargs[arg] = tmp
+                elif kwargs[arg].upper() == 'TRUE':
+                    kwargs[arg] = True
+                elif kwargs[arg].upper() == 'FALSE':
+                    kwargs[arg] = False                   
+            if m.mtype == pab:
+                func = getattr(self.data,m.method)
+                #print m.method, func
+                #print kwargs
+                #self.data['2015-03-16'] = pd.np.nan
+                #print self.data.tail()
+                #self.data = func() #TODO: add kwargs, test.
+                self.data = func(**kwargs) #TODO: add kwargs, test.
+                #print self.data.tail()
+            elif m.mtype == pnab:
+                lib = __import__('pandas',globals(),locals(),[],-1)
+                func = getattr(lib,m.method)
+                #print m.method, func
+                #print kwargs
+                self.data = func(self.data,**kwargs)
+        
         #make sure it's named properly...
         self.data.name = "feed" + str(self.fnum+1).zfill(3)
         
-        #munge accordingly
-        for m in self.munging:
-            args = {}
-            for a in m.methodargs:
-                args[a.arg] = a.value
-            self.data = munging_methods[m.method](self.data,**args)
+#            for a in m.methodargs:
+#                args[a.arg] = a.value
+#            self.data = munging_methods[m.method](self.data,**args)
 
     @property
     def sourcing_map(self):
