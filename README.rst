@@ -88,44 +88,51 @@ Basic Usage
 Coming soon.
 
 Installation
-=============
-Check back March 22nd or slightly after.  
+============
 
-.cfg files are ignored by the git repo.  .cfg_sample files aren't.
+Step 1. Install Package:
+-----------------------
+```pip install trump```
+or
+```git clone https://github.com/Equitable/trump.git```
+```python setup.py install```
 
-Trump Configuration (/config/trump.cfg)
----------------------------------------
-The .cfg_sample file needs to be renamed to .cfg. 
+*Note, if you use ```python setup.py develop```, or any other form of manual installation, 
+you will need to manually create your own .cfg files by renaming the .cfg_sample files.
+
+Step 2. Configuration
+---------------------
+Edit trump/config/trump.cfg, adding a SQLAlchemy engine string to the [readwrite] section.
 
 Populate the [readwrite] section with appropriate details.
 
-Trump Template Settings (/settings/template.cfg)
---------------------------------------------------
-The .cfg_sample files need to be renamed to .cfg. 
+Step 3. Template Settings
+-------------------------
+Edit trump/templating/settings cfg files, depending on the intended data sources to be used.
 
-Each file must match a template class name.  Not because there is a programmatic link, it's
-just for organizational purposes.
+Only Quandl and DBAPI are currently implemented.
+
+See the documentation section "Configuring Data Sources" for guidance.
 
 Documentation
 =============
 Check back March 22nd or slightly after.  For now, see the pdf in the prototype branch.
 
-
 Configuring Data Sources
 ------------------------
 
-Sources of data feeds map to their respective case sensitive file .cfg file in the configuration folder.
+Source feed template classes map to their respective case sensitive file .cfg file in the templating/settings directory.
 Trump will use parameters for a source in the following order:
 
 1. Specified explicitly when a template is used. (Eg. table name)
 2. Specified implicitly using logic derived in the template based on the template itself or argument values passed. (Eg. Database Names)
 3. Specified implicitly using a argument's default value. (Eg. database host, port)
 4. Specified on disk via the source's configuration file. (Eg. authentication keys and passwords)
-5. Specified on disk encrypted sources via an encrypted config file. (Eg. top-secret passwords) (Not yet implemented)
+5. Specified on disk encrypted sources via an encrypted config file. (Eg. top-secret passwords) (Not Implemented)
 
-If it relies on #4 or #5, the info will not be stored in the database.  Instead, it will be looked
-up at runtime from the config file.  This means that the config file values can be changed 
-post symbol creation, but the specific arguments can not be.
+If the template and settings rely on #4 or #5, the info will not be stored in the database.  Instead, it will be looked
+up at runtime from the appropriate section in the cfg file.  This means that the cfg file values can be changed 
+post symbol creation, but the specific arguments can not be modified.
 
 There is nothing in stone, saying that a password can't be hardcoded into a template, just the 
 same as there is nothing in stone, dictating that a tablename can't be included in a config file.
