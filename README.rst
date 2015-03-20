@@ -2,11 +2,10 @@
 Trump
 =====
 
-------------------------------------------
-
 .. image:: https://badges.gitter.im/Join%20Chat.svg
    :alt: Join the chat at https://gitter.im/Equitable/trump
    :target: https://gitter.im/Equitable/trump?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 Persistent Objectification of Indexed Data
 ------------------------------------------
 
@@ -93,7 +92,7 @@ Data Source Dependencies
 - `Quandl <https://pypi.python.org/pypi/Quandl>`_
 
 Step 1. Install Package:
-~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 ``pip install trump``
 
 or
@@ -105,13 +104,13 @@ If you use any other installation method (Eg. ``python setup.py develop``),
 you will need to manually create your own .cfg files by renaming the .cfg_sample files.
 
 Step 2. Configuration
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 Edit trump/config/trump.cfg, adding a SQLAlchemy engine string to the [readwrite] section.
 
 Populate the [readwrite] section with appropriate details.
 
 Step 3. Template Settings
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 Edit trump/templating/settings cfg files, depending on the intended data sources to be used.
 
 Only Quandl and DBAPI are currently implemented.
