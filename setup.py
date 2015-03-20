@@ -1,7 +1,38 @@
 import os
+import shutil
+import sys
 
-from setuptools import setup
+from setuptools import setup, find_packages
+from setuptools.command.install import install
 
+cmds = sys.argv
+installing = 'install' in cmds
+
+def copy_cfg_sample_if_not_exists(p):
+    for f in os.listdir(p):
+        if ".cfg_sample" in f:
+            newf = f.replace(".cfg_sample",".cfg")
+            if not os.path.isfile(os.path.join(p,newf)):
+                print "\nCreating {} from sample file.".format(newf)
+                shutil.copy(os.path.join(p,f),os.path.join(p,newf))
+            else:
+                ans = raw_input("\n{} already exists, overwrite? [y/n]".format(newf))
+                if ans.upper()[0] == 'Y':
+                    print "Overwriting {} from sample file.".format(newf)
+                    shutil.copy(os.path.join(p,f),os.path.join(p,newf))
+                else:
+                    print "Skipping {}.".format(newf)
+
+class TrumpInstall(install):
+    def run(self):
+        install.run(self)
+        if installing:
+            config_path = os.path.join(self.install_lib,'trump','config')
+            copy_cfg_sample_if_not_exists(config_path)        
+            settings_path = os.path.join(self.install_lib,'trump','templating','settings')
+            copy_cfg_sample_if_not_exists(settings_path)  
+        
+        
 def read(*p):
     """Build a file path from paths and return the contents."""
     with open(os.path.join(*p), 'r') as fi:
@@ -12,13 +43,15 @@ v = '0.0.1'
 setup(
   name = 'Trump',
   version = v,
-  packages = ['trump'],
-  description = 'Objectified Indexed Data',
-  install_requires=['smuggle','pandas','SQLAlchemy','Quandl'],
-  long_description=(read('README.rst')),
+  packages = find_packages(),
+  description = 'Persistent Objectified Indexed Data',
+  install_requires = ['smuggle','pandas','SQLAlchemy','Quandl'],
+  long_description = read('README.rst') ,
+  package_data = {'': ['config/*.cfg_sample'], 'trump.templating' : ['settings/*.cfg_sample']},
+  cmdclass = {'install': TrumpInstall},
   author = 'Jeffrey McLarty',
   author_email = 'jeffrey.mclarty@gmail.com',
-  url = 'https://github.com/Equitable/trump/',
+  url = 'http://Equitable.github.com/trump/',
   download_url = 'https://github.com/Equitable/trump/tarball/' + v,
   keywords = ['data', 'timeseries', 'time series', 'indexed', 'objectified', 'trump', 'monotonic', 'RDD', 'relational database', 'pandas', 'SQLAlchemy'],
   classifiers = ['Development Status :: 1 - Planning',

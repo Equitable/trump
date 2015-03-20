@@ -2,3 +2,5 @@
 *.p
 *.cfg
 Trump.egg-info/*
+dist/*
+build/*
