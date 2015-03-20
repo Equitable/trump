@@ -6,6 +6,7 @@ Trump
    :alt: Join the chat at https://gitter.im/Equitable/trump
    :target: https://gitter.im/Equitable/trump?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
+------------------------------------------
 Persistent Objectification of Indexed Data
 ------------------------------------------
 
@@ -116,6 +117,17 @@ Edit trump/templating/settings cfg files, depending on the intended data sources
 Only Quandl and DBAPI are currently implemented.
 
 See the documentation section "Configuring Data Sources" for guidance.
+
+Step 4. Import Trump
+--------------------
+Simply running ``import trump.orm as to`` will create all the tables required in whatever database
+was provided in Step 2.
+
+Un-install
+----------
+1. download uninstall.py, and run it.  This will remove all tables created by Trump. The file
+will likely require minor changes if you use anything other than PostgreSQL.
+2. delete site-packages/trump and all it's subdirectories.
 
 Documentation
 =============
