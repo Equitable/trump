@@ -68,20 +68,7 @@ the fractions of the initial goals completed:
 - Customized
   - Framework ready
 
-Dependencies
-============
-- `Pandas <http://pandas.pydata.org/>`_ (Tested with >= 15.2)
-- `SQLAlchemy <http://sqlalchemy.org/>`_ (Tested with >= 0.9)
-- `Smuggle <https://pypi.python.org/pypi/smuggle>`_ (Tested with >= 0.2.0)
-
-Data Source Dependencies
-========================
-- `Quandl <https://pypi.python.org/pypi/Quandl>`_
-
-Requirements
-=============
-* Python 2.7; Support for Python 3.3 or 3.4 should be do-able, if there was interest.
-* A relational database supported by SQLAlchemy.  The first database with guaranteed support is PostGreSQL
+See the doc/planning.md file for a big checklist.
 
 Basic Usage
 ===========
@@ -90,24 +77,41 @@ Coming soon.
 Installation
 ============
 
-Step 1. Install Package:
------------------------
-```pip install trump```
-or
-```git clone https://github.com/Equitable/trump.git```
-```python setup.py install```
+Requirements
+------------
+* Python 2.7; Support for Python 3.3 or 3.4 should be do-able, if there was interest.
+* A relational database supported by SQLAlchemy.  The first database with guaranteed support is PostGreSQL
 
-*Note, if you use ```python setup.py develop```, or any other form of manual installation, 
+Dependencies
+------------
+- `Pandas <http://pandas.pydata.org/>`_ (Tested with >= 15.2)
+- `SQLAlchemy <http://sqlalchemy.org/>`_ (Tested with >= 0.9)
+- `Smuggle <https://pypi.python.org/pypi/smuggle>`_ (Tested with >= 0.2.0)
+
+Data Source Dependencies
+------------------------
+- `Quandl <https://pypi.python.org/pypi/Quandl>`_
+
+Step 1. Install Package:
+~~~~~~~~~~~~~~~~~~~~~~~
+``pip install trump``
+
+or
+
+``git clone https://github.com/Equitable/trump.git``
+``python setup.py install``
+
+If you use any other installation method (Eg. ``python setup.py develop``),  
 you will need to manually create your own .cfg files by renaming the .cfg_sample files.
 
 Step 2. Configuration
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 Edit trump/config/trump.cfg, adding a SQLAlchemy engine string to the [readwrite] section.
 
 Populate the [readwrite] section with appropriate details.
 
 Step 3. Template Settings
--------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~
 Edit trump/templating/settings cfg files, depending on the intended data sources to be used.
 
 Only Quandl and DBAPI are currently implemented.
@@ -120,7 +124,6 @@ Check back March 22nd or slightly after.  For now, see the pdf in the prototype 
 
 Configuring Data Sources
 ------------------------
-
 Source feed template classes map to their respective case sensitive file .cfg file in the templating/settings directory.
 Trump will use parameters for a source in the following order:
 
