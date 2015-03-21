@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Dec 20 15:50:37 2014
-
-@author: Jeffrey
+Trump's Object Relational Model is the glue to the framework, used to creat 
+a Symbol's tags, alias, meta data, data feeds and their sources, munging and validity
+instructions.
 """
 
 #SQLAQ - running the uninstall script, then this script, in the same session
@@ -47,6 +47,9 @@ from options import read_config, read_settings
 engine_str = read_config('readwrite')['engine']
 engine = create_engine(engine_str)
 
+# Bind the engine to the metadata of the Base class so that the
+# declaratives can be accessed through a DBSession instance
+
 Base = declarative_base()
 Base.metadata.bind = engine
 
@@ -61,9 +64,15 @@ checkpoints = ('EXCEPTION','CHECK')
 state = ('ENABLED','DISABLED','ERROR')
 
 class SymbolManager(object):
+    """
+    A SymbolManager handles the creation, getting and deletion of symbols.
+    """
     def __init__(self,ses=session):
         self.ses = session
     def create(self,name,description=None,freq=None,units=None,agg_method="PRIORITY_FILL"):
+        """
+        Create, or gets if exists, a Symbol.
+        """
         sym = self.try_to_get(name)
         if sym is not None:
             print sym.name
@@ -73,6 +82,9 @@ class SymbolManager(object):
         sym.addAlias(name)
         return sym      
     def delete(self,symbol):
+        """
+        Deletes a Symbol.
+        """
         if isinstance(symbol,str):
             sym = self.get(symbol)
         elif isinstance(symbol,Symbol):
@@ -88,6 +100,11 @@ class SymbolManager(object):
         else:
             return True
     def get(self,symbol):
+        """
+        Gets a Symbol based on name, which is expected to exist. Errors if it doesn't exist.
+        
+        #TODO enable alias use.
+        """
         syms = self.try_to_get(symbol)
         if syms == None:
             raise Exception("Symbol {} does not exist".format(symbol))
@@ -100,7 +117,10 @@ class SymbolManager(object):
         else:
             return syms[0]    
 
-class Symbol(Base, ReprMixin):
+class Symbol(Base, ReprMixin): 
+    """
+    agg_method : see extensions.symbol_aggs.py and look at the wrapped function names.
+    """
     __tablename__ = '_symbols'
     
     name =        Column('name',String,primary_key = True)
@@ -134,6 +154,9 @@ class Symbol(Base, ReprMixin):
     def cache_feed(self,fid):
         raise NotImplemented
     def cache(self):
+        """
+        Re-caches the Symbol's datatable by quering each Feed.
+        """
         
         data = []
         cols = ['final','override_feed000','failsafe_feed999']
@@ -205,6 +228,12 @@ class Symbol(Base, ReprMixin):
                 
     @property
     def describe(self):
+        """
+        Describes a Symbol
+        
+        #TODO Check/test/improve.
+        #TODO Create a Feed's describe() to Feed, and use it here.
+        """
         s = []
         s.append("Symbol = {}".format(self.name))
         if len(self.tags):
@@ -735,10 +764,6 @@ except ProgrammingError as e:
     print e.statement
     print e.message
     raise 
-
-# Bind the engine to the metadata of the Base class so that the
-# declaratives can be accessed through a DBSession instance
-
 
 if __name__ == '__main__':
     for x in range(3):

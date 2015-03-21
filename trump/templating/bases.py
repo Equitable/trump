@@ -10,82 +10,54 @@ from collections import OrderedDict as odict
 
 from converters import  _ListConverter, _DictConverter, _OrderedDictConverter
 
-"""
-*******************************************************************************
-*
-*  Tag Templates
-*
-* Tag Templates are any object which implements a property called 
-* as_list, which returns a list of strings
-*
-* The Base Template for Tag Templates inherits from _listConverter, which
-* implements as_list().  as_list() looks at the attributes defined and 
-* set to True, in order to include the list of tags.
-*
-*******************************************************************************
-"""
-
 class bTags(_ListConverter):
+    """
+    Tag Templates are any object which implements a property called 
+    as_list, which returns a list of strings
+    
+    The Base Template for Tag Templates inherits from _listConverter, which
+    implements as_list().  as_list() looks at the attributes defined and 
+    set to True, in order to include the list of tags.
+    """
     def __init__(self):
         pass
         #self.aTag = True
     def add_tag(self,tag):
         self.__setattr__(tag,True)
 
-"""
-*******************************************************************************
-*
-*  Munging Templates
-*
-* Munging Templates are any object which implements a property called 
-* as_odict, which returns an odict where each key is a function in 
-* munging_methods, and it's value is an object which represents the parameters
-* to use on that object.  This should be sufficient to pass to a 
-* a Feed constructor's munging parameter, which then becomes FeedMungingArgs objects
-* making up a FeedMunge object, of which will be the instructions associated
-* with a specific Feed object.
-*
-*******************************************************************************
-"""
-
 class bMunging(_OrderedDictConverter):
+    """
+    Munging Templates are any object which implements a property called 
+    as_odict, which returns an odict where each key is a function in 
+    munging_methods, and it's value is an object which represents the parameters
+    to use on that object.  This should be sufficient to pass to a 
+    a Feed constructor's munging parameter, which then becomes FeedMungingArgs objects
+    making up a FeedMunge object, of which will be the instructions associated
+    with a specific Feed object.
+    """
+
     def __init__(self):
         super(bMunging,self).__init__()
         #self.key_one = 'value'
         #self.key_two = 'value' # This object tracks which order the attributes
                                 # are created.
-        
-"""
-*******************************************************************************
-* 
-*  Source Templates
-*
-* Source Templates are any object which implements a property called
-* as_dict.  The keywords and values of which are sufficient to pass to a 
-* a Feed constructor's source parameter, which then become FeedSource objects
-* making up a source.
-*
-*******************************************************************************
-"""
 
-        
 class bSource(_DictConverter):
+    """
+    Source Templates are any object which implements a property called
+    as_dict.  The keywords and values of which are sufficient to pass to a 
+    a Feed constructor's source parameter, which then become FeedSource objects
+    making up a source.
+    """
     def __init__(self):
         pass
         #self.key = 'value'
-               
-"""
-*******************************************************************************
-* 
-*  Feed Templates
-*
-* These objects need an tags, sourcing, munging and validity attribute
-* defined.  They must be a list, dict, odict, and dict, respectively.
-*
-*******************************************************************************
-"""
-               
+                             
 class bFeed(object):
+    """
+    Feed objects need an tags, sourcing, munging and validity attribute
+    defined.  They must be a list, dict, odict, and dict, respectively.
+    """
     def __init__(self):
         self.ftype = self.__class__.__name__
         self.tags = []

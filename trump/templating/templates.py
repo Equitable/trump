@@ -77,6 +77,12 @@ class mFFillRollingMean(bMunging, mixin_pab, mixin_pnab):
         self._bld_pab_generic('ffill')
         self.bld_rolling_mean(**kwargs)
 
+class mRollingMeanFFill(bMunging, mixin_pab, mixin_pnab):
+    def __init__(self,**kwargs):
+        super(mFFillRollingMean, self).__init__()   
+        self.bld_rolling_mean(**kwargs)
+        self._bld_pab_generic('ffill')
+
 class mMultiExample(bMunging, mixin_pnab, mixin_pab):
     def __init__(self,pct_change_kwargs,add_kwargs):
         super(mMultiExample, self).__init__()       

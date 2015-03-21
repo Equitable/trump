@@ -39,6 +39,8 @@ With a focus on business processes, Trump's long run goals enable data feeds to 
    configure
    uninstall
    usage
+   objectmodel/orm
+   templating/templates
    framework
    planning
 

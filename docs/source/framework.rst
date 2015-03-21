@@ -49,6 +49,14 @@ Below is for illustrative purposes of the short-term plan for Trump.
          self.feeds = [(int, Feed),...]             # [ (fnum, Feed),]
                                                     
          self.validity = {(str, str, str) : str,...}# { (checkpoint, logic, key) : value,}
+         
+         self.datatable = Table(index,data,[Feed.data,Feed.data,...])
+         
+         self.feeddata = DataFrame(self.datatable)
+         
+         self.df = DataFrame(self.datatable)
+         
+         self.s = Series(self.datatable)
 
 There are many improvements that can be made over and above this model.
 
