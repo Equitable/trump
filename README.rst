@@ -6,6 +6,10 @@ Trump
    :alt: Join the chat at https://gitter.im/Equitable/trump
    :target: https://gitter.im/Equitable/trump?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
+.. image:: https://readthedocs.org/projects/trump/badge/?version=latest
+   :target: https://readthedocs.org/projects/trump/?badge=latest
+   :alt: Documentation Status
+
 ------------------------------------------
 Persistent Objectification of Indexed Data
 ------------------------------------------

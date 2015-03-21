@@ -4,3 +4,4 @@
 Trump.egg-info/*
 dist/*
 build/*
+docs/build/*
