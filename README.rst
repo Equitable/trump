@@ -42,7 +42,7 @@ Coming soon.
 Installation
 ============
 
-See the latest on `readthedocs <trump.readthedocs.org>`_
+See the latest on `readthedocs <http://trump.readthedocs.org/en/latest/installation.html>`_
 
 Requirements
 ------------
@@ -61,7 +61,7 @@ Data Source Dependencies
 
 Documentation
 =============
-Read the latest on `readthedocs <trump.readthedocs.org>`_
+Read the latest on `readthedocs <http://trump.readthedocs.org>`_
 
 Communication
 =============
