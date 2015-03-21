@@ -15,16 +15,7 @@ Persistent Objectification of Indexed Data
 ------------------------------------------
 
 Trump is a framework for objectifying data, with the goal of centralizing the responsibility of 
-managing feeds, munging, calculating and checking data, upstream of any application or user requirement.
-
-Inside the Trump framework, a symbol refers to one or more data feeds, each with their own instructions
-saved for retrieving data.  Once it's retrieved by Trump, depending on the attributes of the symbol,
-it gets munged, aggregated, checked, and cached.  Downstream users are free to query the existing cache,
-force a re-cache, or check any property of the data prior to using it.
- 
-System Admins can systematically detect problems in advance, via common integrity checks of the data,
-then optionally schedule the re-cache by tag or symbol name.  Users and admins have the ability to manually
-override problems if they exist, with a specific feed, in a way that is centralized, audited, and backed-up.
+managing feeds, munging, calculating and validating data, upstream of any application or user requirement.
 
 With a focus on business processes, Trump's long run goals enable data feeds to be:
 
@@ -38,41 +29,11 @@ With a focus on business processes, Trump's long run goals enable data feeds to 
 Planning
 ========
 
-Trump's initial priority is numeric and monotonic timeseries data, but written with the
-future in mind to eventually work with any object as data, and any object as an index.
-Eliminating the non-monotonic assumption is a lower priority. Code legibility is paramount,
-with speed improvements deferred.
+Trump is still in a planning stage.  Trump's initial priority is numeric and monotonic timeseries data,
+but written with the future in mind to eventually work with any sortable object as data, and any object as an index.
+Eliminating the monotonic assumption is a very low priority. 
 
-The initial release of Trump is planned to include the basics of the framework, with the low-hanging
-fruit deferred to later in 2015 or early 2016.  A Web UI currently exists, but is outside the scope
-of Trump until user demand justifies it's release.  This is mainly a technical-resource based decision.
-
-Timing 
-------
-
-Finishing the planning phase should be finished by late-March 2015; the code base is under rapid expansion 
-and changes.  Planning the testing framework is tentatively mid-April 2015, with the hopes of participating
-in `Adopt py.test <http://pytest.org/latest/adopt.html>`_.  The first release is optimistically scheduled for early June 2015, with 
-the fractions of the initial goals completed:
-
-- Prioritization
-  - Priority Index-based
-  - Priority Feed-Based
-  - Latest Available Feed-Based
-- Modified
-  - Override Index-based
-  - Failsafe Index-based
-- Verified  - Feed Compare Index-based
-  - Feed Compare Feed-based
-- Audited (Not Started)
-- Aggregated
-  - Mean
-  - Median
-  - Basic Pandas Functionality (Eg. pct_change())
-- Customized
-  - Framework ready
-
-See the doc/planning.md file for a big checklist.
+See doc/planning.md for the current state of the project.
 
 Basic Usage
 ===========
@@ -81,10 +42,12 @@ Coming soon.
 Installation
 ============
 
+See the latest on `readthedocs <trump.readthedocs.org>`_
+
 Requirements
 ------------
-* Python 2.7; Support for Python 3.3 or 3.4 should be do-able, if there was interest.
-* A relational database supported by SQLAlchemy.  The first database with guaranteed support is PostGreSQL
+* Python 2.7; Support for Python 3.3 or 3.4 is do-able, if there is demand.
+* A relational database supported by SQLAlchemy.  The first database with guaranteed support is PostGreSQL.
 
 Dependencies
 ------------
@@ -96,77 +59,20 @@ Data Source Dependencies
 ------------------------
 - `Quandl <https://pypi.python.org/pypi/Quandl>`_
 
-Step 1. Install Package:
-------------------------
-``pip install trump``
-
-or
-
-``git clone https://github.com/Equitable/trump.git``
-``python setup.py install``
-
-If you use any other installation method (Eg. ``python setup.py develop``),  
-you will need to manually create your own .cfg files by renaming the .cfg_sample files.
-
-Step 2. Configuration
----------------------
-Edit trump/config/trump.cfg, adding a SQLAlchemy engine string to the [readwrite] section.
-
-Populate the [readwrite] section with appropriate details.
-
-Step 3. Template Settings
--------------------------
-Edit trump/templating/settings cfg files, depending on the intended data sources to be used.
-
-Only Quandl and DBAPI are currently implemented.
-
-See the documentation section "Configuring Data Sources" for guidance.
-
-Step 4. Import Trump
---------------------
-Simply running ``import trump.orm as to`` will create all the tables required in whatever database
-was provided in Step 2.
-
-Un-install
-----------
-1. download uninstall.py, and run it.  This will remove all tables created by Trump. The file
-will likely require minor changes if you use anything other than PostgreSQL.
-2. delete site-packages/trump and all it's subdirectories.
-
 Documentation
 =============
-Check back March 22nd or slightly after.  For now, see the pdf in the prototype branch.
-
-Configuring Data Sources
-------------------------
-Source feed template classes map to their respective case sensitive file .cfg file in the templating/settings directory.
-Trump will use parameters for a source in the following order:
-
-1. Specified explicitly when a template is used. (Eg. table name)
-2. Specified implicitly using logic derived in the template based on the template itself or argument values passed. (Eg. Database Names)
-3. Specified implicitly using a argument's default value. (Eg. database host, port)
-4. Specified on disk via the source's configuration file. (Eg. authentication keys and passwords)
-5. Specified on disk encrypted sources via an encrypted config file. (Eg. top-secret passwords) (Not Implemented)
-
-If the template and settings rely on #4 or #5, the info will not be stored in the database.  Instead, it will be looked
-up at runtime from the appropriate section in the cfg file.  This means that the cfg file values can be changed 
-post symbol creation, but the specific arguments can not be modified.
-
-There is nothing in stone, saying that a password can't be hardcoded into a template, just the 
-same as there is nothing in stone, dictating that a tablename can't be included in a config file.
+Read the latest on `readthedocs <trump.readthedocs.org>`_
 
 Communication
 =============
 
-* Help -> Stack Overflow
-* Bugs, Ideas & Requests -> GitHub Issues
+* Questions, Bugs, Ideas & Requests -> GitHub Issues or InvTech@equitable.ca
 * Contribute Code -> New Branch + GitHub Pull Request
-* Chat - > Gitter (https://gitter.im/Equitable/trump)
-* Other -> e-mail InvTech@equitable.ca
+* Chat -> `Gitter <https://gitter.im/Equitable/trump>`_
 
 License
 =======
-BSD-3 clause
+BSD-3 clause.  See the actual `License <https://raw.githubusercontent.com/Equitable/trump/master/LICENSE.txt>`_.
 
 Background
 ==========
