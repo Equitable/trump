@@ -32,6 +32,7 @@ With a focus on business processes, Trump's long run goals enable data feeds to 
 * **Customized**, *dynamically* - extensibility is possible at the templating, munging, aggregation, and validity steps.
 
 .. toctree::
+   :hidden:
    :maxdepth: 3
    
    installation
