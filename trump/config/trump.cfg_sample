@@ -3,7 +3,8 @@ debug: false
 
 ;for reference, a SQLAlchemy's connection string is of the form dialect[+driver]://user:password@host/dbname[?key=value..]
 [readwrite]
-engine: '{dialect}://{user}:{password}@{host}:{port}/{name}'
+;engine: {dialect}://{user}:{password}@{host}:{port}/{name}
+engine: sqlite://
 
 ;for reference, a SQLAlchemy's connection string is of the form dialect[+driver]://user:password@host/dbname[?key=value..]
 [read]

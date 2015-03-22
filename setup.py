@@ -1,6 +1,7 @@
 import os
 import shutil
 import sys
+import time
 
 from setuptools import setup, find_packages
 from setuptools.command.install import install
@@ -16,12 +17,15 @@ def copy_cfg_sample_if_not_exists(p):
                 print "\nCreating {} from sample file.".format(newf)
                 shutil.copy(os.path.join(p,f),os.path.join(p,newf))
             else:
-                ans = raw_input("\n{} already exists, overwrite? [y/n]".format(newf))
-                if ans.upper()[0] == 'Y':
-                    print "Overwriting {} from sample file.".format(newf)
-                    shutil.copy(os.path.join(p,f),os.path.join(p,newf))
-                else:
-                    print "Skipping {}.".format(newf)
+                print "\n{} already exists, will overwrite momentarily. Break execution to stop.".format(newf)
+                for i in range(5):
+                    sys.stdout.write(".")
+                    time.sleep(1)
+                #if ans.upper()[0] == 'Y':
+                print "Overwriting {} from sample file.".format(newf)
+                shutil.copy(os.path.join(p,f),os.path.join(p,newf))
+                #else:
+                #    print "Skipping {}.".format(newf)
 
 class TrumpInstall(install):
     def run(self):
