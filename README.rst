@@ -90,7 +90,7 @@ See the latest `Installation instructions on ReadTheDocs.org <http://trump.readt
 Requirements
 ------------
 * Python 2.7; Support for Python 3.3 or 3.4 is do-able, if there is demand.
-* A relational database supported by SQLAlchemy.  The first database with guaranteed support is PostGreSQL.
+* PostgreSQL 9.4 (untested on previous versions) or potentially any relational database supported by SQLAlchemy (preliminary testing with SQLite3 on linux, indicates a bug associated with object type)
 
 Dependencies
 ------------
