@@ -1,8 +1,8 @@
 Templating
-----------
+==========
 
 Bases
-=====
+-----
 
 .. automodule:: trump.templating.bases
       
@@ -15,7 +15,7 @@ Bases
 .. autoclass:: trump.templating.bases.bFeed
 
 Templates
-=========
+---------
 
 Tags
 ~~~~

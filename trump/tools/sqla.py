@@ -1,5 +1,5 @@
 class ReprMixin(object):
-    """Hooks into SQLAlchemy's magic to make :meth:`__repr__`s."""
+    """Hooks into SQLAlchemy's magic to make repr work."""
     def __repr__(self):
         def reprs():
             for col in self.__table__.c:

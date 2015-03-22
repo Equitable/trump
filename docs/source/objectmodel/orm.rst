@@ -1,11 +1,11 @@
 Object Model
-------------
+============
 
 .. autoclass:: trump.orm.SymbolManager
    :members: create, delete, get
 
 Symbols
-=======
+-------
    
 .. autoclass:: trump.orm.Symbol
    :members: cache, describe
@@ -13,7 +13,7 @@ Symbols
 .. autoclass:: trump.orm.SymbolTag
 
 Feeds
-=====
+-----
 
 .. autoclass:: trump.orm.Feed
 
@@ -24,7 +24,7 @@ Feeds
 .. autoclass:: trump.orm.FeedMungeArg
 
 Centralized Data Editing
-========================
+------------------------
 
 Each trump datatable comes with two extra columns beyond the feeds, index and final.  
 
