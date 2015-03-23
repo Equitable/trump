@@ -1,11 +1,32 @@
+[readwrite]
+
+;  Uncomment one of the 'engine' examples below.
+
+;  for reference, a SQLAlchemy's connection string is of the form:
+;  dialect[+driver]://user:password@host/dbname[?key=value..]
+;  examples: http://docs.sqlalchemy.org/en/rel_0_9/core/engines.html
+;  list of dialects: http://docs.sqlalchemy.org/en/rel_0_9/dialects/index.html
+
+;  PostgreSQL (9.4 tested, but should work on 9.x) (works with Trump 0.0.1)
+;engine: postgresql+psycopg2://username:password@localhost/trump
+;engine: postgresql://username:password@localhost/trump
+
+;  SQLite (in-memory) (buggy with Trump 0.0.1)
+;engine: sqlite://
+
+;  SQLite (in-file, Linux) (buggy with Trump 0.0.1)
+;engine: sqlite:////absolute/path/to/foo.db
+;engine: sqlite:///home/jnmclarty/Desktop/trump.db
+
+;  SQLite (in-file, Windows) (buggy with Trump 0.0.1)
+;engine: sqlite:///C:\trump.db
+
+; MySQL, Microsoft SQL, Oracle, are all supported by SQLAlchemy, might work.
+
+; Not Used in Trump 0.0.1:
+[read]
+engine: {dialect}://{user}:{password}@{host}:{port}/{name}
+
+; Not Used in Trump 0.0.1:
 [options]
 debug: false
-
-;for reference, a SQLAlchemy's connection string is of the form dialect[+driver]://user:password@host/dbname[?key=value..]
-[readwrite]
-;engine: {dialect}://{user}:{password}@{host}:{port}/{name}
-engine: sqlite://
-
-;for reference, a SQLAlchemy's connection string is of the form dialect[+driver]://user:password@host/dbname[?key=value..]
-[read]
-engine: '{dialect}://{user}:{password}@{host}:{port}/{name}'
