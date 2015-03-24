@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Trump's Object Relational Model is the glue to the framework, used to creat 
+Trump's Object Relational Model is the glue to the framework, used to create
 a Symbol's tags, alias, meta data, data feeds and their sources, munging and validity
 instructions.
 """
@@ -45,7 +45,7 @@ from templating import pab, pnab
 from options import read_config, read_settings
 
 engine_str = read_config('readwrite')['engine']
-engine = create_engine(engine_str)
+engine = create_engine(engine_str,echo=False)
 
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
@@ -163,13 +163,15 @@ class Symbol(Base, ReprMixin):
         
         #TODO : Take out the override columns.  That behavious should be
         #       Extension agnostic.
+
+        if len(self.feeds) == 0:
+            raise Exception("Symbol has no Feeds. Can't cache a feed-less Symbol.")
         
         for f in self.feeds:
             f.cache()
             data.append(f.data)
             cols.append(f.data.name)
-        
-        
+
         data = pd.concat(data,axis=1)
         
         l = len(data)
@@ -190,14 +192,11 @@ class Symbol(Base, ReprMixin):
         for row in ords:
             data.loc[row.dt_ind,'failsafe_feed999'] = row.value
             
-        print data
-        print self.agg_method
-        print apply_row
-
         if self.agg_method in apply_row:
             data['final'] = data.apply(apply_row[self.agg_method],axis=1)
         elif self.agg_method in choose_col:
             data['final'] = choose_col[self.agg_method](data)
+    
         
         # SQLAQ There are several states to deal with at this point
         # A) the datatable exists but a feed has been added
@@ -317,10 +316,17 @@ class Symbol(Base, ReprMixin):
                 for key in explicit_munging:
                     munging[key] = explicit_munging[key]                   
             f = Feed(self,obj.ftype,obj.sourcing,munging,obj.validity,obj.meta,fnum)
-        if isinstance(obj,Feed):
+        elif isinstance(obj,Feed):
             f = obj
         self.feeds.append(f)
         session.add(f)
+        
+        # SQLAQ - With Postgres, I don't need this commit here.
+        # with SQLite, I do. On SQLite, if I don't have it, I get a really
+        # strange situation where self.feeds can have two identical Feed objects
+        # matching, after only ever calling addFeed ONCE, on a brand new
+        # SQLite file.
+        session.commit()
     def addAlias(self,obj):
         if isinstance(obj,list):
             raise NotImplemented
@@ -330,7 +336,11 @@ class Symbol(Base, ReprMixin):
             session.add(a)             
     def data(self):
         t = self.datatable
-        return session.query(t.c.datetime,t.c.final).all()
+        print type(t)
+        if isinstance(t,Table):
+            return session.query(t.c.datetime,t.c.final).all()
+        else:
+            raise Exception("Symbol has no datatable")
     @property
     def df(self):
         data = self.data()
