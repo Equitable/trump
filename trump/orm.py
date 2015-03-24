@@ -215,8 +215,8 @@ class Symbol(Base, ReprMixin):
         # self.InitializeDataTable()
          
         # Is this the best way to check?
-        if engine.dialect.has_table(session.connection(), self.name):
-            delete(self.datatable).execute()
+        # if engine.dialect.has_table(session.connection(), self.name):
+        #    delete(self.datatable).execute()
         self.InitializeDataTable()
                   
         for index, row in data.iterrows():
@@ -375,7 +375,8 @@ class Symbol(Base, ReprMixin):
         
     def InitializeDataTable(self):
         self.datatable = self._DataTableFactory()
-        self.datatable.create(checkfirst=True)
+        self.datatable.drop(checkfirst=True)
+        self.datatable.create()
         self.datatable_exists = True
         
     def _DataTableFactory(self):
