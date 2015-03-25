@@ -6,5 +6,8 @@ sm = SymbolManager()
 
 oil = sm.get("oil_front_month")
 
+oil.cache()
+
 print oil.df.tail()
-            
+
+sm.finish()

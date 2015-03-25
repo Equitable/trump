@@ -2,7 +2,7 @@ Object Model
 ============
 
 .. autoclass:: trump.orm.SymbolManager
-   :members: create, delete, get
+   :members: create, delete, get, finish
 
 Symbols
 -------

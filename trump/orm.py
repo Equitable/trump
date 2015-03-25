@@ -69,6 +69,14 @@ class SymbolManager(object):
     """
     def __init__(self,ses=session):
         self.ses = session
+    def finish(self):
+        """
+        Closes the session with the database.
+        
+        Call after doing any work with Trump.
+        """
+        self.ses.close()
+        
     def create(self,name,description=None,freq=None,units=None,agg_method="PRIORITY_FILL"):
         """
         Create, or gets if exists, a Symbol.
@@ -80,7 +88,7 @@ class SymbolManager(object):
             self.ses.commit() 
         sym = Symbol(name,description,freq,units,agg_method)
         sym.addAlias(name)
-        return sym      
+        return sym
     def delete(self,symbol):
         """
         Deletes a Symbol.

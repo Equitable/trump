@@ -28,7 +28,9 @@ Adding a Symbol
    oil.cache()
 
    print oil.df.tail()
-   
+
+   sm.finish()
+
 Using a Symbol
 --------------
 
@@ -44,3 +46,5 @@ Using a Symbol
    oil.cache()
 
    print oil.df.tail()
+
+   sm.finish()
