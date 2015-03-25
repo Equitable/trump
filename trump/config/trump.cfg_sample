@@ -12,7 +12,7 @@
 ;engine: postgresql://username:password@localhost/trump
 
 ;  SQLite (in-memory) (buggy with Trump 0.0.1)
-;engine: sqlite://
+engine: sqlite://
 
 ;  SQLite (in-file, Linux) (buggy with Trump 0.0.1)
 ;engine: sqlite:////absolute/path/to/foo.db
