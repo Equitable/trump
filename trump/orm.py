@@ -218,13 +218,11 @@ class Symbol(Base, ReprMixin):
         # if engine.dialect.has_table(session.connection(), self.name):
         #    delete(self.datatable).execute()
         self.InitializeDataTable()
-                  
-        for index, row in data.iterrows():
-            vals = {k : row[k] for k in cols}
-            vals['datetime'] = index
-            insert(self.datatable,vals).execute()
-          
-                
+        
+        data.index.name = 'datetime'
+        data = data.reset_index()
+        session.execute(self.datatable.insert(), data.to_dict(orient='records'))
+        
     @property
     def describe(self):
         """
