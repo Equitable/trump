@@ -207,9 +207,11 @@ class fSQLAlchemy(bFeed):
 class fQuandl(bFeed):
     def __init__(self,dataset,**kwargs):
         super(fQuandl, self).__init__()
+        
         QuandlAPIkey = read_settings()['Quandl']['userone']['authtoken']
         tmp = {'dataset' : dataset, 'authtoken' : QuandlAPIkey}
-        self.sourcing = dict(tmp.items() + kwargs.items())    
+        tmp.update(kwargs)
+        self.sourcing = tmp
         self.set_stype()
     def set_stype(self):
         self.meta['stype'] = 'Quandl'

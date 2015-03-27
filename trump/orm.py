@@ -546,7 +546,16 @@ class Feed(Base, ReprMixin):
         if stype == 'Quandl':
             import Quandl as q
             self.data = q.get(**kwargs)
-            self.data = self.data[kwargs['fieldname']]
+            try:
+                fn = kwargs['fieldname']
+            except KeyError:
+                raise KeyError("fieldname wasn't specified in Quandl Feed")
+            
+            try:
+                self.data = self.data[fn]
+            except KeyError:
+                raise KeyError("{} was not found in list of Quandle headers: {}".format(fn,str(self.data.columns)))
+                                  
         elif stype == 'psycopg2':
             import psycopg2 as db
             con_kwargs = {k:v for k,v in kwargs.items() if k in ['dsn','user','password','host','database','port']}
