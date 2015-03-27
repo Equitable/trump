@@ -65,6 +65,8 @@ class bFeed(object):
         self.munging = odict()
         self.validity = {}
         self.meta = {}
+    def set_stype(self,s):
+        self.meta['stype'] = s.__class__.__name__
     def addTagTemplate(self,t):
         self.tags.append(t)
     def addSourceTemplate(self,k,v):

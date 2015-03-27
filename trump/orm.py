@@ -576,8 +576,26 @@ class Feed(Base, ReprMixin):
             self.data = pd.Series(dat,ind)
         elif stype == 'SQLAlchemy':
             NotImplementedError("SQLAlchemy")
-        elif stype == 'pydata':
-            NotImplementedError("pydata")
+        elif stype == 'sPyDataDataReader':
+            import pandas.io.data as pydata
+            
+            print kwargs
+            
+            if 'start' in kwargs:
+                kwargs['start'] = dt.datetime.strptime(kwargs['start'],"%Y-%m-%d")
+            if 'end' in kwargs:
+                if kwargs['end'] == 'now':
+                    kwargs['end'] = dt.datetime.now()
+                else:
+                    kwargs['end'] = dt.datetime.strptime(kwargs['end'],"%Y-%m-%d")
+            
+            col = kwargs['data_column']
+            del kwargs['data_column']
+            
+            df = pydata.DataReader(**kwargs)
+            s = df[col]
+            self.data = s
+
         else:
             raise Exception("Unknown Source Type : {}".format(stype))
 

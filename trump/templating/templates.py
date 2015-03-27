@@ -122,7 +122,15 @@ class sSQLAlchemySession(bSource):
         super(sSQLAlchemySession,self).__init__()
         self.enginestr = enginestr
         self.set_basic()
-               
+
+class sPyDataDataReader(bSource):
+    def __init__(self,data_source,name,column='Close',start='2000-01-01',end='now'):
+        self.name = name
+        self.start = start
+        self.end = end
+        self.data_source = data_source
+        self.data_column = column
+        
 """
 *******************************************************************************
 * 
@@ -210,9 +218,53 @@ class fQuandlSecure(fQuandl):
     def __init__(self,dataset,**kwargs):
         super(fQuandl, self).__init__()
         tmp = {'dataset' : dataset }
-        self.sourcing = dict(tmp.items() + kwargs.items())
+        tmp.update(kwargs)
+        self.sourcing = tmp
         self.set_stype()
         self.meta['sourcing_key'] = 'userone'
+
+
+#******************************************************************************
+#
+#   Google Finance
+#
+#******************************************************************************
+
+class fGoogleFinance(bFeed):
+    def __init__(self,name,column='Close',start='1995-01-01'):
+        super(fGoogleFinance, self).__init__()
+        source = sPyDataDataReader('google',name,column=column,start=start)
+        self.sourcing = source.as_dict
+        self.set_stype(source)
+
+
+#******************************************************************************
+#
+#   St. Louis FED (FRED)
+#
+#******************************************************************************
+
+class fStLouisFED(bFeed):
+    def __init__(self,name,column=None,start='1995-01-01'):
+        super(fStLouisFED, self).__init__()
+        c = column or name
+        source = sPyDataDataReader('fred',name,c,start=start)
+        self.sourcing = source.as_dict
+        self.set_stype(source)
+
+#******************************************************************************
+#
+#   Yahoo Finance
+#
+#******************************************************************************
+
+class fYahooFinance(bFeed):
+    def __init__(self,name,column='Close',start='1995-01-01'):
+        super(fYahooFinance, self).__init__()
+        source = sPyDataDataReader('yahoo',name,column=column,start=start)
+        self.sourcing = source.as_dict
+        self.set_stype(source)
+        
 
 if __name__ == '__main__':
     f = fMyTable('atable')
@@ -238,3 +290,15 @@ if __name__ == '__main__':
         print key
         for ins in m.as_odict[key]:
             print " ", m.as_odict[key][ins]
+    
+    m = fYahooFinance('TSLA')
+    print m.sourcing
+    print m.meta
+    
+    m = fGoogleFinance('TSLA')
+    print m.sourcing
+    print m.meta
+
+    m = fStLouisFED('GDP')
+    print m.sourcing
+    print m.meta  
