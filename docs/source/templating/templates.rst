@@ -48,6 +48,8 @@ Sources
 
 .. autoclass:: trump.templating.templates.sDBAPI
 
+.. autoclass:: trump.templating.templates.sPyDataDataReader
+
 Feeds
 ~~~~~
 
@@ -58,3 +60,9 @@ Feeds
 .. autoclass:: trump.templating.templates.fQuandl
 
 .. autoclass:: trump.templating.templates.fQuandlSecure
+
+.. autoclass:: trump.templating.templates.fGoogleFinance
+
+.. autoclass:: trump.templating.templates.fYahooFinance
+
+.. autoclass:: trump.templating.templates.fStLouisFED
