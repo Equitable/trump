@@ -45,26 +45,39 @@ Adding a Symbol
 .. code-block:: python
 
    from trump.orm import SymbolManager
-   from trump.templating import fQuandl, fSQL
+   from trump.templating import fQuandl, fGoogleFinance, fYahooFinance
 
    sm = SymbolManager()
 
-   oil = sm.create(name = "oil_front_month",
-                   description = "Crude Oil",
-                   freq = 'D',
-                   units = '$ / barrel')
+   TSLA = sm.create(name = "TSLA", description = "Tesla Closing Price USD",
+                   freq = 'B', units = '$ / share')
 
-   oil.addTags(['commodity','oil','futures'])
+   TSLA.addTags(["stocks","US"])
 
-   f1 = fQuandl(r"CHRIS/CME_CL2",fieldname='Settle')
-   f2 = fSQL("SELECT date,data FROM test_oil_data;")
+   #Try Google First
+   #If Google's feed has a problem, try Quandl's backup
+   #If all else fails, use Yahoo's data...
 
-   oil.addFeed(f1)
-   oil.addFeed(f2)
+   TSLA.addFeed(fGoogleFinance("TSLA"))                          
+   TSLA.addFeed(fQuandl("GOOG/NASDAQ_TSLA",fieldname='Close'))
+   TSLA.addFeed(fYahooFinance("TSLA"))
 
-   oil.cache()
+   #Optional munging, validity checks, tags, and aggregation settings are planned...
+   
+   #All three are cached...
+   TSLA.cache()
 
-   print oil.df.tail()
+   print TSLA.df.tail()
+
+                 TSLA
+   dateindex         
+   2015-03-20  198.08
+   2015-03-23  199.63
+   2015-03-24  201.72
+   2015-03-25  194.30
+   2015-03-26  190.40 
+   
+   sm.finish()
    
 Using a Symbol
 --------------
@@ -75,13 +88,24 @@ Using a Symbol
 
    sm = SymbolManager()
 
-   oil = sm.get("oil_front_month")
+   TSLA = sm.get("TSLA")
 
    #optional
-   oil.cache()
+   TSLA.cache()
 
-   print oil.df.tail()
+   print TSLA.df.tail()
+   
+                 TSLA
+   dateindex         
+   2015-03-20  198.08
+   2015-03-23  199.63
+   2015-03-24  201.72
+   2015-03-25  194.30
+   2015-03-26  190.40  
 
+   sm.finish()
+
+   
 Installation
 ============
 
