@@ -16,13 +16,13 @@ Trump will use parameters for a source in the following order:
 
 .. code-block:: python
 
-   myfeed = fQuandl(authkey='XXXXXXXX') #Assuming the template doesn't clober the value.
+   myfeed = QuandlFT(authkey='XXXXXXXX') #Assuming the template doesn't clober the value.
    
 2. Specified implicitly using default value or logic derived in the template. (Eg. Database Names)
 
 .. code-block:: python
 
-   class fQuandl(object):
+   class QuandlFT(object):
       def __init__(authtoken ='XXXXXXXXX'):
          if len(authkey) == 8:
             self.authtoken = authkey
@@ -33,7 +33,7 @@ Trump will use parameters for a source in the following order:
 
 .. code-block:: python
 
-   class fQuandl(object):
+   class QuandlFT(object):
       def __init__(**kwargs):
          self.authtoken = read_settings()['Quandl']['userone']['authtoken']
 
@@ -41,7 +41,7 @@ Trump will use parameters for a source in the following order:
 
 .. code-block:: python
 
-   class fQuandl(object):
+   class QuandlFT(object):
       def __init__(**kwargs):
          self.meta['stype'] = 'Quandl' #cfg file name
          self.meta['sourcing_key'] = 'userone' #cfg file section

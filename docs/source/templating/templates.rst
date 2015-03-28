@@ -20,49 +20,49 @@ Templates
 Tags
 ~~~~
 
-.. autoclass:: trump.templating.templates.tAsset
+.. autoclass:: trump.templating.templates.AssetTT
 
-.. autoclass:: trump.templating.templates.tGeneric
+.. autoclass:: trump.templating.templates.GenericTT
 
-.. autoclass:: trump.templating.templates.tSimple
+.. autoclass:: trump.templating.templates.SimpleTT
 
-.. autoclass:: trump.templating.templates.tSimple
+.. autoclass:: trump.templating.templates.SimpleTT
 
 Munging
 ~~~~~~~
 
-.. autoclass:: trump.templating.templates.mAbs
+.. autoclass:: trump.templating.templates.AbsMT
 
-.. autoclass:: trump.templating.templates.mRollingMean
+.. autoclass:: trump.templating.templates.RollingMeanMT
 
-.. autoclass:: trump.templating.templates.mFFillRollingMean
+.. autoclass:: trump.templating.templates.FFillRollingMeanMT
 
-.. autoclass:: trump.templating.templates.mRollingMeanFFill
+.. autoclass:: trump.templating.templates.RollingMeanFFillMT
 
-.. autoclass:: trump.templating.templates.mSimpleExample
+.. autoclass:: trump.templating.templates.SimpleExampleMT
 
-.. autoclass:: trump.templating.templates.mMultiExample
+.. autoclass:: trump.templating.templates.MultiExampleMT
 
 Sources
 ~~~~~~~
 
-.. autoclass:: trump.templating.templates.sDBAPI
+.. autoclass:: trump.templating.templates.DBapiST
 
-.. autoclass:: trump.templating.templates.sPyDataDataReader
+.. autoclass:: trump.templating.templates.PyDataDataReaderST
 
 Feeds
 ~~~~~
 
-.. autoclass:: trump.templating.templates.fDBAPI
+.. autoclass:: trump.templating.templates.DBapiFT
 
-.. autoclass:: trump.templating.templates.fSQL
+.. autoclass:: trump.templating.templates.SQLFT
 
-.. autoclass:: trump.templating.templates.fQuandl
+.. autoclass:: trump.templating.templates.QuandlFT
 
-.. autoclass:: trump.templating.templates.fQuandlSecure
+.. autoclass:: trump.templating.templates.QuandlSecureFT
 
-.. autoclass:: trump.templating.templates.fGoogleFinance
+.. autoclass:: trump.templating.templates.GoogleFinanceFT
 
-.. autoclass:: trump.templating.templates.fYahooFinance
+.. autoclass:: trump.templating.templates.YahooFinanceFT
 
-.. autoclass:: trump.templating.templates.fStLouisFED
+.. autoclass:: trump.templating.templates.StLouisFEDRT

@@ -11,22 +11,22 @@ Adding the Symbol
 .. code-block:: python
 
    from trump.orm import SymbolManager
-   from trump.templating import fQuandl, fGoogleFinance, fYahooFinance
+   from trump.templating import QuandlFT, GoogleFinanceFT, YahooFinanceFT
 
    sm = SymbolManager()
 
    TSLA = sm.create(name = "TSLA", description = "Tesla Closing Price USD",
                    freq = 'B', units = '$ / share')
 
-   TSLA.addTags(["stocks","US"])
+   TSLA.add_tags(["stocks","US"])
 
    #Try Google First
    #If Google's feed has a problem, try Quandl's backup
    #If all else fails, use Yahoo's data...
 
-   TSLA.addFeed(fGoogleFinance("TSLA")) # 'Close' is stored in the fGoogleFinance Template
-   TSLA.addFeed(fQuandl("GOOG/NASDAQ_TSLA",fieldname='Close'))
-   TSLA.addFeed(fYahooFinance("TSLA"))  # 'Close' is stored in the fYahooFinance Template
+   TSLA.add_feed(GoogleFinanceFT("TSLA")) # 'Close' is stored in the GoogleFinanceFT Template
+   TSLA.add_feed(QuandlFT("GOOG/NASDAQ_TSLA",fieldname='Close'))
+   TSLA.add_feed(YahooFinanceFT("TSLA"))  # 'Close' is stored in the YahooFinanceFT Template
 
    #All three are downloaded, with every cache instruction
    TSLA.cache() 
@@ -98,7 +98,7 @@ Adding the Symbol
 .. code-block:: python
 
    from trump.orm import SymbolManager
-   from trump.templating import fQuandl, fSQL
+   from trump.templating import QuandlFT, SQLFT
 
    sm = SymbolManager()
 
@@ -107,13 +107,13 @@ Adding the Symbol
                    freq = 'D',
                    units = '$ / barrel')
 
-   oil.addTags(['commodity','oil','futures'])
+   oil.add_tags(['commodity','oil','futures'])
 
-   f1 = fQuandl(r"CHRIS/CME_CL2",fieldname='Settle')
-   f2 = fSQL("SELECT date,data FROM test_oil_data;")
+   f1 = QuandlFT(r"CHRIS/CME_CL2",fieldname='Settle')
+   f2 = SQLFT("SELECT date,data FROM test_oil_data;")
 
-   oil.addFeed(f1)
-   oil.addFeed(f2)
+   oil.add_feed(f1)
+   oil.add_feed(f2)
 
    oil.cache()
 

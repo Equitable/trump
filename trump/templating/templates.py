@@ -1,225 +1,294 @@
 # -*- coding: utf-8 -*-
+
+###############################################################################
+#
+# PyLint tests that will never be applied by Trump.
+#
+# Used * or ** magic, we're not getting rid of this, this is what makes Trump
+#                     possible
+# pylint: disable-msg=W0142
+
+# Abstract class not referenced, ignored because inheritance is useful info.
+# pylint: disable-msg=R0921
+
+# Too many/few arguments, ignored because its confusing and doesn't make
+#                         sense to refactor templates.
+#
+# pylint: disable-msg=R0913
+# pylint: disable-msg=R0903
+
+
 """
 Trump's templating system consists of pure-python objects, which can
 be converted into either lists, dictionaries, or ordered dictionaries,
-which can then be used in the generalized constructors of Trump's SQLAlchemy 
+which can then be used in the generalized constructors of Trump's SQLAlchemy
 based ORM system.
 """
 
-from bases import  bTags, bMunging, bSource, bFeed
+from trump.templating.bases import bTags, bMunging, bSource, bFeed
 
 from trump.options import read_settings
 
-"""
-*******************************************************************************
-*
-*  Tag Templates
-*
-* Tag Templates are any object which implements a property called 
-* as_list, which returns a list of strings
-*
-*******************************************************************************
-"""
+# *****************************************************************************
+#
+#  Tag Templates
+#
+# Tag Templates are any object which implements a property called
+# as_list, which returns a list of strings
+#
+# *****************************************************************************
 
-class tAsset(bTags):
-    def __init__(self,cls):
-        if cls.lower() in ('equity','stock','equities','stocks'):
+class AssetTT(bTags):
+    """ implements groups of tags for certain asset classes """
+    def __init__(self, cls):
+        if cls.lower() in ('equity', 'stock', 'equities', 'stocks'):
             self.equity = True
-        elif cls.lower() in ('bond','bonds'):
+        elif cls.lower() in ('bond', 'bonds'):
             self.bond = True
-        elif cls.lower() in ('pref','prefferred','preferred','prefered'):
+        elif cls.lower() in ('pref', 'preferred', 'preferred', 'prefered'):
             self.pref = True
-        elif cls.lower() in ('comodity','commodity','commodities'):
+        elif cls.lower() in ('comodity', 'commodity', 'commodities'):
             self.commodity = True
 
-class tGeneric(bTags):
-    def __init__(self,tags):
-        for t in tags:
-            self.__setattr__(self,t,True)
-        
-class tSimple(bTags):
-    def __init__(self,tags):
+class GenericTT(bTags):
+    """ implements generic list of tags via boolean attributes """
+    def __init__(self, tags):
+        for tag in tags:
+            self.__setattr__(self, tag, True)
+
+class SimpleTT(bTags):
+    """ implements a simple list of tags via a single attribute """
+    def __init__(self, tags):
         self.tags = tags
+
     def as_list(self):
         return self.tags
-        
-"""
-*******************************************************************************
-*
-*  Munging Templates
-*
-* Munging Templates are any object which implements a property called 
-* as_odict, which returns an odict where each key is a function in 
-* munging_methods, and it's value is an object which represents the parameters
-* to use on that object.  This should be sufficient to pass to a 
-* a Feed constructor's munging parameter, which then becomes FeedMungingArgs objects
-* making up a FeedMunge object, of which will be the instructions associated
-* with a specific Feed object.
-*
-*******************************************************************************
-"""
 
-from munging_helpers import mixin_pab, mixin_pnab
+# *****************************************************************************
+#
+#   Munging Templates
+#
+#  Munging Templates are any object which implements a property called
+#  as_odict, which returns an odict where each key is a function in
+#  munging_methods, and it's value is an object which represents the parameters
+#  to use on that object.  This should be sufficient to pass to a
+#  a Feed constructor's munging parameter, which then becomes FeedMungingArgs
+#  objects making up a FeedMunge object, of which will be the instructions
+#  associated with a specific Feed object.
+#
+# *****************************************************************************
 
-class mAbs(bMunging, mixin_pab):
+from trump.templating.munging_helpers import mixin_pab, mixin_pnab
+
+class AbsMT(bMunging, mixin_pab):
+    """ Example munging template, which implements an absolute function."""
     def __init__(self):
-        super(mAbs, self).__init__()       
+        super(AbsMT, self).__init__()
         self.bld_abs()
 
-class mRollingMean(bMunging, mixin_pnab):
-    def __init__(self,**kwargs):
-        super(mRollingMean, self).__init__()       
+class RollingMeanMT(bMunging, mixin_pnab):
+    """ Example munging template, which implements a rolling mean."""
+    def __init__(self, **kwargs):
+        super(RollingMeanMT, self).__init__()
         self.bld_rolling_mean(**kwargs)
 
-class mFFillRollingMean(bMunging, mixin_pab, mixin_pnab):
-    def __init__(self,**kwargs):
-        super(mFFillRollingMean, self).__init__()   
+class FFillRollingMeanMT(bMunging, mixin_pab, mixin_pnab):
+    """ Example munging template, which implements a ffill using the generic
+        pandas attribute based munging, and then a rolling mean."""
+    def __init__(self, **kwargs):
+        super(FFillRollingMeanMT, self).__init__()
         self._bld_pab_generic('ffill')
         self.bld_rolling_mean(**kwargs)
 
-class mRollingMeanFFill(bMunging, mixin_pab, mixin_pnab):
-    def __init__(self,**kwargs):
-        super(mFFillRollingMean, self).__init__()   
+class RollingMeanFFillMT(bMunging, mixin_pab, mixin_pnab):
+    """ Example munging template, which implements a rolling mean
+        and a generic pandas attribute based munging step."""
+    def __init__(self, **kwargs):
+        super(RollingMeanFFillMT, self).__init__()
         self.bld_rolling_mean(**kwargs)
         self._bld_pab_generic('ffill')
 
-class mMultiExample(bMunging, mixin_pnab, mixin_pab):
-    def __init__(self,pct_change_kwargs,add_kwargs):
-        super(mMultiExample, self).__init__()       
-        self.bld_pct_change(**pct_change_kwargs)        
-        self.bld_add(**add_kwargs)  
+class MultiExampleMT(bMunging, mixin_pnab, mixin_pab):
+    """ Example munging template, which implements a pct_change
+        and add, using two sets of kwargs"""
+    def __init__(self, pct_change_kwargs, add_kwargs):
+        super(MultiExampleMT, self).__init__()
+        self.bld_pct_change(**pct_change_kwargs)
+        self.bld_add(**add_kwargs)
 
-class mSimpleExample(bMunging, mixin_pnab, mixin_pab):
-    def __init__(self,periods,window):
-        super(mSimpleExample, self).__init__()
-        kwargs = {'periods' : periods, 'fill_method' : 'ffill'}
+class SimpleExampleMT(bMunging, mixin_pnab, mixin_pab):
+    """ Example munging template, which has defauls to forward fill,
+        and a minimum period argument of 5"""
+    def __init__(self, periods, window):
+        super(SimpleExampleMT, self).__init__()
+        kwargs = {'periods': periods, 'fill_method': 'ffill'}
         self.bld_pct_change(**kwargs)
-        kwargs = {'window' : window, 'min_periods' : 5}
-        self.bld_rolling_mean(**kwargs)      
-       
-"""
-*******************************************************************************
-* 
-*  Source Templates
-*
-* Source Templates are any object which implements a property called
-* as_dict.  The keywords and values of which are sufficient to pass to a 
-* a Feed constructor's source parameter, which then become FeedSource objects
-* making up a source.
-*
-*******************************************************************************
-"""
+        kwargs = {'window': window, 'min_periods': 5}
+        self.bld_rolling_mean(**kwargs)
 
-from source_helpers import mixin_dbCon, mixin_dbIns
+#******************************************************************************
+#
+#  Source Templates
+#
+# Source Templates are any object which implements a property called
+# as_dict.  The keywords and values of which are sufficient to pass to a
+# a Feed constructor's source parameter, which then become FeedSource objects
+# making up a source.
+#
+#******************************************************************************
 
-class sDBAPI(bSource, mixin_dbCon, mixin_dbIns):
-    def __init__(self,dsn=None,user=None,password=None,host=None,database=None,sourcing_key=None):
-        super(sDBAPI,self).__init__()
-        self.set_con_params(dsn,user,password,host,database,sourcing_key)
-            
-class sSQLAlchemySession(bSource):
-    def __init__(self,enginestr):
-        super(sSQLAlchemySession,self).__init__()
-        self.enginestr = enginestr
-        self.set_basic()
+from trump.templating.source_helpers import mixin_dbCon, mixin_dbIns
 
-class sPyDataDataReader(bSource):
-    def __init__(self,data_source,name,column='Close',start='2000-01-01',end='now'):
+
+class DBapiST(bSource, mixin_dbCon, mixin_dbIns):
+    """ implements the generic source information for a DBAPI 2.0 driver """
+    def __init__(self, dsn=None, user=None, password=None, host=None,
+                 database=None, sourcing_key=None):
+        super(DBapiST, self).__init__()
+        self.set_con_params(dsn, user, password, host, database, sourcing_key)
+
+
+class SQLAlchemyST(bSource):
+    """ implements the generic source information for a SQLAlchemy engine """
+    def __init__(self, enginestr):
+        raise NotImplementedError
+        # super(SQLAlchemyST, self).__init__()
+        # self.enginestr = enginestr
+        # self.set_basic()
+
+
+class PyDataDataReaderST(bSource):
+    """ implements the pydata datareaders sources """
+    def __init__(self, data_source, name, column='Close',
+                 start='2000-01-01', end='now'):
         self.name = name
         self.start = start
         self.end = end
         self.data_source = data_source
         self.data_column = column
-        
-"""
-*******************************************************************************
-* 
-*  Feed Templates
-*
-* These objects need an tags, sourcing, munging and validity attribute
-* defined.  They must be a list, dict, odict, and dict, respectively.
-*
-*******************************************************************************
-"""
 
-skey = 'explicit'
 
-class fDBAPI(bFeed):
-    def __init__(self,table=None,indexcol=None,datacol=None,dsn=None,user=None,password=None,host=None,database=None,sourcing_key=None):
-        super(fDBAPI, self).__init__()
+# *****************************************************************************
+#
+#  Feed Templates
+#
+# These objects need an tags, sourcing, munging and validity attribute
+# defined.  They must be a list, dict, odict, and dict, respectively.
+#
+# *****************************************************************************
+
+
+SKEY = 'explicit'
+
+
+class DBapiFT(bFeed):
+    """ Feed template for DBAPI 2.0, which collects up everything it needs
+        via parameters about the connection and information."""
+    def __init__(self, table=None, indexcol=None, datacol=None, dsn=None,
+                 user=None, password=None, host=None, database=None,
+                 sourcing_key=None):
+        super(DBapiFT, self).__init__()
         self.set_stype()
         if sourcing_key:
             self.set_sourcing_key(sourcing_key)
-        self.s = sDBAPI(dsn,user,password,host,database,sourcing_key)
-        if self.__class__.__name__ == 'fDBAPI':
-            self.s.set_basic(table,indexcol,datacol)
+        self.s = DBapiST(dsn, user, password, host, database, sourcing_key)
+        if self.__class__.__name__ == 'DBapiFT':
+            self.s.set_basic(table, indexcol, datacol)
             self.sourcing = self.s.as_dict
+
     def set_stype(self):
         self.meta['stype'] = 'DBAPI'
-    def set_sourcing_key(self,sourcing_key):
+
+    def set_sourcing_key(self, sourcing_key):
+        """ sets a sourcing key, sourcing keys are used to pull information
+        from configuring files.  They refer to "sections", in python's
+        config parser."""
         self.meta['sourcing_key'] = sourcing_key
 
-class fExplicitKeyCol(fDBAPI):
-    def __init__(self,table,keycol,key,indexcol,datacol):
-        super(fExplicitKeyCol, self).__init__(sourcing_key=skey)
-        self.s.set_keycol(table,keycol,key,indexcol,datacol)
-        self.sourcing = self.s.as_dict
-       
-class fExplicitBasic(fDBAPI):
-    def __init__(self,table,datacol,indexcol):
-        super(fExplicitBasic, self).__init__(table=table,
-                                             indexcol=indexcol,
-                                             datacol=datacol,
-                                             sourcing_key=skey)
-        self.s.set_basic(table,indexcol,datacol)
+
+class ExplicitKeyColFT(DBapiFT):
+    """ Feed template to implement a basic DBAPI Feed, using a keyed column"""
+    def __init__(self, table, keycol, key, indexcol, datacol):
+        super(ExplicitKeyColFT, self).__init__(sourcing_key=SKEY)
+        self.s.set_keycol(table, keycol, key, indexcol, datacol)
         self.sourcing = self.s.as_dict
 
-class fExplicitCommand(fDBAPI):
-    def __init__(self,command):
-        super(fExplicitCommand, self).__init__(sourcing_key=skey)
+
+class ExplicitBasicFT(DBapiFT):
+    """ Feed template to implement a basic DBAPI Feed, using explicit,
+        table, index, and data columns. """
+    def __init__(self, table, datacol, indexcol):
+        super(ExplicitBasicFT, self).__init__(table=table,
+                                              indexcol=indexcol,
+                                              datacol=datacol,
+                                              sourcing_key=SKEY)
+        self.s.set_basic(table, indexcol, datacol)
+        self.sourcing = self.s.as_dict
+
+
+class ExplicitCommandFT(DBapiFT):
+    """ Example use of pure SQL command """
+    def __init__(self, command):
+        super(ExplicitCommandFT, self).__init__(sourcing_key=SKEY)
         self.s.set_command(command)
         self.sourcing = self.s.as_dict
 
-class fEcon(fExplicitKeyCol):
-    def __init__(self,key):
-        super(fEcon,self).__init__('econ','name',key,'date','value')
 
-class fMyTable(fExplicitBasic):
-    def __init__(self,table,datacol='value',indexcol='date'):
-        super(fMyTable,self).__init__(table,datacol,indexcol)
-        
-class fSQL(fExplicitCommand):
+class EconFT(ExplicitKeyColFT):
+    """ Example use of simplifying a keyed column table """
+    def __init__(self, key):
+        super(EconFT, self).__init__('econ', 'name', key, 'date', 'value')
+
+
+class MyTableFT(ExplicitBasicFT):
+    """ Example use of simplifying an explicity basic table """
+    def __init__(self, table, datacol='value', indexcol='date'):
+        super(MyTableFT, self).__init__(table, datacol, indexcol)
+
+
+class SQLFT(ExplicitCommandFT):
+    """ Just wrap inherit, for renaming purposes. """
     pass
-        
-class fSQLAlchemy(bFeed):
-    def __init__(self,enginestr,table):
-        super(fSQLAlchemy, self).__init__()
-        s = sSQLAlchemySession(enginestr)
-        s.set_basic(table)
-        self.sourcing = s.as_dict
+
+
+class SQLAlchemyFT(bFeed):
+    """ Example feed for SQLAlchemy.... """
+    def __init__(self, enginestr, table):
+        raise NotImplementedError
+        # super(SQLAlchemyFT, self).__init__()
+        # s = SQLAlchemyST(enginestr)
+        # s.set_basic(table)
+        # self.sourcing = s.as_dict
 
 #******************************************************************************
 #
-#   Quandl
+#  Quandl
 #
 #******************************************************************************
 
-class fQuandl(bFeed):
-    def __init__(self,dataset,**kwargs):
-        super(fQuandl, self).__init__()
-        
-        QuandlAPIkey = read_settings()['Quandl']['userone']['authtoken']
-        tmp = {'dataset' : dataset, 'authtoken' : QuandlAPIkey}
+
+class QuandlFT(bFeed):
+    """ Feed tamplate for a Quandl data source """
+    def __init__(self, dataset, **kwargs):
+        super(QuandlFT, self).__init__()
+
+        authtoken = read_settings()['Quandl']['userone']['authtoken']
+        tmp = {'dataset': dataset, 'authtoken': authtoken}
         tmp.update(kwargs)
         self.sourcing = tmp
         self.set_stype()
+
     def set_stype(self):
         self.meta['stype'] = 'Quandl'
 
-class fQuandlSecure(fQuandl):
-    def __init__(self,dataset,**kwargs):
-        super(fQuandl, self).__init__()
-        tmp = {'dataset' : dataset }
+
+class QuandlSecureFT(QuandlFT):
+    """
+    Feed tamplate for a Quandl data source, authtoken left in config file.
+    """
+    def __init__(self, dataset, **kwargs):
+        super(QuandlSecureFT, self).__init__()
+        tmp = {'dataset': dataset}
         tmp.update(kwargs)
         self.sourcing = tmp
         self.set_stype()
@@ -232,10 +301,11 @@ class fQuandlSecure(fQuandl):
 #
 #******************************************************************************
 
-class fGoogleFinance(bFeed):
-    def __init__(self,name,column='Close',start='1995-01-01'):
-        super(fGoogleFinance, self).__init__()
-        source = sPyDataDataReader('google',name,column=column,start=start)
+class GoogleFinanceFT(bFeed):
+    """ PyData reader feed, generalized for google finance. """
+    def __init__(self, name, column='Close', start='1995-01-01'):
+        super(GoogleFinanceFT, self).__init__()
+        source = PyDataDataReaderST('google', name, column=column, start=start)
         self.sourcing = source.as_dict
         self.set_stype(source)
 
@@ -246,11 +316,12 @@ class fGoogleFinance(bFeed):
 #
 #******************************************************************************
 
-class fStLouisFED(bFeed):
-    def __init__(self,name,column=None,start='1995-01-01'):
-        super(fStLouisFED, self).__init__()
-        c = column or name
-        source = sPyDataDataReader('fred',name,c,start=start)
+class StLouisFEDRT(bFeed):
+    """ PyData reader feed, generalized for St Louis FED. """
+    def __init__(self, name, column=None, start='1995-01-01'):
+        super(StLouisFEDRT, self).__init__()
+        acol = column or name
+        source = PyDataDataReaderST('fred', name, acol, start=start)
         self.sourcing = source.as_dict
         self.set_stype(source)
 
@@ -260,47 +331,15 @@ class fStLouisFED(bFeed):
 #
 #******************************************************************************
 
-class fYahooFinance(bFeed):
-    def __init__(self,name,column='Close',start='1995-01-01'):
-        super(fYahooFinance, self).__init__()
-        source = sPyDataDataReader('yahoo',name,column=column,start=start)
+
+class YahooFinanceFT(bFeed):
+    """ PyData reader feed, generalized for Yahoo Finance. """
+    def __init__(self, name, column='Close', start='1995-01-01'):
+        super(YahooFinanceFT, self).__init__()
+        source = PyDataDataReaderST('yahoo', name, column=column, start=start)
         self.sourcing = source.as_dict
         self.set_stype(source)
-        
+
 
 if __name__ == '__main__':
-    f = fMyTable('atable')
-    print f.sourcing
-    print f.meta
-    
-    f = fEcon('SP500')
-    print f.sourcing
-    print f.meta
-    
-    f = fSQL('SELECT t,data FROM math ORDER BY t;')
-    print f.sourcing
-    print f.meta
-
-    m = mRollingMean(window=5,min_periods=4,center=True)
-    for key in m.as_odict.keys():
-        print key
-        for ins in m.as_odict[key]:
-            print " ", m.as_odict[key][ins]
-
-    m = mSimpleExample(3,5)
-    for key in m.as_odict.keys():
-        print key
-        for ins in m.as_odict[key]:
-            print " ", m.as_odict[key][ins]
-    
-    m = fYahooFinance('TSLA')
-    print m.sourcing
-    print m.meta
-    
-    m = fGoogleFinance('TSLA')
-    print m.sourcing
-    print m.meta
-
-    m = fStLouisFED('GDP')
-    print m.sourcing
-    print m.meta  
+    pass

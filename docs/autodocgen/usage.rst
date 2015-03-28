@@ -8,7 +8,7 @@ Adding a Symbol
 .. code-block:: python
 
    from trump.orm import SymbolManager
-   from trump.templating import fQuandl, fSQL
+   from trump.templating import QuandlFT, SQLFT
 
    sm = SymbolManager()
 
@@ -17,13 +17,13 @@ Adding a Symbol
                    freq = 'D',
                    units = '$ / barrel')
 
-   oil.addTags(['commodity','oil','futures'])
+   oil.add_tags(['commodity','oil','futures'])
 
-   f1 = fQuandl(r"CHRIS/CME_CL2",fieldname='Settle')
-   f2 = fSQL("SELECT date,data FROM test_oil_data;")
+   f1 = QuandlFT(r"CHRIS/CME_CL2",fieldname='Settle')
+   f2 = SQLFT("SELECT date,data FROM test_oil_data;")
 
-   oil.addFeed(f1)
-   oil.addFeed(f2)
+   oil.add_feed(f1)
+   oil.add_feed(f2)
 
    oil.cache()
 

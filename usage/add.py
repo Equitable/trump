@@ -8,7 +8,7 @@ Created on Sun Jan 04 08:56:07 2015
 from trump.orm import SymbolManager
 
 
-from trump.templating import fQuandl, mAddFFillMult
+from trump.templating import QuandlFT, mAddFFillMult
 
 from datetime import datetime as dt
 
@@ -30,29 +30,29 @@ if rawmunging:
     for oil_sym,oil_info_l in oil.iteritems():
         new_sym = sm.create("oil_" + oil_sym,"Quandl - " + oil_info_l[0].description,'D','$ / barrel')
         for oil_info in oil_info_l:
-            f = fQuandl(oil_info.ticker,fieldname='Settle')
+            f = QuandlFT(oil_info.ticker,fieldname='Settle')
     
             f.addMunging('crop_dates',{'start' : '2000-01-01', 'end' : '2015-01-01'})
             f.addMunging('multiply_const',3)
     
-            new_sym.addFeed(f,fillna={'method' : 'ffill'},exp_const=(3,['a','b','c'],{'n' : 123}),add_const={'n' : 55})
-        new_sym.addAlias(oil_sym + "_oil")
-        new_sym.addTags(['commodity','oil','quandl'])
+            new_sym.add_feed(f,fillna={'method' : 'ffill'},exp_const=(3,['a','b','c'],{'n' : 123}),add_const={'n' : 55})
+        new_sym.add_alias(oil_sym + "_oil")
+        new_sym.add_tags(['commodity','oil','quandl'])
         
         if oil_sym == 'CONT':
-            new_sym.addOverride(dt(2015,1,6),50.0,user='Jeffor')
-            new_sym.addFailSafe(dt(2015,1,6),45.0,user='Jefffs')
+            new_sym.add_override(dt(2015,1,6),50.0,user='Jeffor')
+            new_sym.add_fail_safe(dt(2015,1,6),45.0,user='Jefffs')
             
 elif templatedmunging:
     for oil_sym,oil_info_l in oil.iteritems():
         new_sym = sm.create("oil_" + oil_sym,"Quandl - " + oil_info_l[0].description,'D','$ / barrel')
         for oil_info in oil_info_l:
-            f = fQuandl(oil_info.ticker,fieldname='Settle')
+            f = QuandlFT(oil_info.ticker,fieldname='Settle')
             m = mAddFFillMult(5.0,mult=2.5)
-            new_sym.addFeed(f,munging=m)
-        new_sym.addAlias(oil_sym + "_oil")
-        new_sym.addTags(['commodity','oil','quandl'])
+            new_sym.add_feed(f,munging=m)
+        new_sym.add_alias(oil_sym + "_oil")
+        new_sym.add_tags(['commodity','oil','quandl'])
         
         if oil_sym == 'CONT':
-            new_sym.addOverride(dt(2015,1,6),50.0,user='Jeffor')
-            new_sym.addFailSafe(dt(2015,1,6),45.0,user='Jefffs')
+            new_sym.add_override(dt(2015,1,6),50.0,user='Jeffor')
+            new_sym.add_fail_safe(dt(2015,1,6),45.0,user='Jefffs')

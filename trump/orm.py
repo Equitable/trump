@@ -1,15 +1,36 @@
 # -*- coding: utf-8 -*-
+###############################################################################
+#
+# PyLint tests that will never be applied by Trump.
+#
+# ... is not callable, ignored because a property that returns a callable
+#                       becomes callable.
+# pylint: disable-msg=E1102
+
+# missing parameter, ignored because a SQLAlchemy function is wrapped.
+#                    it's a documented issue with that team.
+# pylint: disable-msg=E1120
+
+# Used * or ** magic, we're not getting rid of this, it's imperative to Trump.
+# pylint: disable-msg=W0142
+
+# Too many/few arguments, ignored, because its confusing and doesn't make
+#                         sense to refactor templates.
+#
+# pylint: disable-msg=R0913
+# pylint: disable-msg=R0903
+
 """
 Trump's Object Relational Model is the glue to the framework, used to create
-a Symbol's tags, alias, meta data, data feeds and their sources, munging and validity
-instructions.
+a Symbol's tags, alias, meta data, data feeds and their sources, munging and
+validity instructions.
 """
 
-#SQLAQ - running the uninstall script, then this script, in the same session
+# SQLAQ - running the uninstall script, then this script, in the same session
 #        causes an error:
 #
-#        sqlalchemy.exc.InvalidRequestError: When initializing mapper 
-#        Mapper|Feed|_feeds, expression 'FeedMeta' failed to locate a name 
+#        sqlalchemy.exc.InvalidRequestError: When initializing mapper
+#        Mapper|Feed|_feeds, expression 'FeedMeta' failed to locate a name
 #        ("name 'FeedMeta' is not defined"). If this is a class name, consider
 #        adding this relationship() to the <class 'trump.orm.Feed'> class
 #        after both dependent classes have been defined
@@ -20,8 +41,8 @@ import pandas as pd
 import datetime as dt
 
 from sqlalchemy import event, Table, Column, ForeignKey, ForeignKeyConstraint,\
-                       String, Integer, Float, DateTime, MetaData, \
-                       func
+    String, Integer, Float, DateTime, MetaData, \
+    func
 
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -30,22 +51,19 @@ from sqlalchemy.orm.session import object_session
 
 from sqlalchemy.exc import ProgrammingError
 
-from sqlalchemy.sql.expression import insert, delete
 from sqlalchemy.sql import and_
 
-from tools import ReprMixin, ProxyDict, isinstanceofany
+from trump.tools import ReprMixin, ProxyDict, isinstanceofany
 from sqlalchemy import create_engine
 
-from extensions.symbol_aggs import apply_row, choose_col
-from extensions.feed_munging import munging_methods
+from trump.extensions.symbol_aggs import apply_row, choose_col
 
-from templating import bFeed
-from templating import pab, pnab
+from trump.templating import bFeed, pab, pnab
 
-from options import read_config, read_settings
+from trump.options import read_config, read_settings
 
-engine_str = read_config('readwrite')['engine']
-engine = create_engine(engine_str,echo=False)
+ENGINE_STR = read_config('readwrite')['engine']
+engine = create_engine(ENGINE_STR, echo=False)
 
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
@@ -58,97 +76,124 @@ session = DBSession()
 
 metadata = MetaData(bind=engine)
 
-cc = {'onupdate' : "CASCADE", 'ondelete' : "CASCADE"}
-      
-checkpoints = ('EXCEPTION','CHECK')
-state = ('ENABLED','DISABLED','ERROR')
+ADO = "all, delete-orphan"
+CC = {'onupdate': "CASCADE", 'ondelete': "CASCADE"}
+
+CHECKPOINTS = ('EXCEPTION', 'CHECK')
+# STATE = ('ENABLED', 'DISABLED', 'ERROR')
+
 
 class SymbolManager(object):
     """
     A SymbolManager handles the creation, getting and deletion of symbols.
     """
-    def __init__(self,ses=session):
-        self.ses = session
+    def __init__(self, ses=None):
+        self.ses = ses or session
+
     def finish(self):
         """
         Closes the session with the database.
-        
+
         Call after doing any work with Trump.
         """
         self.ses.close()
-        
-    def create(self,name,description=None,freq=None,units=None,agg_method="PRIORITY_FILL"):
-        """
-        Create, or gets if exists, a Symbol.
-        """
+
+    def create(self, name, description=None, freq=None, units=None,
+               agg_method="PRIORITY_FILL"):
+        """ Create, or gets if exists, a Symbol. """
         sym = self.try_to_get(name)
         if sym is not None:
             print sym.name
             self.ses.delete(sym)
-            self.ses.commit() 
-        sym = Symbol(name,description,freq,units,agg_method)
-        sym.addAlias(name)
+            self.ses.commit()
+        sym = Symbol(name, description, freq, units, agg_method)
+        sym.add_alias(name)
         return sym
-    def delete(self,symbol):
-        """
-        Deletes a Symbol.
-        """
-        if isinstance(symbol,str):
+
+    def delete(self, symbol):
+        """ Deletes a Symbol. """
+        if isinstance(symbol, str):
             sym = self.get(symbol)
-        elif isinstance(symbol,Symbol):
+        elif isinstance(symbol, Symbol):
             sym = symbol
         del sym
         self.ses.commit()
+
     def complete(self):
+        """ commits any changes to the session  """
         self.ses.commit()
-    def exists(self,symbol):
+
+    def exists(self, symbol):
+        """
+        checks to see if a symbol exists
+
+        returns boolean
+        """
         syms = self.ses.query(Symbol).filter(Symbol.name == symbol).all()
         if len(syms) == 0:
             return False
         else:
             return True
-    def get(self,symbol):
+
+    def get(self, symbol):
         """
-        Gets a Symbol based on name, which is expected to exist. Errors if it doesn't exist.
-        
-        #TODO enable alias use.
+        Gets a Symbol based on name, which is expected to exist. Errors if it
+        doesn't exist.
         """
         syms = self.try_to_get(symbol)
         if syms == None:
             raise Exception("Symbol {} does not exist".format(symbol))
         else:
             return syms
-    def try_to_get(self,symbol):
+
+    def try_to_get(self, symbol):
         syms = self.ses.query(Symbol).filter(Symbol.name == symbol).all()
         if len(syms) == 0:
             return None
         else:
-            return syms[0]    
+            return syms[0]
 
-class Symbol(Base, ReprMixin): 
+
+class Symbol(Base, ReprMixin):
     """
-    agg_method : see extensions.symbol_aggs.py and look at the wrapped function names.
+    agg_method : see extensions.symbol_aggs.py and look at the wrapped function
+    names.
     """
     __tablename__ = '_symbols'
-    
-    name =        Column('name',String,primary_key = True)
-    description = Column('description',String)
-    freq =        Column('freq',String)
-    units =       Column('units',String)
-    agg_method =  Column('agg_method',String)
-    
-    tags =        relationship("SymbolTag",cascade="all, delete-orphan")
-    aliases =     relationship("SymbolAlias",cascade="all, delete-orphan")
-    validity =    relationship("SymbolValidity",cascade="all, delete-orphan")
-    feeds =       relationship("Feed",cascade="all, delete-orphan")
-    
-    #overrides =   relationship("Override",cascade="save-update",passive_deletes=True)
-    
-    def __init__(self,name,description=None,freq=None,units=None,agg_method="PRIORITY_FILL"):
+
+    name = Column('name', String, primary_key=True)
+    description = Column('description', String)
+    freq = Column('freq', String)
+    units = Column('units', String)
+    agg_method = Column('agg_method', String)
+
+    tags = relationship("SymbolTag", cascade=ADO)
+    aliases = relationship("SymbolAlias", cascade=ADO)
+    validity = relationship("SymbolValidity", cascade=ADO)
+    feeds = relationship("Feed", cascade=ADO)
+
+    # overrides = relationship("Override",cascade="save-update",
+    #              passive_deletes=True)
+
+    def __init__(self, name, description=None, freq=None, units=None,
+                 agg_method="PRIORITY_FILL"):
         """
-        agg_method : see extensions.symbol_aggs.py
-        
-        """         
+        Parameters
+        ----------
+        name : str
+            The name of the symbol to be added to the database, serves
+            as a primary key across the trump installation.
+        description : str, optional
+            a description of the symbol, just for notes.
+        freq : str, optional
+            a pandas dateoffset string.
+        units : str, optional
+            a string representing the units for the data.
+        agg_method : str, default PRIORITY_FILL
+            the method used for aggregating feeds, see 
+            trump.extensions.symbol_aggs.py for the list of available options.
+            
+        """
         self.name = name
         self.description = description
         self.freq = freq
@@ -156,56 +201,62 @@ class Symbol(Base, ReprMixin):
         self.agg_method = agg_method
         self.datatable = None
         self.datatable_exists = False
-        #SQLAQ - Is this okay to do? It feels sneaky, dirty and wrong.
+        # SQLAQ - Is this okay to do? It feels sneaky, dirty and wrong.
         session.add(self)
-        
-    def cache_feed(self,fid):
-        raise NotImplemented
+
+    def cache_feed(self, fid):
+        raise NotImplementedError
+
     def cache(self):
-        """
-        Re-caches the Symbol's datatable by quering each Feed.
-        """
-        
+        """ Re-caches the Symbol's datatable by quering each Feed. """
+
         data = []
-        cols = ['final','override_feed000','failsafe_feed999']
-        
-        #TODO : Take out the override columns.  That behavious should be
-        #       Extension agnostic.
+        cols = ['final', 'override_feed000', 'failsafe_feed999']
 
         if len(self.feeds) == 0:
-            raise Exception("Symbol has no Feeds. Can't cache a feed-less Symbol.")
-        
-        for f in self.feeds:
-            f.cache()
-            data.append(f.data)
-            cols.append(f.data.name)
+            err_msg = "Symbol has no Feeds. Can't cache a feed-less Symbol."
+            raise Exception(err_msg)
 
-        data = pd.concat(data,axis=1)
-        
-        l = len(data)
-        data['override_feed000'] = [None] * l
-        data['failsafe_feed999'] = [None] * l
+        for afeed in self.feeds:
+            afeed.cache()
+            data.append(afeed.data)
+            cols.append(afeed.data.name)
 
-        os = object_session(self)
-        
-        gb = os.query(Override.dt_ind,func.max(Override.dt_log).label('max_dt_log')).group_by(Override.dt_ind).subquery()
-        ords = os.query(Override).join((gb, and_(Override.dt_ind == gb.c.dt_ind, Override.dt_log == gb.c.max_dt_log))).all()
-              
+        data = pd.concat(data, axis=1)
+
+        data_len = len(data)
+        data['override_feed000'] = [None] * data_len
+        data['failsafe_feed999'] = [None] * data_len
+
+        objs = object_session(self)
+
+        qry = objs.query(Override.dt_ind,
+                         func.max(Override.dt_log).label('max_dt_log'))
+        grb = qry.group_by(Override.dt_ind).subquery()
+
+        qry = objs.query(Override)
+        ords = qry.join((grb, and_(Override.dt_ind == grb.c.dt_ind,
+                                   Override.dt_log == grb.c.max_dt_log))).all()
+
         for row in ords:
-            data.loc[row.dt_ind,'override_feed000'] = row.value
+            data.loc[row.dt_ind, 'override_feed000'] = row.value
 
-        gb = os.query(FailSafe.dt_ind,func.max(FailSafe.dt_log).label('max_dt_log')).group_by(FailSafe.dt_ind).subquery()
-        ords = os.query(FailSafe).join((gb, and_(FailSafe.dt_ind == gb.c.dt_ind, FailSafe.dt_log == gb.c.max_dt_log))).all()
-              
+        qry = objs.query(FailSafe.dt_ind,
+                         func.max(FailSafe.dt_log).label('max_dt_log'))
+        grb = qry.group_by(FailSafe.dt_ind).subquery()
+
+        qry = objs.query(FailSafe)
+        ords = qry.join((grb, and_(FailSafe.dt_ind == grb.c.dt_ind,
+                                   FailSafe.dt_log == grb.c.max_dt_log))).all()
+
         for row in ords:
-            data.loc[row.dt_ind,'failsafe_feed999'] = row.value
-            
+            data.loc[row.dt_ind, 'failsafe_feed999'] = row.value
+
         if self.agg_method in apply_row:
-            data['final'] = data.apply(apply_row[self.agg_method],axis=1)
+            data['final'] = data.apply(apply_row[self.agg_method], axis=1)
         elif self.agg_method in choose_col:
             data['final'] = choose_col[self.agg_method](data)
-    
-        
+
         # SQLAQ There are several states to deal with at this point
         # A) the datatable exists but a feed has been added
         # B) the datatable doesn't exist and needs to be created
@@ -213,256 +264,340 @@ class Symbol(Base, ReprMixin):
         # D) the datatable_exists flag is incorrect because all edge cases
         #    haven't been handled yet.
         #
-        # My logic is that once Trump is more functional, I'll be able to 
-        # eliminate this hacky solution.  But, SQLAlchemy might have 
+        # My logic is that once Trump is more functional, I'll be able to
+        # eliminate this hacky solution.  But, SQLAlchemy might have
         # a more elegant answer.  A check, of somekind prior to deletion?
-         
+
         # if not self.datatable_exists:
-        #     self.InitializeDataTable()
+        #     self._init_datatable()
         # delete(self.datatable).execute()
-        # self.InitializeDataTable()
-         
+        # self._init_datatable()
+
         # Is this the best way to check?
         # if engine.dialect.has_table(session.connection(), self.name):
         #    delete(self.datatable).execute()
-        self.InitializeDataTable()
-        
+        self._init_datatable()
+
         data.index.name = 'datetime'
         data = data.reset_index()
-        session.execute(self.datatable.insert(), data.to_dict(orient='records'))
-        
+        session.execute(self.datatable.insert(),
+                        data.to_dict(orient='records'))
+
     @property
     def describe(self):
-        """
-        Describes a Symbol
-        
-        #TODO Check/test/improve.
-        #TODO Create a Feed's describe() to Feed, and use it here.
-        """
-        s = []
-        s.append("Symbol = {}".format(self.name))
+        """ describes a Symbol, returns a string """
+        lines = []
+        lines.append("Symbol = {}".format(self.name))
         if len(self.tags):
-            s.append("  tagged = {}".format(", ".join(x.tag for x in self.tags)))
+            tgs = ", ".join(x.tag for x in self.tags)
+            lines.append("  tagged = {}".format(tgs))
         if len(self.aliases):
-            s.append("  aliased = {}".format(", ".join(x.alias for x in self.aliases)))
+            als = ", ".join(x.alias for x in self.aliases)
+            lines.append("  aliased = {}".format(als))
         if len(self.validity):
-            s.append("  validity =")
+            lines.append("  validity =")
             printed_cp = []
-            for v in self.validity:
-                if v.checkpoint not in printed_cp:
-                    printed_cp.append(v.checkpoint)
-                    s.append("    Checkpoint = {}".format(v.checkpoint))
-                s.append("      {} -> {} : {}".format(v.logic,v.key,v.value))
+            for vld in self.validity:
+                if vld.checkpoint not in printed_cp:
+                    printed_cp.append(vld.checkpoint)
+                    lines.append("    Checkpoint = {}".format(vld.checkpoint))
+                vlm = "      {} -> {} : {}".format(vld.logic,
+                                                   vld.key,
+                                                   vld.value)
+                lines.append(vlm)
         if len(self.feeds):
-            s.append("  feeds:")
-        
-            for f in self.feeds:
-                s.append("    {}. {} -> {}".format(f.fnum,f.ftype,f.source_str()))
+            lines.append("  feeds:")
+
+            for fed in self.feeds:
+                lines.append("    {}. {} -> {}".format(fed.fnum,
+                                                       fed.ftype,
+                                                       fed.source_str()))
                 printed_cp = []
-                for v in f.validity:
-                    if v.checkpoint not in printed_cp:
-                        printed_cp.append(v.checkpoint)
-                        s.append("      Checkpoint = {}".format(v.checkpoint))
-                    s.append("        {} -> {} : {}".format(v.logic,v.key,v.value))        
-        return "\n".join(s)
-                  
-    def addTag(self,tag):
+                for vld in fed.validity:
+                    if vld.checkpoint not in printed_cp:
+                        printed_cp.append(vld.checkpoint)
+                        chkpnt = "      Checkpoint = {}".format(vld.checkpoint)
+                        lines.append(chkpnt)
+                    lines.append("        {} -> {} : {}".format(vld.logic,
+                                                                vld.key,
+                                                                vld.value))
+        return "\n".join(lines)
+
+    def add_tag(self, tag):
+        """
+        Add a tag object to a Symbol.  Tags can be used to search for sets of
+        symbols
+        """
         # SQLA Adding a SymbolTag object, feels awkward/uneccessary.
         # Should I be implementing this functionality a different way?
-        os = object_session(self)
-        tmp = SymbolTag(tag=tag,symbol=self)
+        objs = object_session(self)
+        tmp = SymbolTag(tag=tag, symbol=self)
         self.tags.append(tmp)
-        os.add(tmp)
-        os.commit()
-   
-    def addOverride(self,dt_ind,value,dt_log=None,user=None,comment=None):
-        os = object_session(self)
-        
-        if not dt_log:
-            dt_log = dt.datetime.now()
-            
-        tmp = Override(symname=self.name,dt_ind=dt_ind,value=value,dt_log=dt_log,user=user,comment=comment)
-        os.add(tmp)
-        os.commit()
 
-    def addFailSafe(self,dt_ind,value,dt_log=None,user=None,comment=None):
-        os = object_session(self)
-        
+        objs.add(tmp)
+        objs.commit()
+
+    def add_override(self, dt_ind, value, dt_log=None, user=None, comment=None):
+        """
+        appends a single value and date pair, to a symbol object, to be
+        used during the final steps of the aggregation of the datatable
+
+        Overrides, get applied with highest priority.
+        """
+        objs = object_session(self)
+
         if not dt_log:
             dt_log = dt.datetime.now()
-            
-        tmp = FailSafe(symname=self.name,dt_ind=dt_ind,value=value,dt_log=dt_log,user=user,comment=comment)
-        os.add(tmp)
-        os.commit()
-        
-    def delTag(self):
-        raise NotImplemented
-        
-    def addTags(self,tags):
-        os = object_session(self)        
-        tmps = [SymbolTag(tag=t,symbol=self) for t in tags]
-        os.add_all(tmps)
-        os.commit()
-    
+
+        tmp = Override(symname=self.name,
+                       dt_ind=dt_ind,
+                       value=value,
+                       dt_log=dt_log,
+                       user=user,
+                       comment=comment)
+        objs.add(tmp)
+        objs.commit()
+
+    def add_fail_safe(self, dt_ind, value,
+                      dt_log=None, user=None, comment=None):
+        """
+        appends a single value and date pair, to a symbol object, to be
+        used during the final steps of the aggregation of the datatable.
+
+        Failsafes, get applied with highest priority.
+        """
+        objs = object_session(self)
+
+        if not dt_log:
+            dt_log = dt.datetime.now()
+
+        tmp = FailSafe(symname=self.name,
+                       dt_ind=dt_ind,
+                       value=value,
+                       dt_log=dt_log,
+                       user=user,
+                       comment=comment)
+        objs.add(tmp)
+        objs.commit()
+
+    def del_tag(self):
+        """ remove a tag from a symbol """
+        raise NotImplementedError
+
+    def add_tags(self, tags):
+        """  add a list of strings, representing tags, to the symbol. """
+        objs = object_session(self)
+        tmps = [SymbolTag(tag=t, symbol=self) for t in tags]
+        objs.add_all(tmps)
+        objs.commit()
+
     @property
     def n_tags(self):
+        """ returns the number of tags  """
         return len(self.tags)
 
-    def addFeed(self,obj,**kwargs):
+    def add_feed(self, obj, **kwargs):
         if 'fnum' in kwargs:
             fnum = kwargs['fnum']
             del kwargs['fnum']
         else:
             fnum = None
-            
-        if isinstance(obj,bFeed):
+
+        if isinstance(obj, bFeed):
             munging = obj.munging
             if 'munging' in kwargs:
                 explicit_munging = kwargs['munging'].as_odict
                 for key in explicit_munging:
-                    munging[key] = explicit_munging[key]                   
-            f = Feed(self,obj.ftype,obj.sourcing,munging,obj.validity,obj.meta,fnum)
-        elif isinstance(obj,Feed):
-            f = obj
-        self.feeds.append(f)
-        session.add(f)
-        
+                    munging[key] = explicit_munging[key]
+            fed = Feed(self, obj.ftype,
+                       obj.sourcing,
+                       munging,
+                       obj.validity,
+                       obj.meta,
+                       fnum)
+        elif isinstance(obj, Feed):
+            fed = obj
+        self.feeds.append(fed)
+        session.add(fed)
+
         # SQLAQ - With Postgres, I don't need this commit here.
         # with SQLite, I do. On SQLite, if I don't have it, I get a really
-        # strange situation where self.feeds can have two identical Feed objects
-        # matching, after only ever calling addFeed ONCE, on a brand new
+        # strange situation where self.feeds can have two identical Feeds
+        # matching, after only ever calling add_feed ONCE, on a brand new
         # SQLite file.
         session.commit()
-    def addAlias(self,obj):
-        if isinstance(obj,list):
-            raise NotImplemented
-        elif isinstanceofany(obj,(str,unicode)):
-            a = SymbolAlias(self,obj)
+
+    def add_alias(self, obj):
+        if isinstance(obj, list):
+            raise NotImplementedError
+        elif isinstanceofany(obj, (str, unicode)):
+            a = SymbolAlias(self, obj)
             self.aliases.append(a)
-            session.add(a)             
+            session.add(a)
+
     def data(self):
-        t = self.datatable
-        print type(t)
-        if isinstance(t,Table):
-            return session.query(t.c.datetime,t.c.final).all()
+        dtbl = self.datatable
+        print type(dtbl)
+        if isinstance(dtbl, Table):
+            return session.query(dtbl.c.datetime, dtbl.c.final).all()
         else:
             raise Exception("Symbol has no datatable")
+
     @property
     def df(self):
+        """ returns the dataframe representation of the symbol's final data """
         data = self.data()
-        df = pd.DataFrame(data)           
-        df.columns = ['dateindex',self.name]
-        df = df.set_index('dateindex')
-        return df
-    def delFeed(self):
-        raise NotImplemented
+        adf = pd.DataFrame(data)
+        adf.columns = ['dateindex', self.name]
+        adf = adf.set_index('dateindex')
+        return adf
 
-    def addFeeds(self,symbol,ftype,sourcing,munging=None,fnum=None):
-        raise NotImplemented
-        
+    def del_feed(self):
+        """ remove a feed """
+        raise NotImplementedError
+
+    def add_feeds(self, symbol, ftype, sourcing, munging=None, fnum=None):
+        """ add several feeds with one method """
+        raise NotImplementedError
+
     @property
     def n_feeds(self):
+        """ returns the number of feeds """
         return len(self.feeds)
 
-    def addValidity(self,checkpoint,logic,kwargs):
-        for key,value in kwargs.iteritems():
-            self.validity.append(SymbolValidity(checkpoint=checkpoint,logic=logic,key=key,value=value,symbol=self))
+    def add_validity(self, checkpoint, logic, kwargs):
+        for key, value in kwargs.iteritems():
+            self.validity.append(SymbolValidity(checkpoint=checkpoint,
+                                                logic=logic,
+                                                key=key,
+                                                value=value,
+                                                symbol=self))
         #self = session.merge(self)
         session.commit()
-        
-    def setDescription(self,description):
+
+    def set_description(self, description):
+        """ change the description of the symbol """
         self.description = description
 
-    def setFreq(self,freq):
+    def set_freq(self, freq):
+        """ change the frequency of the index """
         self.freq = freq
-        
-    def setUnits(self,units):
+
+    def set_units(self, units):
+        """ change the symbol's units """
         self.units = units
-        
-    def InitializeDataTable(self):
-        self.datatable = self._DataTableFactory()
+
+    def _init_datatable(self):
+        """
+        Instantiates the .datatable attribute, pointing to a table in the
+        database that stores all the cached data
+        """
+        self.datatable = self._datatable_factory()
         self.datatable.drop(checkfirst=True)
         self.datatable.create()
         self.datatable_exists = True
-        
-    def _DataTableFactory(self):
-        feed_cols = ['feed{0:03d}'.format(i+1) for i in range(self.n_feeds)]
+
+    def _datatable_factory(self):
+        """
+        creates a SQLAlchemy Table object with the appropriate number of
+        columns given the number of feeds
+        """
+        feed_cols = ['feed{0:03d}'.format(i + 1) for i in range(self.n_feeds)]
         feed_cols = ['override_feed000'] + feed_cols + ['failsafe_feed999']
-        
-        t = Table(self.name, metadata, 
-                  Column('datetime', DateTime, primary_key=True),
-                  Column('final', Float),
-                  *(Column(feed_col, Float) for feed_col in feed_cols),
-                  extend_existing=True)
-        return t
+
+        atbl = Table(self.name, metadata,
+                     Column('datetime', DateTime, primary_key=True),
+                     Column('final', Float),
+                     *(Column(feed_col, Float) for feed_col in feed_cols),
+                     extend_existing=True)
+        return atbl
+
 
 @event.listens_for(Symbol, 'load')
 def __receive_load(target, context):
-    target.InitializeDataTable()
-    
+    """ loads a symbols data table upon being queried """
+    target._init_datatable()
+
+
 class SymbolTag(Base, ReprMixin):
     __tablename__ = '_symbol_tags'
-    symname = Column('symname',String,ForeignKey('_symbols.name', **cc),  primary_key = True)
-    tag =  Column('tag',String, primary_key = True)
+    symname = Column('symname', String, ForeignKey('_symbols.name', **CC),
+                     primary_key=True)
+    tag = Column('tag', String, primary_key=True)
     symbol = relationship("Symbol")
-    def __init__(self,symbol,tag):
+
+    def __init__(self, symbol, tag):
         self.symbol = symbol
         self.tag = tag
 
+
 class SymbolAlias(Base, ReprMixin):
-    __tablename__ = '_symbol_aliases'               
-    symname = Column('symname',String,ForeignKey('_symbols.name', **cc), primary_key = True)
-    alias = Column('alias',String, primary_key = True)
-    
-    symbol = relationship("Symbol")  
-    def __init__(self,symbol,alias):
+    __tablename__ = '_symbol_aliases'
+    symname = Column('symname', String, ForeignKey('_symbols.name', **CC),
+                     primary_key=True)
+    alias = Column('alias', String, primary_key=True)
+
+    symbol = relationship("Symbol")
+
+    def __init__(self, symbol, alias):
         self.symbol = symbol
         self.alias = alias
 
+
 class SymbolValidity(Base, ReprMixin):
     __tablename__ = "_symbol_validity"
-    
-    symname = Column('symname', String, ForeignKey("_symbols.name", **cc), primary_key = True)
-    checkpoint = Column('checkpoint',String, primary_key = True)
-    logic = Column('logic',String, primary_key = True)
-    key = Column('key',String, primary_key = True)
-    value = Column('value',String)
 
-    symbol = relationship("Symbol")   
-    def __init__(self,symbol,checkpoint,logic,key,value=None):
+    symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
+                     primary_key=True)
+    checkpoint = Column('checkpoint', String, primary_key=True)
+    logic = Column('logic', String, primary_key=True)
+    key = Column('key', String, primary_key=True)
+    value = Column('value', String)
+
+    symbol = relationship("Symbol")
+
+    def __init__(self, symbol, checkpoint, logic, key, value=None):
         self.symbol = symbol
         self.checkpoint = checkpoint
         self.logic = logic
         self.key = key
         self.value = value
 
+
 class Feed(Base, ReprMixin):
+    """
+    The Feed object stores parameters associated with souring and munging
+    a single series.
+    """
     __tablename__ = "_feeds"
-    
-    symname = Column('symname',String, ForeignKey("_symbols.name", **cc), primary_key = True)
-    fnum = Column('fnum',Integer,primary_key = True)
-       
-    state = Column('state',String,nullable=False)
-    ftype = Column('ftype',String,nullable=False)
-    
-    tags = relationship("FeedTag",cascade="all, delete-orphan")
-    sourcing = relationship("FeedSource",lazy="dynamic",cascade="all, delete-orphan")
-    meta = relationship("FeedMeta",lazy="dynamic",cascade="all, delete-orphan")
-    munging = relationship("FeedMunge",lazy="dynamic",cascade="all, delete-orphan")
-    validity = relationship("FeedValidity",lazy="dynamic",cascade="all, delete-orphan")
-       
+
+    symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
+                     primary_key=True)
+    fnum = Column('fnum', Integer, primary_key=True)
+
+    state = Column('state', String, nullable=False)
+    ftype = Column('ftype', String, nullable=False)
+
+    tags = relationship("FeedTag", cascade=ADO)
+    sourcing = relationship("FeedSource", lazy="dynamic", cascade=ADO)
+    meta = relationship("FeedMeta", lazy="dynamic", cascade=ADO)
+    munging = relationship("FeedMunge", lazy="dynamic", cascade=ADO)
+    validity = relationship("FeedValidity", lazy="dynamic", cascade=ADO)
+
     symbol = relationship("Symbol")
 
-    def __init__(self,symbol,ftype,sourcing,munging=None,validity=None,meta=None,fnum=None):
+    def __init__(self, symbol, ftype, sourcing,
+                 munging=None, validity=None, meta=None, fnum=None):
         self.ftype = ftype
         self.state = "ON"
         self.symbol = symbol
         self.data = None
-        
+
         self._symsess = object_session(symbol)
-        
+
         if fnum is None:
-            existing_fnums = session.query(Feed.fnum).filter(Feed.symname == symbol.name).all()
+            qry = session.query(Feed.fnum)
+            existing_fnums = qry.filter(Feed.symname == symbol.name).all()
             existing_fnums = [n[0] for n in existing_fnums]
             if len(existing_fnums) == 0:
                 self.fnum = 0
@@ -470,61 +605,66 @@ class Feed(Base, ReprMixin):
                 self.fnum = max(existing_fnums) + 1
         else:
             self.fnum = fnum
-            
-        def setinmeta(t,o):
+
+        def setinmeta(typ, infobj):
+            """ moves information from infobj to meta """
             val = None
-            if meta is not None and t in meta:
-                val = meta[t]
-                del meta[t]
-            elif o is not None and t in o: #otherwise fall back to the value used in the sourcing dictionary.
-                val = o[t]
-                del o[t]
-            
+            if meta is not None and typ in meta:
+                val = meta[typ]
+                del meta[typ]
+            # otherwise fall back to the value used in the sourcing dictionary.
+            elif infobj is not None and typ in infobj:
+                val = infobj[typ]
+                del infobj[typ]
+
             if val:
-                tmp = FeedMeta(attr=t,value=val,feed=self)
+                tmp = FeedMeta(attr=typ, value=val, feed=self)
                 self._symsess.add(tmp)
-                self.meta_map[t] = tmp
+                self.meta_map[typ] = tmp
                 self._symsess.commit()
-        
-        setinmeta('stype',sourcing)
-        setinmeta('sourcing_key',sourcing)
-        setinmeta('vtype',validity)
+
+        setinmeta('stype', sourcing)
+        setinmeta('sourcing_key', sourcing)
+        setinmeta('vtype', validity)
 
         if meta:
             for key in meta:
-                tmp = FeedMeta(attr=key,value=meta[key],feed=self)
+                tmp = FeedMeta(attr=key, value=meta[key], feed=self)
                 self._symsess.add(tmp)
                 self.meta_map[key] = tmp
-                self._symsess.commit()            
-        
-        if sourcing:        
+                self._symsess.commit()
+
+        if sourcing:
             for key in sourcing:
-                tmp = FeedSource(param=key,value=sourcing[key],feed=self)
+                tmp = FeedSource(param=key, value=sourcing[key], feed=self)
                 self._symsess.add(tmp)
                 self.sourcing_map[key] = tmp
-                self._symsess.commit()   
+                self._symsess.commit()
 
-        if munging:            
-            for i,meth in enumerate(munging.keys()):
-                print i,meth, munging[meth]
-                fm = FeedMunge(order=i,mtype=munging[meth]['mtype'],method=meth,feed=self)
-                for arg,value in munging[meth]['kwargs'].iteritems():
-                    print arg,value
-                    # TODO making munging arguments dynamically typed
-                    if not isinstance(value,(int,float)):
+        if munging:
+            for i, meth in enumerate(munging.keys()):
+                print i, meth, munging[meth]
+                fmg = FeedMunge(order=i, mtype=munging[meth]['mtype'],
+                                method=meth, feed=self)
+                for arg, value in munging[meth]['kwargs'].iteritems():
+                    print arg, value
+                    if not isinstance(value, (int, float)):
                         val = str(value)
                     else:
                         val = value
-                    fm.mungeargs.append(FeedMungeArg(arg,val,feedmunge=fm))
-                self.munging.append(fm)
+                    fmg.mungeargs.append(FeedMungeArg(arg, val, feedmunge=fmg))
+                self.munging.append(fmg)
 
         if validity:
             for checkpoint in validity:
                 for logic in checkpoint:
                     for key in logic:
-                        self.validity.append(FeedValidity(checkpoint,logic,key,logic[key]))
+                        self.validity.append(FeedValidity(checkpoint,
+                                                          logic, key,
+                                                          logic[key]))
+
     def cache(self):
-        
+
         # Pull in the database defined sourcing arguments
         # for now, this is a dictionary of the forms {str : str,}
         kwargs = self.sourcing_map()
@@ -532,7 +672,7 @@ class Feed(Base, ReprMixin):
         # Check the source type
         meta = self.meta_map()
         stype = meta['stype']
-         
+
         # If there is a sourcing key defined, use it to override any database
         # defined parameters
         if 'sourcing_key' in meta:
@@ -550,109 +690,111 @@ class Feed(Base, ReprMixin):
                 fn = kwargs['fieldname']
             except KeyError:
                 raise KeyError("fieldname wasn't specified in Quandl Feed")
-            
+
             try:
                 self.data = self.data[fn]
             except KeyError:
-                raise KeyError("{} was not found in list of Quandle headers: {}".format(fn,str(self.data.columns)))
-                                  
+                kemsg = """{} was not found in list of Quandle headers:\n
+                         {}""".format(fn, str(self.data.columns))
+                raise KeyError(kemsg)
+
         elif stype == 'psycopg2':
+            dbargs = ['dsn', 'user', 'password', 'host', 'database', 'port']
             import psycopg2 as db
-            con_kwargs = {k:v for k,v in kwargs.items() if k in ['dsn','user','password','host','database','port']}
+            con_kwargs = {k: v for k, v in kwargs.items() if k in dbargs}
             con = db.connect(**con_kwargs)
             raise NotImplementedError("pyscopg2")
         elif stype == 'DBAPI':
+            dbargs = ['dsn', 'user', 'password', 'host', 'database', 'port']
             db = __import__(engine.driver)
-            con_kwargs = {k:v for k,v in kwargs.items() if k in ['dsn','user','password','host','database','port']}
+            con_kwargs = {k: v for k, v in kwargs.items() if k in dbargs}
 
             print kwargs
             print con_kwargs
-            
-            con = db.connect(**con_kwargs) 
+
+            con = db.connect(**con_kwargs)
             cur = con.cursor()
 
             if 'command' in kwargs:
                 cur.execute(kwargs['command'])
-            elif set(['table','indexcol','datacol']).issubset(kwargs.keys()):
-                
-                i,d,t = kwargs['indexcol'],kwargs['datacol'],kwargs['table']
-                qry = "SELECT {0},{1} FROM {2} ORDER BY {0};".format(i,d,t)
+            elif set(['table', 'indexcol', 'datacol']).issubset(kwargs.keys()):
+
+                rel = (kwargs[c] for c in ['indexcol', 'datacol', 'table'])
+                qry = "SELECT {0},{1} FROM {2} ORDER BY {0};".format(*rel)
                 cur.execute(qry)
-                      
-            results = [(row[0],row[1]) for row in cur.fetchall()]
+
+            results = [(row[0], row[1]) for row in cur.fetchall()]
             con.close()
-            ind,dat = zip(*results)
-            self.data = pd.Series(dat,ind)
+            ind, dat = zip(*results)
+            self.data = pd.Series(dat, ind)
         elif stype == 'SQLAlchemy':
             NotImplementedError("SQLAlchemy")
-        elif stype == 'sPyDataDataReader':
+        elif stype == 'PyDataDataReaderST':
             import pandas.io.data as pydata
-            
+
             print kwargs
-            
+
+            fmt = "%Y-%m-%d"
             if 'start' in kwargs:
-                kwargs['start'] = dt.datetime.strptime(kwargs['start'],"%Y-%m-%d")
+                kwargs['start'] = dt.datetime.strptime(kwargs['start'], fmt)
             if 'end' in kwargs:
                 if kwargs['end'] == 'now':
                     kwargs['end'] = dt.datetime.now()
                 else:
-                    kwargs['end'] = dt.datetime.strptime(kwargs['end'],"%Y-%m-%d")
-            
+                    kwargs['end'] = dt.datetime.strptime(kwargs['end'], fmt)
+
             col = kwargs['data_column']
             del kwargs['data_column']
-            
-            df = pydata.DataReader(**kwargs)
-            s = df[col]
-            self.data = s
+
+            adf = pydata.DataReader(**kwargs)
+            self.data = adf[col]
 
         else:
             raise Exception("Unknown Source Type : {}".format(stype))
 
-        #print self.data.tail(5)
-        #print type(self.data)
-        #print self.data.index
-        #print self.data.dtype
+        # print self.data.tail(5)
+        # print type(self.data)
+        # print self.data.index
+        # print self.data.dtype
 
-       
-        #munge accordingly
-        for m in self.munging:
-            print m.mtype
-            mmkeys = m.munging_map.keys()
-            kwargs = {k : m.munging_map[k].value for k in mmkeys}
+        # munge accordingly
+        for mgn in self.munging:
+            print mgn.mtype
+            mmkeys = mgn.munging_map.keys()
+            kwargs = {k: mgn.munging_map[k].value for k in mmkeys}
             for arg in kwargs:
-                #TODO handle types better.
                 if kwargs[arg].isnumeric():
                     tmp = float(kwargs[arg])
-                    if (tmp % 1) == 0: #then, probably an int.
+                    if (tmp % 1) == 0:  # then, probably an int.
                         kwargs[arg] = int(tmp)
                     else:
                         kwargs[arg] = tmp
                 elif kwargs[arg].upper() == 'TRUE':
                     kwargs[arg] = True
                 elif kwargs[arg].upper() == 'FALSE':
-                    kwargs[arg] = False                   
-            if m.mtype == pab:
-                func = getattr(self.data,m.method)
-                #print m.method, func
-                #print kwargs
+                    kwargs[arg] = False
+            if mgn.mtype == pab:
+                afunc = getattr(self.data, mgn.method)
+                # print mgn.method, func
+                # print kwargs
                 #self.data['2015-03-16'] = pd.np.nan
-                #print self.data.tail()
-                #self.data = func() #TODO: add kwargs, test.
-                self.data = func(**kwargs) #TODO: add kwargs, test.
-                #print self.data.tail()
-            elif m.mtype == pnab:
-                lib = __import__('pandas',globals(),locals(),[],-1)
-                func = getattr(lib,m.method)
-                #print m.method, func
-                #print kwargs
-                self.data = func(self.data,**kwargs)
-        
-        #make sure it's named properly...
-        self.data.name = "feed" + str(self.fnum+1).zfill(3)
-        
-#            for a in m.methodargs:
+                # print self.data.tail()
+                #self.data = func()
+                self.data = afunc(**kwargs)
+                # print self.data.tail()
+            elif mgn.mtype == pnab:
+                lib = __import__('pandas', globals(), locals(), [], -1)
+                afunc = getattr(lib, mgn.method)
+                # print mgn.method, func
+                # print kwargs
+                self.data = afunc(self.data, **kwargs)
+
+        # make sure it's named properly...
+        self.data.name = "feed" + str(self.fnum + 1).zfill(3)
+
+#            for a in mgn.methodargs:
 #                args[a.arg] = a.value
-#            self.data = munging_methods[m.method](self.data,**args)
+#            self.data = munging_methods[mgn.method](self.data,**args)
 
     @property
     def sourcing_map(self):
@@ -661,204 +803,179 @@ class Feed(Base, ReprMixin):
     @property
     def meta_map(self):
         return ProxyDict(self, 'meta', FeedMeta, 'attr')
-     
-    @property         
+
+    @property
     def source(self):
         return " ".join([p.key + " : " + p.value for p in self.sourcing])
-               
+
+
 class FeedTag(Base, ReprMixin):
     __tablename__ = '_feed_tags'
-    symname = Column('symname',String,  primary_key = True)
-    fnum = Column('fnum',Integer,  primary_key = True)
-    
-    tag =  Column('tag',String, primary_key = True)
-    
+    symname = Column('symname', String, primary_key=True)
+    fnum = Column('fnum', Integer, primary_key=True)
+
+    tag = Column('tag', String, primary_key=True)
+
     feed = relationship("Feed")
 
-    __table_args__ = (ForeignKeyConstraint([symname,fnum],[Feed.symname,Feed.fnum], **cc),{})
-         
+    fkey = ForeignKeyConstraint([symname, fnum],
+                                [Feed.symname, Feed.fnum],
+                                **CC)
+    __table_args__ = (fkey, {})
+
+
 class FeedSource(Base, ReprMixin):
     __tablename__ = "_feed_sourcing"
-    
-    symname = Column('symname',String, primary_key = True)
-    fnum = Column('fnum',Integer, primary_key = True)
-    param =  Column('param',String, primary_key = True)
-    
+
+    symname = Column('symname', String, primary_key=True)
+    fnum = Column('fnum', Integer, primary_key=True)
+    param = Column('param', String, primary_key=True)
+
     feed = relationship("Feed")
-    
-    value = Column('value',String)
-    
-    __table_args__ = (ForeignKeyConstraint([symname,fnum],[Feed.symname,Feed.fnum], **cc),{})
-    def __init__(self,feed,param,value):
+
+    value = Column('value', String)
+
+    fkey = ForeignKeyConstraint([symname, fnum],
+                                [Feed.symname, Feed.fnum],
+                                **CC)
+    __table_args__ = (fkey, {})
+
+    def __init__(self, feed, param, value):
         self.feed = feed
         self.param = param
         self.value = value
 
+
 class FeedMeta(Base, ReprMixin):
     __tablename__ = "_feed_meta"
-    
-    symname = Column('symname',String, primary_key = True)
-    fnum = Column('fnum',Integer, primary_key = True)
-    attr =  Column('attr',String, primary_key = True)
-    
+
+    symname = Column('symname', String, primary_key=True)
+    fnum = Column('fnum', Integer, primary_key=True)
+    attr = Column('attr', String, primary_key=True)
+
     feed = relationship("Feed")
-    
-    value = Column('value',String)
-    
-    __table_args__ = (ForeignKeyConstraint([symname,fnum],[Feed.symname,Feed.fnum], **cc),{})
-    def __init__(self,feed,attr,value):
+
+    value = Column('value', String)
+
+    fkey = ForeignKeyConstraint([symname, fnum],
+                                [Feed.symname, Feed.fnum],
+                                **CC)
+    __table_args__ = (fkey, {})
+
+    def __init__(self, feed, attr, value):
         self.feed = feed
         self.attr = attr
         self.value = value
-        
+
+
 class FeedMunge(Base, ReprMixin):
     __tablename__ = "_feed_munging"
-    
-    symname = Column('symname',String, primary_key = True)
-    fnum = Column('fnum',Integer, primary_key = True)
-    order =  Column('order',Integer, primary_key = True)
-    mtype = Column('mtype',String)
-    method =  Column('method',String)
-    
+
+    symname = Column('symname', String, primary_key=True)
+    fnum = Column('fnum', Integer, primary_key=True)
+    order = Column('order', Integer, primary_key=True)
+    mtype = Column('mtype', String)
+    method = Column('method', String)
+
     feed = relationship("Feed")
-    
-    mungeargs = relationship("FeedMungeArg",lazy="dynamic",cascade="all, delete-orphan")
-    
-    __table_args__ = (ForeignKeyConstraint([symname,fnum],[Feed.symname,Feed.fnum]),{})
-    def __init__(self,order,mtype,method,feed):
+    mungeargs = relationship("FeedMungeArg", lazy="dynamic", cascade=ADO)
+
+    fkey = ForeignKeyConstraint([symname, fnum], [Feed.symname, Feed.fnum])
+    __table_args__ = (fkey, {})
+
+    def __init__(self, order, mtype, method, feed):
         self.order = order
         self.method = method
         self.mtype = mtype
         self.feed = feed
+
     @property
     def munging_map(self):
         return ProxyDict(self, 'mungeargs', FeedMungeArg, 'arg')
-        
+
+
 class FeedMungeArg(Base, ReprMixin):
     __tablename__ = "_feed_munging_args"
-    
-    symname = Column('symname',String, primary_key = True)
-    fnum = Column('fnum',Integer, primary_key = True)
-    order =  Column('order',Integer, primary_key = True)
-    arg =  Column('arg',String, primary_key = True)    
-    value = Column('value',String)
+
+    symname = Column('symname', String, primary_key=True)
+    fnum = Column('fnum', Integer, primary_key=True)
+    order = Column('order', Integer, primary_key=True)
+    arg = Column('arg', String, primary_key=True)
+    value = Column('value', String)
 
     feedmunge = relationship("FeedMunge")
-    
-    __table_args__ = (ForeignKeyConstraint([symname,fnum,order],[FeedMunge.symname,FeedMunge.fnum,FeedMunge.order]),{})
-    def __init__(self,arg,value,feedmunge):
+
+    fkey = ForeignKeyConstraint([symname, fnum, order],
+                                [FeedMunge.symname,
+                                 FeedMunge.fnum,
+                                 FeedMunge.order])
+    __table_args__ = (fkey, {})
+
+    def __init__(self, arg, value, feedmunge):
         self.arg = arg
         self.value = value
         self.feedmunge = feedmunge
-        
+
+
 class FeedValidity(Base, ReprMixin):
     __tablename__ = "_feed_validity"
-    
-    symname = Column('symname',String, primary_key = True)
-    fnum = Column('fnum',Integer, primary_key = True)
-    checkpoint = Column('checkpoint',String, primary_key = True)
-    logic = Column('logic',String, primary_key = True)
-    key = Column('key',String, primary_key = True)
+
+    symname = Column('symname', String, primary_key=True)
+    fnum = Column('fnum', Integer, primary_key=True)
+    checkpoint = Column('checkpoint', String, primary_key=True)
+    logic = Column('logic', String, primary_key=True)
+    key = Column('key', String, primary_key=True)
 
     feed = relationship("Feed")
-    
-    value = Column('value',String)
 
-    __table_args__ = (ForeignKeyConstraint([symname,fnum],[Feed.symname,Feed.fnum]),{})
-    def __init__(self,feed,checkpoint,logic,key,value=None):
+    value = Column('value', String)
+
+    fkey = ForeignKeyConstraint([symname, fnum], [Feed.symname, Feed.fnum])
+    __table_args__ = (fkey, {})
+
+    def __init__(self, feed, checkpoint, logic, key, value=None):
         self.feed = feed
         self.checkpoint = checkpoint
         self.logic = logic
         self.key = key
-        self.value = value     
+        self.value = value
+
 
 class Override(Base, ReprMixin):
     __tablename__ = '_overrides'
 
-    symname = Column('symname',String, primary_key = True)
-    ornum = Column('ornum',Integer,primary_key = True)
-    dt_ind = Column('dt_ind',DateTime, nullable=False)
+    symname = Column('symname', String, primary_key=True)
+    ornum = Column('ornum', Integer, primary_key=True)
+    dt_ind = Column('dt_ind', DateTime, nullable=False)
 
-    value = Column('value',Float,nullable=False)
-     
-    dt_log = Column('dt_log',DateTime,nullable=False)
-    user = Column('user',String,nullable=True)
-    comment = Column('comment',String,nullable=True)
+    value = Column('value', Float, nullable=False)
+
+    dt_log = Column('dt_log', DateTime, nullable=False)
+    user = Column('user', String, nullable=True)
+    comment = Column('comment', String, nullable=True)
+
 
 class FailSafe(Base, ReprMixin):
     __tablename__ = '_failsafes'
 
-    symname = Column('symname',String, primary_key = True)
-    fsnum = Column('fsnum',Integer,primary_key = True)
-    dt_ind = Column('dt_ind',DateTime, nullable=False)
+    symname = Column('symname', String, primary_key=True)
+    fsnum = Column('fsnum', Integer, primary_key=True)
+    dt_ind = Column('dt_ind', DateTime, nullable=False)
 
-    value = Column('value',Float,nullable=False)
-     
-    dt_log = Column('dt_log',DateTime,nullable=False)
-    user = Column('user',String,nullable=True)
-    comment = Column('comment',String,nullable=True)
-    
-      
+    value = Column('value', Float, nullable=False)
 
-    
+    dt_log = Column('dt_log', DateTime, nullable=False)
+    user = Column('user', String, nullable=True)
+    comment = Column('comment', String, nullable=True)
+
+
 try:
     Base.metadata.create_all(engine)
     print "Trump is ready."
-except ProgrammingError as e:
-    print e.statement
-    print e.message
-    raise 
+except ProgrammingError as pgerr:
+    print pgerr.statement
+    print pgerr.message
+    raise
 
 if __name__ == '__main__':
-    for x in range(3):
-        un = str(x) + dt.datetime.now().strftime("%H%M%S")
-        
-        NewSymbol = Symbol(name="NewSymbol" + un)
-        
-        NewSymbol.description = 'tester chester 2 ' + un
-        NewSymbol.freq = 'D'
-        NewSymbol.units = '$'
-        
-        # Nice to have:
-        # NewSymbol.tags = ['Alpha', 'Beta', 'Charlie', 'Delta']
-        NewSymbol.addTag("Alpha")
-        NewSymbol.addTags(["Beta","Charlie","Delta"])
-        
-        NewSymbol.addAlias("Newish")
-        NewSymbol.addAlias("Newer")
-        
-        session.commit()
-                
-        vals = [SymbolValidity(checkpoint='Exception',logic='NoData',key='arg1',value=1,symbol=NewSymbol),
-                SymbolValidity(checkpoint='Exception',logic='NoData',key='arg2',value=2,symbol=NewSymbol),
-                SymbolValidity(checkpoint='Exception',logic='NoData',key='arg3',value=3,symbol=NewSymbol),
-                SymbolValidity(checkpoint='Exception',logic='NoFeed',key='arg1',value=10,symbol=NewSymbol),
-                SymbolValidity(checkpoint='Exception',logic='NoFeed',key='arg2',value=20,symbol=NewSymbol)]
-    
-        session.add_all(vals)
-        
-        for f in range(4):
-            un = str(x) + dt.datetime.now().strftime("%H%M%S")
-            NewFeed = Feed(NewSymbol,"DB",
-                           sourcing={'stype' : 'DBNonAPICompliant', 'db' : 'General', 'user' : 'TODO'})
-                           #TODO:
-                           #munging={'mtype' : 'pandas', 'pct_change'})
-            
-            vals = [FeedValidity(checkpoint='Exception',logic='NoData',key='arg1',value=1,feed=NewFeed),
-                    FeedValidity(checkpoint='Exception',logic='NoData',key='arg2',value=2,feed=NewFeed),
-                    FeedValidity(checkpoint='Check',logic='NoData',key='arg3',value=3,feed=NewFeed),
-                    FeedValidity(checkpoint='Check',logic='NoFeed',key='arg1',value=100,feed=NewFeed),
-                    FeedValidity(checkpoint='Check',logic='NoFeed',key='arg2',value='jeff',feed=NewFeed)]
-        
-            for v in vals:
-                session.add(v)
-    
-            session.add(NewFeed)
-        
-        NewSymbol.InitializeDataTable()
-        
-        session.commit()
-    session.commit()
-    
-    
-    aSymbol = session.query(Symbol).all()[-1]
+    pass
