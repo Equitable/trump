@@ -119,3 +119,79 @@ Optionally, the validity checks can be executed before and after each of the abo
 - [ ] Reporting
   - [ ] HTML
   - [ ] DataFrame
+
+# Checks & Validity Objects
+
+## ValidityResult Object
+
+## FeedReport
+
+## SymbolReport
+
+## Report
+
+## ValidityInstruction
+
+ValidityInstruction objects contain information used to check a Symbol's data.  The end application
+should never "see" the data from the individual feeds, however a validity check can peek at it for the purposes of checking the final.
+
+A symbol has a single .isvalid() method, which will run the checks associated with each ValidityInstruction Object.
+The function returns a ValidityResult object.  The ValidtyResult object can be compared against a boolean, in an all-or-nothing way,
+or it can be converted to a list of booleans, a dictionary of booleans where the keys are the names of the individual checks,
+or a more advanced object which is a dictionary keyed by the test name, but the value returned is an object decided by the test.
+
+Examples of Validity Checks might be:
+
+- Length
+- MissingData (gaps)
+- Recency [has there been data in the last X days]
+- Today [is there a datapoint for today]
+- Last-Close-to-Others
+- FrequencyAutoDetect
+- StandardDeviationLevel (eg. Realized Volatility)
+- DeviationFromMovingAverage
+- FeedLengthCompare
+- FeedDeviationCompare
+- CheckExistence
+
+## FeedHandle & SymbolHandle
+
+A *Handle object is attached to each Symbol, and Feed, one-to-one.  So, a Symbol with 3 Feeds, would have 1 SymbolHandle, and 3 FeedHandle objects.
+
+It contains instructions about how to handle common exceptions raised during the caching of an individual Feeds, or the aggregation of a Symbol.
+
+Trump has default settings for each type of failure, that get read from the config file when a SymbolManager is instantiated.
+The defaults stored in the config, get attached permanently to the Feed or Symbol upon instatiation.  One can update them,
+at any point.
+
+The catch points for a Feed include:
+
+- APIfailure [of any-kind] 
+- Empty Feed [length of 0]
+- Index Type Problem [Eg. expecting Periods, got DateTimes]
+- Index Property Problem [Eg. expecting 'B', got 'D']
+- Data Type Failure [Eg. expecting floats, got strings]
+- Non-monotonic [Eg. expecting monotonic, got non-monotonic]
+- Other [Eg. Any other kind of problem]
+
+The catch points for a Symbol include:
+
+- CachingOfAnyXFeed [eg. if X feeds fail, do something...where X is a number >= 1, if you set all the Feed handling to anything less than e-mail, this point can raise/e-mail once and only once]
+- Feed Aggregation Problem
+- Validity Check*
+- Other
+
+The ValidityCheck can be skipped during a cache, by passing setting the checkvalidity=False.  Big speed boost.
+
+Upon an exception getting caught, the handle object has the choice to 
+
+- [ ] enabled -> True/False Default, TRUE # this one silences all the rest, and will even ignore for reporting purposes
+- [ ] raise -> True/False Default, FALSE
+- [ ] warn -> True/False Default, FALSE
+- [ ] e-mail -> True/False Default, FALSE
+- [ ] dblog -> True/False Default, FALSE
+- [ ] txtlog -> True/False Default, TRUE
+- [ ] print -> True/False Default, TRUE
+- [ ] report -> True/False Default, TRUE
+
+Setting all to false, is therefore setting ignore to 

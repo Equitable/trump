@@ -37,30 +37,23 @@ validity instructions.
 #
 #        Why?
 
-import pandas as pd
 import datetime as dt
 
+import pandas as pd
 from sqlalchemy import event, Table, Column, ForeignKey, ForeignKeyConstraint,\
-    String, Integer, Float, DateTime, MetaData, \
-    func
-
+    String, Integer, Float, DateTime, MetaData, func
 from sqlalchemy.ext.declarative import declarative_base
-
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.orm.session import object_session
-
 from sqlalchemy.exc import ProgrammingError
-
 from sqlalchemy.sql import and_
-
-from trump.tools import ReprMixin, ProxyDict, isinstanceofany
 from sqlalchemy import create_engine
 
+from trump.tools import ReprMixin, ProxyDict, isinstanceofany
 from trump.extensions.symbol_aggs import apply_row, choose_col
-
 from trump.templating import bFeed, pab, pnab
-
 from trump.options import read_config, read_settings
+
 
 ENGINE_STR = read_config('readwrite')['engine']
 engine = create_engine(ENGINE_STR, echo=False)
@@ -116,6 +109,8 @@ class SymbolManager(object):
             sym = self.get(symbol)
         elif isinstance(symbol, Symbol):
             sym = symbol
+        else:
+            raise Exception("Invalid symbol {}".format((repr(symbol))))
         del sym
         self.ses.commit()
 
@@ -417,6 +412,8 @@ class Symbol(Base, ReprMixin):
                        fnum)
         elif isinstance(obj, Feed):
             fed = obj
+        else:
+            raise Exception("Invalid Feed {}".format(repr(obj)))
         self.feeds.append(fed)
         session.add(fed)
 
@@ -562,6 +559,17 @@ class SymbolValidity(Base, ReprMixin):
         self.logic = logic
         self.key = key
         self.value = value
+
+
+class SymbolHandle(Base, ReprMixin):
+    __tablename__ = "_symbol_handle"
+
+    caching_of_feeds = Column('caching_of_feeds', Integer)
+    feed_aggregation_problem = Column('feed_aggregation_problem', Integer)
+    validity_check = Column('validity_check', Integer)
+    other = Column('other', Integer)
+
+    symbol = relationship("Symbol")
 
 
 class Feed(Base, ReprMixin):
@@ -940,6 +948,27 @@ class FeedValidity(Base, ReprMixin):
         self.key = key
         self.value = value
 
+class FeedHandle(Base, ReprMixin):
+    __tablename__ = "_feed_handle"
+
+    symname = Column('symname', String, primary_key=True)
+    fnum = Column('fnum', Integer, primary_key=True)
+
+    api_failure = Column('api_failure', Integer)
+    empty_feed = Column('empty_feed', Integer)
+    index_type_problem = Column('index_type_problem', Integer)
+    index_property_problem = Column('index_property_problem', Integer)
+    data_type_problem = Column('data_type_problem', Integer)
+    non_monotonic = Column('non_monotonic', Integer)
+    other = Column('other', Integer)
+
+    feed = relationship("Feed")
+
+    fkey = ForeignKeyConstraint([symname, fnum], [Feed.symname, Feed.fnum])
+    __table_args__ = (fkey, {})
+
+    def __init__(self, feed, ):
+        self.feed = feed
 
 class Override(Base, ReprMixin):
     __tablename__ = '_overrides'
