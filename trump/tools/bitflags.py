@@ -3,15 +3,17 @@ Creates the BitFlag object, which enables efficient storage of the boolean
 array for each Handle catch point.
 """
 from collections import OrderedDict as ODict
+import sqlalchemy.types as sqlatypes
 
-
-class BitFlag(object):
+class BitFlag(sqlatypes.TypeDecorator):
     """
     An object to semi-efficiently encode and decode a boolean array
     into and from an an integer representing bitwise logic based flags
     """
     flags = ['enabled', 'raise', 'warn', 'email',
              'dblog', 'txtlog', 'stdout', 'report']
+
+    impl = sqlatypes.Integer
 
     def __init__(self, obj, defaultflags=None):
         """
@@ -120,3 +122,12 @@ class BitFlag(object):
             return BitFlag(other() | self())
         elif isinstance(other, int):
             return BitFlag(other | self())
+
+    def process_bind_param(self, value, dialect):
+        return value.val # or should this be self.val?
+
+    def process_result_value(self, value, dialect):
+        return BitFlag(value)
+
+    def copy(self):
+        return BitFlag(self.val)

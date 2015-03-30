@@ -49,7 +49,7 @@ from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.sql import and_
 from sqlalchemy import create_engine
 
-from trump.tools import ReprMixin, ProxyDict, isinstanceofany
+from trump.tools import ReprMixin, ProxyDict, BitFlag, isinstanceofany
 from trump.extensions.symbol_aggs import apply_row, choose_col
 from trump.templating import bFeed, pab, pnab
 from trump.options import read_config, read_settings
@@ -564,10 +564,10 @@ class SymbolValidity(Base, ReprMixin):
 class SymbolHandle(Base, ReprMixin):
     __tablename__ = "_symbol_handle"
 
-    caching_of_feeds = Column('caching_of_feeds', Integer)
-    feed_aggregation_problem = Column('feed_aggregation_problem', Integer)
-    validity_check = Column('validity_check', Integer)
-    other = Column('other', Integer)
+    caching_of_feeds = Column('caching_of_feeds', BitFlag)
+    feed_aggregation_problem = Column('feed_aggregation_problem', BitFlag)
+    validity_check = Column('validity_check', BitFlag)
+    other = Column('other', BitFlag)
 
     symbol = relationship("Symbol")
 
@@ -954,13 +954,13 @@ class FeedHandle(Base, ReprMixin):
     symname = Column('symname', String, primary_key=True)
     fnum = Column('fnum', Integer, primary_key=True)
 
-    api_failure = Column('api_failure', Integer)
-    empty_feed = Column('empty_feed', Integer)
-    index_type_problem = Column('index_type_problem', Integer)
-    index_property_problem = Column('index_property_problem', Integer)
-    data_type_problem = Column('data_type_problem', Integer)
-    non_monotonic = Column('non_monotonic', Integer)
-    other = Column('other', Integer)
+    api_failure = Column('api_failure', BitFlag)
+    empty_feed = Column('empty_feed', BitFlag)
+    index_type_problem = Column('index_type_problem', BitFlag)
+    index_property_problem = Column('index_property_problem', BitFlag)
+    data_type_problem = Column('data_type_problem', BitFlag)
+    non_monotonic = Column('non_monotonic', BitFlag)
+    other = Column('other', BitFlag)
 
     feed = relationship("Feed")
 
