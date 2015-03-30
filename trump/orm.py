@@ -49,7 +49,8 @@ from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.sql import and_
 from sqlalchemy import create_engine
 
-from trump.tools import ReprMixin, ProxyDict, BitFlag, isinstanceofany
+from trump.tools import ReprMixin, ProxyDict, BitFlag, BitFlagType, \
+    isinstanceofany
 from trump.extensions.symbol_aggs import apply_row, choose_col
 from trump.templating import bFeed, pab, pnab
 from trump.options import read_config, read_settings
@@ -57,7 +58,7 @@ from trump.options import read_config, read_settings
 
 ENGINE_STR = read_config('readwrite')['engine']
 engine = create_engine(ENGINE_STR, echo=False)
-
+print ENGINE_STR
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
 
@@ -101,6 +102,10 @@ class SymbolManager(object):
             self.ses.commit()
         sym = Symbol(name, description, freq, units, agg_method)
         sym.add_alias(name)
+
+        sym.handle = SymbolHandle(sym)
+        self.ses.commit()
+
         return sym
 
     def delete(self, symbol):
@@ -161,6 +166,8 @@ class Symbol(Base, ReprMixin):
     freq = Column('freq', String)
     units = Column('units', String)
     agg_method = Column('agg_method', String)
+
+    handle = relationship("SymbolHandle", uselist=False, backref='_symbols', cascade=ADO)
 
     tags = relationship("SymbolTag", cascade=ADO)
     aliases = relationship("SymbolAlias", cascade=ADO)
@@ -564,13 +571,20 @@ class SymbolValidity(Base, ReprMixin):
 class SymbolHandle(Base, ReprMixin):
     __tablename__ = "_symbol_handle"
 
-    caching_of_feeds = Column('caching_of_feeds', BitFlag)
-    feed_aggregation_problem = Column('feed_aggregation_problem', BitFlag)
-    validity_check = Column('validity_check', BitFlag)
-    other = Column('other', BitFlag)
+    symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
+                     primary_key=True)
 
-    symbol = relationship("Symbol")
+    caching_of_feeds = Column('caching_of_feeds', BitFlagType)
+    feed_aggregation_problem = Column('feed_aggregation_problem', BitFlagType)
+    validity_check = Column('validity_check', BitFlagType)
+    other = Column('other', BitFlagType)
 
+    def __init__(self,symbol):
+        self.symname = symbol.name
+        self.caching_of_feeds = BitFlag(2)
+        self.feed_aggregation_problem = BitFlag(3)
+        self.validity_check = BitFlag(10)
+        self.other = BitFlag(0)
 
 class Feed(Base, ReprMixin):
     """
@@ -954,13 +968,13 @@ class FeedHandle(Base, ReprMixin):
     symname = Column('symname', String, primary_key=True)
     fnum = Column('fnum', Integer, primary_key=True)
 
-    api_failure = Column('api_failure', BitFlag)
-    empty_feed = Column('empty_feed', BitFlag)
-    index_type_problem = Column('index_type_problem', BitFlag)
-    index_property_problem = Column('index_property_problem', BitFlag)
-    data_type_problem = Column('data_type_problem', BitFlag)
-    non_monotonic = Column('non_monotonic', BitFlag)
-    other = Column('other', BitFlag)
+    api_failure = Column('api_failure', BitFlagType)
+    empty_feed = Column('empty_feed', BitFlagType)
+    index_type_problem = Column('index_type_problem', BitFlagType)
+    index_property_problem = Column('index_property_problem', BitFlagType)
+    data_type_problem = Column('data_type_problem', BitFlagType)
+    non_monotonic = Column('non_monotonic', BitFlagType)
+    other = Column('other', BitFlagType)
 
     feed = relationship("Feed")
 
@@ -1007,4 +1021,15 @@ except ProgrammingError as pgerr:
     raise
 
 if __name__ == '__main__':
-    pass
+    sm = SymbolManager()
+
+    oil = sm.create('oil')
+
+    print oil.handle.caching_of_feeds
+    oil.handle.caching_of_feeds['dblog'] = True
+    print oil.handle.caching_of_feeds
+    print oil.handle
+
+    sm.complete()
+
+    sm.finish()
