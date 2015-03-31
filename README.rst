@@ -133,7 +133,7 @@ Read the latest on `ReadTheDocs.org <http://trump.readthedocs.org>`_
 Communication
 =============
 
-* Questions, Bugs, Ideas & Requests -> GitHub Issues or InvTech@equitable.ca
+* Questions, Bugs, Ideas, Requests or just say "Hi" -> GitHub Issues, InvTech@equitable.ca, or jeffrey.mclarty@gmail.com
 * Contribute Code -> New Branch + GitHub Pull Request
 * Chat -> `Gitter <https://gitter.im/Equitable/trump>`_
 
