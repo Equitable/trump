@@ -574,6 +574,7 @@ class SymbolHandle(Base, ReprMixin):
     symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
                      primary_key=True)
 
+    egint = Column('egint', Integer)
     caching_of_feeds = Column('caching_of_feeds', BitFlagType)
     feed_aggregation_problem = Column('feed_aggregation_problem', BitFlagType)
     validity_check = Column('validity_check', BitFlagType)
@@ -581,7 +582,8 @@ class SymbolHandle(Base, ReprMixin):
 
     def __init__(self,symbol):
         self.symname = symbol.name
-        self.caching_of_feeds = BitFlag(2)
+        self.egint = 5
+        self.caching_of_feeds = BitFlag(3)
         self.feed_aggregation_problem = BitFlag(3)
         self.validity_check = BitFlag(10)
         self.other = BitFlag(0)
@@ -1023,13 +1025,48 @@ except ProgrammingError as pgerr:
 if __name__ == '__main__':
     sm = SymbolManager()
 
+    print "Getting Oil"
+
     oil = sm.create('oil')
 
-    print oil.handle.caching_of_feeds
-    oil.handle.caching_of_feeds['dblog'] = True
+    print oil
+
+    from copy import copy
+
+    print "The session should be clean:"
+    print sm.ses.dirty
+    #oil.handle.egint = 10
+    #print sm.ses.dirty
+
     print oil.handle.caching_of_feeds
     print oil.handle
 
+    #oil.handle.egint = 55
+    #modify
+    #oil.handle.caching_of_feeds = BitFlag(34)
+
+    print oil.handle.caching_of_feeds
+    print oil.handle.caching_of_feeds.val
+    print oil.handle
+
+    print "The id of caching_of_feeds is {}".format(id(oil.handle.caching_of_feeds))
+    oil.handle.caching_of_feeds['email'] = True
+    print "The id of caching_of_feeds is {}".format(id(oil.handle.caching_of_feeds))
+    oil.handle.caching_of_feeds = copy(oil.handle.caching_of_feeds)
+    print "The id of caching_of_feeds is {}".format(id(oil.handle.caching_of_feeds))
+
+    oil.handle.egint = 56
+
+    print oil.handle.caching_of_feeds
+    print oil.handle.caching_of_feeds.val
+    print oil.handle
+
+    #print oil.handle.caching_of_feeds
+    print sm.ses.dirty
+
+    #print oil.handle
+
     sm.complete()
 
+    print sm.ses.dirty
     sm.finish()

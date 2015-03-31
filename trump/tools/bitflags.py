@@ -5,8 +5,12 @@ array for each Handle catch point.
 from collections import OrderedDict as ODict
 from sqlalchemy.types import TypeDecorator, Integer
 
+from sqlalchemy import Column
 
-class BitFlag(TypeDecorator):
+class BitFlagColumn(Column):
+    pass
+
+class BitFlag(object):
     """
     An object to semi-efficiently encode and decode a boolean array
     into and from an an integer representing bitwise logic based flags
@@ -14,9 +18,7 @@ class BitFlag(TypeDecorator):
     flags = ['enabled', 'raise', 'warn', 'email',
              'dblog', 'txtlog', 'stdout', 'report']
 
-    impl = Integer
-
-    def __init__(self, obj, defaultflags=None):
+    def __init__(self,obj, defaultflags=None):
         """
         :param obj, (int, dict):
             either the decimal form of the bitwise array, or
@@ -35,18 +37,21 @@ class BitFlag(TypeDecorator):
         # the msb * 2 to get one more digit than
         # the number of flags
 
-        self.msb = 2 ** len(BitFlag.flags)
+        self.msb = 2 ** (len(BitFlag.flags) + 1)
 
         # if an integer was passed...
         # convert it to a boolean array
         if isinstance(obj, int):
+            #print "obj = {}".format(obj)
             self.val = obj % (self.msb >> 1)
-            self.val += self.msb
+            #print "self.val = {}".format(self.val)
+            tmp = self.val + self.msb
 
             self.bools = []
-            while self.val != 0:
-                self.bools.append(self.val % 2 == 1)
-                self.val >>= 1
+            while tmp != 0:
+                self.bools.append(tmp % 2 == 1)
+                tmp >>= 1
+                #print "  tmp = {}".format(tmp)
             self.bools = self.bools[:-1]
 
             for i, key in enumerate(BitFlag.flags):
@@ -94,8 +99,8 @@ class BitFlag(TypeDecorator):
         tmp = [b.upper() if self[b] else b for b in BitFlag.flags]
         return " ".join(tmp)
 
-    def __repr__(self):
-        return "BitFlag({})".format(self.val)
+    #def __repr__(self):
+    #    return "BitFlag({})".format(self.val)
 
     def __getitem__(self, key):
         return self.__getattribute__(key)
@@ -124,15 +129,29 @@ class BitFlag(TypeDecorator):
         elif isinstance(other, int):
             return BitFlag(other | self())
 
+
 class BitFlagType(TypeDecorator):
 
     impl = Integer
 
     def process_bind_param(self, value, dialect):
-        return value.val # or should this be self.val?
-
+        if value is not None:
+            value = value.val
+        return value
     def process_result_value(self, value, dialect):
-        return BitFlag(value)
+        if value is not None:
+            value = BitFlag(value)
+        return value
 
     def copy(self):
         return BitFlagType()
+
+if __name__ == '__main__':
+    for v in [0,1,2,3,127,128,129,255,256,257]:
+        print str(v) * 20
+        b = BitFlag(v)
+        print b
+        print b.val
+        print b.asdict()
+        print b.bools
+        print b.bin
