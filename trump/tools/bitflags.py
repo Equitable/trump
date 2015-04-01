@@ -5,12 +5,10 @@ array for each Handle catch point.
 from collections import OrderedDict as ODict
 from sqlalchemy.types import TypeDecorator, Integer
 
-from sqlalchemy import Column
+from sqlalchemy.ext.mutable import Mutable
 
-class BitFlagColumn(Column):
-    pass
 
-class BitFlag(object):
+class BitFlag(Mutable, object):
     """
     An object to semi-efficiently encode and decode a boolean array
     into and from an an integer representing bitwise logic based flags
@@ -18,7 +16,7 @@ class BitFlag(object):
     flags = ['enabled', 'raise', 'warn', 'email',
              'dblog', 'txtlog', 'stdout', 'report']
 
-    def __init__(self,obj, defaultflags=None):
+    def __init__(self, obj, defaultflags=None):
         """
         :param obj, (int, dict):
             either the decimal form of the bitwise array, or
@@ -42,16 +40,13 @@ class BitFlag(object):
         # if an integer was passed...
         # convert it to a boolean array
         if isinstance(obj, int):
-            #print "obj = {}".format(obj)
             self.val = obj % (self.msb >> 1)
-            #print "self.val = {}".format(self.val)
             tmp = self.val + self.msb
 
             self.bools = []
             while tmp != 0:
                 self.bools.append(tmp % 2 == 1)
                 tmp >>= 1
-                #print "  tmp = {}".format(tmp)
             self.bools = self.bools[:-1]
 
             for i, key in enumerate(BitFlag.flags):
@@ -81,6 +76,15 @@ class BitFlag(object):
                 if val:
                     self.val += 2 ** i
 
+    @classmethod
+    def coerce(cls, key, value):
+        if not isinstance(value, BitFlag):
+            if isinstance(value, int):
+                return BitFlag(value)
+            return Mutable.coerce(key, value)
+        else:
+            return value
+
     @property
     def bin(self):
         """ the binary equivalent """
@@ -99,8 +103,8 @@ class BitFlag(object):
         tmp = [b.upper() if self[b] else b for b in BitFlag.flags]
         return " ".join(tmp)
 
-    #def __repr__(self):
-    #    return "BitFlag({})".format(self.val)
+    def __repr__(self):
+        return "BitFlag({})".format(self.val)
 
     def __getitem__(self, key):
         return self.__getattribute__(key)
@@ -113,6 +117,8 @@ class BitFlag(object):
         for i, val in enumerate(self.bools):
             if val:
                 self.val += 2 ** i
+
+        self.changed()
 
     def __call__(self):
         return self.val
@@ -131,6 +137,7 @@ class BitFlag(object):
 
 
 class BitFlagType(TypeDecorator):
+    """ SQLAlchemy type definition for the BitFlag object """
 
     impl = Integer
 
@@ -138,6 +145,7 @@ class BitFlagType(TypeDecorator):
         if value is not None:
             value = value.val
         return value
+
     def process_result_value(self, value, dialect):
         if value is not None:
             value = BitFlag(value)
@@ -147,11 +155,11 @@ class BitFlagType(TypeDecorator):
         return BitFlagType()
 
 if __name__ == '__main__':
-    for v in [0,1,2,3,127,128,129,255,256,257]:
+    for v in [0, 1, 2, 3, 127, 128, 129, 255, 256, 257]:
         print str(v) * 20
-        b = BitFlag(v)
-        print b
-        print b.val
-        print b.asdict()
-        print b.bools
-        print b.bin
+        bf = BitFlag(v)
+        print bf
+        print bf.val
+        print bf.asdict()
+        print bf.bools
+        print bf.bin

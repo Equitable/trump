@@ -55,6 +55,7 @@ from trump.extensions.symbol_aggs import apply_row, choose_col
 from trump.templating import bFeed, pab, pnab
 from trump.options import read_config, read_settings
 
+BitFlag.associate_with(BitFlagType)
 
 ENGINE_STR = read_config('readwrite')['engine']
 engine = create_engine(ENGINE_STR, echo=False)
@@ -1038,8 +1039,8 @@ if __name__ == '__main__':
     #oil.handle.egint = 10
     #print sm.ses.dirty
 
-    print oil.handle.caching_of_feeds
-    print oil.handle
+    #print oil.handle.caching_of_feeds
+    #print oil.handle
 
     #oil.handle.egint = 55
     #modify
@@ -1049,13 +1050,14 @@ if __name__ == '__main__':
     print oil.handle.caching_of_feeds.val
     print oil.handle
 
-    print "The id of caching_of_feeds is {}".format(id(oil.handle.caching_of_feeds))
-    oil.handle.caching_of_feeds['email'] = True
-    print "The id of caching_of_feeds is {}".format(id(oil.handle.caching_of_feeds))
-    oil.handle.caching_of_feeds = copy(oil.handle.caching_of_feeds)
-    print "The id of caching_of_feeds is {}".format(id(oil.handle.caching_of_feeds))
+    #print "The id of caching_of_feeds is {}".format(id(oil.handle.caching_of_feeds))
+    oil.handle.caching_of_feeds['txtlog'] = True
+    oil.handle.caching_of_feeds['txtlog'] = False
+    #print "The id of caching_of_feeds is {}".format(id(oil.handle.caching_of_feeds))
+    #oil.handle.caching_of_feeds = copy(oil.handle.caching_of_feeds)
+    #print "The id of caching_of_feeds is {}".format(id(oil.handle.caching_of_feeds))
 
-    oil.handle.egint = 56
+    #oil.handle.egint = 56
 
     print oil.handle.caching_of_feeds
     print oil.handle.caching_of_feeds.val
