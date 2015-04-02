@@ -1,6 +1,8 @@
 Object Model
 ============
 
+.. image:: ../sqla-orm.png
+
 .. autoclass:: trump.orm.SymbolManager
    :members: create, delete, get, finish
 
