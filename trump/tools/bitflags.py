@@ -1,6 +1,7 @@
 """
-Creates the BitFlag object, which enables efficient storage of the boolean
-array for each Handle catch point.
+Creates the BitFlag and BitFlagType object,
+which enables efficient storage of the boolean
+array for each Handle catch points.
 """
 from collections import OrderedDict as ODict
 from sqlalchemy.types import TypeDecorator, Integer
@@ -10,11 +11,11 @@ from sqlalchemy.ext.mutable import Mutable
 
 class BitFlag(Mutable, object):
     """
-    An object to semi-efficiently encode and decode a boolean array
-    into and from an an integer representing bitwise logic based flags
+    Semi-efficiently encode and decode a boolean array
+    as an an integer representing bitwise logic based flags
     """
-    flags = ['enabled', 'raise', 'warn', 'email',
-             'dblog', 'txtlog', 'stdout', 'report']
+    flags = ['raise', 'warn', 'email', 'dblog',
+             'txtlog', 'stdout', 'report']
 
     def __init__(self, obj, defaultflags=None):
         """
@@ -54,8 +55,9 @@ class BitFlag(Mutable, object):
 
         # a dict of the form {flags : bool, } was passed...
         # convert it to the boolean array just the same.
-        elif isinstance(obj, dict):
-
+        elif isinstance(obj, (dict,list)):
+            if isinstance(obj, list):
+                obj = dict(zip(obj,[True] * len(obj)))
             # if there are defaultflags, use them, otherwise assume all flages
             # are unset
             if defaultflags:
@@ -163,3 +165,5 @@ if __name__ == '__main__':
         print bf.asdict()
         print bf.bools
         print bf.bin
+
+    bf = BitFlag(['enabled','stdout','report'])

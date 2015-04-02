@@ -554,19 +554,21 @@ class SymbolValidity(Base, ReprMixin):
 
     symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
                      primary_key=True)
-    checkpoint = Column('checkpoint', String, primary_key=True)
-    logic = Column('logic', String, primary_key=True)
-    key = Column('key', String, primary_key=True)
-    value = Column('value', String)
+
+    vid = Column('vid', Integer, primary_key=True, nullable=False)
+
+    validator = Column('validator', String, nullable=False)
+    argint = Column('argint', Integer)
+    argstr = Column('argstr', String)
 
     symbol = relationship("Symbol")
 
-    def __init__(self, symbol, checkpoint, logic, key, value=None):
+    def __init__(self, symbol, validator, argint=None, argstr=None):
         self.symbol = symbol
-        self.checkpoint = checkpoint
-        self.logic = logic
-        self.key = key
-        self.value = value
+
+        self.validator = validator
+        self.argint = argint
+        self.argstr = argstr
 
 
 class SymbolHandle(Base, ReprMixin):
@@ -575,19 +577,20 @@ class SymbolHandle(Base, ReprMixin):
     symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
                      primary_key=True)
 
-    egint = Column('egint', Integer)
     caching_of_feeds = Column('caching_of_feeds', BitFlagType)
     feed_aggregation_problem = Column('feed_aggregation_problem', BitFlagType)
     validity_check = Column('validity_check', BitFlagType)
     other = Column('other', BitFlagType)
 
+    symbol = relationship("Symbol")
+
     def __init__(self,symbol):
-        self.symname = symbol.name
-        self.egint = 5
-        self.caching_of_feeds = BitFlag(3)
-        self.feed_aggregation_problem = BitFlag(3)
-        self.validity_check = BitFlag(10)
-        self.other = BitFlag(0)
+        self.symbol = symbol
+
+        self.caching_of_feeds = BitFlag(0)
+        self.feed_aggregation_problem = BitFlag(['stdout'])
+        self.validity_check = BitFlag(['report'])
+        self.other = BitFlag(['raise'])
 
 class Feed(Base, ReprMixin):
     """
@@ -603,11 +606,12 @@ class Feed(Base, ReprMixin):
     state = Column('state', String, nullable=False)
     ftype = Column('ftype', String, nullable=False)
 
+    handle = relationship("FeedHandle", uselist=False, backref='_feeds', cascade=ADO)
+
     tags = relationship("FeedTag", cascade=ADO)
     sourcing = relationship("FeedSource", lazy="dynamic", cascade=ADO)
     meta = relationship("FeedMeta", lazy="dynamic", cascade=ADO)
     munging = relationship("FeedMunge", lazy="dynamic", cascade=ADO)
-    validity = relationship("FeedValidity", lazy="dynamic", cascade=ADO)
 
     symbol = relationship("Symbol")
 
@@ -679,14 +683,6 @@ class Feed(Base, ReprMixin):
                         val = value
                     fmg.mungeargs.append(FeedMungeArg(arg, val, feedmunge=fmg))
                 self.munging.append(fmg)
-
-        if validity:
-            for checkpoint in validity:
-                for logic in checkpoint:
-                    for key in logic:
-                        self.validity.append(FeedValidity(checkpoint,
-                                                          logic, key,
-                                                          logic[key]))
 
     def cache(self):
 
@@ -941,30 +937,6 @@ class FeedMungeArg(Base, ReprMixin):
         self.value = value
         self.feedmunge = feedmunge
 
-
-class FeedValidity(Base, ReprMixin):
-    __tablename__ = "_feed_validity"
-
-    symname = Column('symname', String, primary_key=True)
-    fnum = Column('fnum', Integer, primary_key=True)
-    checkpoint = Column('checkpoint', String, primary_key=True)
-    logic = Column('logic', String, primary_key=True)
-    key = Column('key', String, primary_key=True)
-
-    feed = relationship("Feed")
-
-    value = Column('value', String)
-
-    fkey = ForeignKeyConstraint([symname, fnum], [Feed.symname, Feed.fnum])
-    __table_args__ = (fkey, {})
-
-    def __init__(self, feed, checkpoint, logic, key, value=None):
-        self.feed = feed
-        self.checkpoint = checkpoint
-        self.logic = logic
-        self.key = key
-        self.value = value
-
 class FeedHandle(Base, ReprMixin):
     __tablename__ = "_feed_handle"
 
@@ -984,8 +956,17 @@ class FeedHandle(Base, ReprMixin):
     fkey = ForeignKeyConstraint([symname, fnum], [Feed.symname, Feed.fnum])
     __table_args__ = (fkey, {})
 
-    def __init__(self, feed, ):
+    def __init__(self, feed):
         self.feed = feed
+
+        self.api_failure = BitFlag(['raise'])
+        self.empty_feed = BitFlag(['stdout','report'])
+        self.index_type_problem = BitFlag(['stdout','report'])
+        self.index_property_problem = BitFlag(['stdout'])
+        self.data_type_problem = BitFlag(['stdout','report'])
+        self.non_monotonic = BitFlag(['raise'])
+        self.other = BitFlag(['raised'])
+
 
 class Override(Base, ReprMixin):
     __tablename__ = '_overrides'
@@ -1026,47 +1007,15 @@ except ProgrammingError as pgerr:
 if __name__ == '__main__':
     sm = SymbolManager()
 
-    print "Getting Oil"
-
     oil = sm.create('oil')
 
-    print oil
-
-    from copy import copy
-
-    print "The session should be clean:"
     print sm.ses.dirty
-    #oil.handle.egint = 10
-    #print sm.ses.dirty
 
-    #print oil.handle.caching_of_feeds
-    #print oil.handle
-
-    #oil.handle.egint = 55
-    #modify
-    #oil.handle.caching_of_feeds = BitFlag(34)
-
-    print oil.handle.caching_of_feeds
-    print oil.handle.caching_of_feeds.val
-    print oil.handle
-
-    #print "The id of caching_of_feeds is {}".format(id(oil.handle.caching_of_feeds))
     oil.handle.caching_of_feeds['txtlog'] = True
-    oil.handle.caching_of_feeds['txtlog'] = False
-    #print "The id of caching_of_feeds is {}".format(id(oil.handle.caching_of_feeds))
-    #oil.handle.caching_of_feeds = copy(oil.handle.caching_of_feeds)
-    #print "The id of caching_of_feeds is {}".format(id(oil.handle.caching_of_feeds))
-
-    #oil.handle.egint = 56
-
-    print oil.handle.caching_of_feeds
-    print oil.handle.caching_of_feeds.val
-    print oil.handle
-
-    #print oil.handle.caching_of_feeds
+    # oil.handle.caching_of_feeds = BitFlag(55)
     print sm.ses.dirty
 
-    #print oil.handle
+    print oil.handle.symbol
 
     sm.complete()
 

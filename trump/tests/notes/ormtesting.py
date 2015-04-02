@@ -34,3 +34,59 @@
      SESSION.commit()
  SESSION.commit()
  mysymbol = SESSION.query(Symbol).all()[-1]
+
+
+
+
+
+
+###########################3333
+
+    sm = SymbolManager()
+
+    print "Getting Oil"
+
+    oil = sm.create('oil')
+
+    print oil
+
+    from copy import copy
+
+    print "The session should be clean:"
+    print sm.ses.dirty
+    #oil.handle.egint = 10
+    #print sm.ses.dirty
+
+    #print oil.handle.caching_of_feeds
+    #print oil.handle
+
+    #oil.handle.egint = 55
+    #modify
+    #oil.handle.caching_of_feeds = BitFlag(34)
+
+    print oil.handle.caching_of_feeds
+    print oil.handle.caching_of_feeds.val
+    print oil.handle
+
+    #print "The id of caching_of_feeds is {}".format(id(oil.handle.caching_of_feeds))
+    oil.handle.caching_of_feeds['txtlog'] = True
+    oil.handle.caching_of_feeds['txtlog'] = False
+    #print "The id of caching_of_feeds is {}".format(id(oil.handle.caching_of_feeds))
+    #oil.handle.caching_of_feeds = copy(oil.handle.caching_of_feeds)
+    #print "The id of caching_of_feeds is {}".format(id(oil.handle.caching_of_feeds))
+
+    #oil.handle.egint = 56
+
+    print oil.handle.caching_of_feeds
+    print oil.handle.caching_of_feeds.val
+    print oil.handle
+
+    #print oil.handle.caching_of_feeds
+    print sm.ses.dirty
+
+    #print oil.handle
+
+    sm.complete()
+
+    print sm.ses.dirty
+    sm.finish()
