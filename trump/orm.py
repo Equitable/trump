@@ -37,34 +37,29 @@ validity instructions.
 #
 #        Why?
 
-import pandas as pd
 import datetime as dt
 
+import pandas as pd
 from sqlalchemy import event, Table, Column, ForeignKey, ForeignKeyConstraint,\
-    String, Integer, Float, DateTime, MetaData, \
-    func
-
+    String, Integer, Float, DateTime, MetaData, func
 from sqlalchemy.ext.declarative import declarative_base
-
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.orm.session import object_session
-
 from sqlalchemy.exc import ProgrammingError
-
 from sqlalchemy.sql import and_
-
-from trump.tools import ReprMixin, ProxyDict, isinstanceofany
 from sqlalchemy import create_engine
 
+from trump.tools import ReprMixin, ProxyDict, BitFlag, BitFlagType, \
+    isinstanceofany
 from trump.extensions.symbol_aggs import apply_row, choose_col
-
 from trump.templating import bFeed, pab, pnab
-
 from trump.options import read_config, read_settings
+
+BitFlag.associate_with(BitFlagType)
 
 ENGINE_STR = read_config('readwrite')['engine']
 engine = create_engine(ENGINE_STR, echo=False)
-
+print ENGINE_STR
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
 
@@ -108,6 +103,10 @@ class SymbolManager(object):
             self.ses.commit()
         sym = Symbol(name, description, freq, units, agg_method)
         sym.add_alias(name)
+
+        sym.handle = SymbolHandle(sym)
+        self.ses.commit()
+
         return sym
 
     def delete(self, symbol):
@@ -116,6 +115,8 @@ class SymbolManager(object):
             sym = self.get(symbol)
         elif isinstance(symbol, Symbol):
             sym = symbol
+        else:
+            raise Exception("Invalid symbol {}".format((repr(symbol))))
         del sym
         self.ses.commit()
 
@@ -166,6 +167,8 @@ class Symbol(Base, ReprMixin):
     freq = Column('freq', String)
     units = Column('units', String)
     agg_method = Column('agg_method', String)
+
+    handle = relationship("SymbolHandle", uselist=False, backref='_symbols', cascade=ADO)
 
     tags = relationship("SymbolTag", cascade=ADO)
     aliases = relationship("SymbolAlias", cascade=ADO)
@@ -417,6 +420,8 @@ class Symbol(Base, ReprMixin):
                        fnum)
         elif isinstance(obj, Feed):
             fed = obj
+        else:
+            raise Exception("Invalid Feed {}".format(repr(obj)))
         self.feeds.append(fed)
         session.add(fed)
 
@@ -549,20 +554,43 @@ class SymbolValidity(Base, ReprMixin):
 
     symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
                      primary_key=True)
-    checkpoint = Column('checkpoint', String, primary_key=True)
-    logic = Column('logic', String, primary_key=True)
-    key = Column('key', String, primary_key=True)
-    value = Column('value', String)
+
+    vid = Column('vid', Integer, primary_key=True, nullable=False)
+
+    validator = Column('validator', String, nullable=False)
+    argint = Column('argint', Integer)
+    argstr = Column('argstr', String)
 
     symbol = relationship("Symbol")
 
-    def __init__(self, symbol, checkpoint, logic, key, value=None):
+    def __init__(self, symbol, validator, argint=None, argstr=None):
         self.symbol = symbol
-        self.checkpoint = checkpoint
-        self.logic = logic
-        self.key = key
-        self.value = value
 
+        self.validator = validator
+        self.argint = argint
+        self.argstr = argstr
+
+
+class SymbolHandle(Base, ReprMixin):
+    __tablename__ = "_symbol_handle"
+
+    symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
+                     primary_key=True)
+
+    caching_of_feeds = Column('caching_of_feeds', BitFlagType)
+    feed_aggregation_problem = Column('feed_aggregation_problem', BitFlagType)
+    validity_check = Column('validity_check', BitFlagType)
+    other = Column('other', BitFlagType)
+
+    symbol = relationship("Symbol")
+
+    def __init__(self,symbol):
+        self.symbol = symbol
+
+        self.caching_of_feeds = BitFlag(0)
+        self.feed_aggregation_problem = BitFlag(['stdout'])
+        self.validity_check = BitFlag(['report'])
+        self.other = BitFlag(['raise'])
 
 class Feed(Base, ReprMixin):
     """
@@ -578,11 +606,12 @@ class Feed(Base, ReprMixin):
     state = Column('state', String, nullable=False)
     ftype = Column('ftype', String, nullable=False)
 
+    handle = relationship("FeedHandle", uselist=False, backref='_feeds', cascade=ADO)
+
     tags = relationship("FeedTag", cascade=ADO)
     sourcing = relationship("FeedSource", lazy="dynamic", cascade=ADO)
     meta = relationship("FeedMeta", lazy="dynamic", cascade=ADO)
     munging = relationship("FeedMunge", lazy="dynamic", cascade=ADO)
-    validity = relationship("FeedValidity", lazy="dynamic", cascade=ADO)
 
     symbol = relationship("Symbol")
 
@@ -654,14 +683,6 @@ class Feed(Base, ReprMixin):
                         val = value
                     fmg.mungeargs.append(FeedMungeArg(arg, val, feedmunge=fmg))
                 self.munging.append(fmg)
-
-        if validity:
-            for checkpoint in validity:
-                for logic in checkpoint:
-                    for key in logic:
-                        self.validity.append(FeedValidity(checkpoint,
-                                                          logic, key,
-                                                          logic[key]))
 
     def cache(self):
 
@@ -916,29 +937,35 @@ class FeedMungeArg(Base, ReprMixin):
         self.value = value
         self.feedmunge = feedmunge
 
-
-class FeedValidity(Base, ReprMixin):
-    __tablename__ = "_feed_validity"
+class FeedHandle(Base, ReprMixin):
+    __tablename__ = "_feed_handle"
 
     symname = Column('symname', String, primary_key=True)
     fnum = Column('fnum', Integer, primary_key=True)
-    checkpoint = Column('checkpoint', String, primary_key=True)
-    logic = Column('logic', String, primary_key=True)
-    key = Column('key', String, primary_key=True)
+
+    api_failure = Column('api_failure', BitFlagType)
+    empty_feed = Column('empty_feed', BitFlagType)
+    index_type_problem = Column('index_type_problem', BitFlagType)
+    index_property_problem = Column('index_property_problem', BitFlagType)
+    data_type_problem = Column('data_type_problem', BitFlagType)
+    non_monotonic = Column('non_monotonic', BitFlagType)
+    other = Column('other', BitFlagType)
 
     feed = relationship("Feed")
-
-    value = Column('value', String)
 
     fkey = ForeignKeyConstraint([symname, fnum], [Feed.symname, Feed.fnum])
     __table_args__ = (fkey, {})
 
-    def __init__(self, feed, checkpoint, logic, key, value=None):
+    def __init__(self, feed):
         self.feed = feed
-        self.checkpoint = checkpoint
-        self.logic = logic
-        self.key = key
-        self.value = value
+
+        self.api_failure = BitFlag(['raise'])
+        self.empty_feed = BitFlag(['stdout','report'])
+        self.index_type_problem = BitFlag(['stdout','report'])
+        self.index_property_problem = BitFlag(['stdout'])
+        self.data_type_problem = BitFlag(['stdout','report'])
+        self.non_monotonic = BitFlag(['raise'])
+        self.other = BitFlag(['raised'])
 
 
 class Override(Base, ReprMixin):
@@ -978,4 +1005,19 @@ except ProgrammingError as pgerr:
     raise
 
 if __name__ == '__main__':
-    pass
+    sm = SymbolManager()
+
+    oil = sm.create('oil')
+
+    print sm.ses.dirty
+
+    oil.handle.caching_of_feeds['txtlog'] = True
+    # oil.handle.caching_of_feeds = BitFlag(55)
+    print sm.ses.dirty
+
+    print oil.handle.symbol
+
+    sm.complete()
+
+    print sm.ses.dirty
+    sm.finish()

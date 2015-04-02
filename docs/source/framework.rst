@@ -20,6 +20,8 @@ Below is for illustrative purposes of the short-term plan for Trump.
          self.fnum = int
          self.state = str # ON/OFF 
          self.ftype = str # Feed type
+
+         self.handle = [int, int, int, ...]  #where each int, is actually a BitFlag representing what to do upon certain exceptions.
          
          self.tags = [str,]
          
@@ -31,7 +33,7 @@ Below is for illustrative purposes of the short-term plan for Trump.
          # feed. Eg. 'stype'.
          self.meta = {str : str,...}                       # { attr : value,}
          
-         #self.validity = {(str, str, str) : str,...}      # { (checkpoint, logic, key) : value,}    
+         #self.validity = ['function_name',int, str],]      # Simplified, for now...   
          self.munging = {(int, str) : {str : str,...},...} # { (order, mtype, method) : {argument : value,},}
         
    class Symbol(object):
@@ -40,6 +42,8 @@ Below is for illustrative purposes of the short-term plan for Trump.
          self.description = str
          self.freq = str         
          self.units = str
+
+         self.handle = [int, int, int, int]  #where each int, is actually a BitFlag representing what to do upon common exceptions.
          
          self.agg_method = str                      # PRIORITY, etc.
                                                     
@@ -48,7 +52,6 @@ Below is for illustrative purposes of the short-term plan for Trump.
                                                     
          self.feeds = [(int, Feed),...]             # [ (fnum, Feed),]
                                                     
-         self.validity = {(str, str, str) : str,...}# { (checkpoint, logic, key) : value,}
          
          self.datatable = Table(index,data,[Feed.data,Feed.data,...])
          

@@ -1,17 +1,21 @@
 """
-Creates the BitFlag object, which enables efficient storage of the boolean
-array for each Handle catch point.
+Creates the BitFlag and BitFlagType object,
+which enables efficient storage of the boolean
+array for each Handle catch points.
 """
 from collections import OrderedDict as ODict
+from sqlalchemy.types import TypeDecorator, Integer
+
+from sqlalchemy.ext.mutable import Mutable
 
 
-class BitFlag(object):
+class BitFlag(Mutable, object):
     """
-    An object to semi-efficiently encode and decode a boolean array
-    into and from an an integer representing bitwise logic based flags
+    Semi-efficiently encode and decode a boolean array
+    as an an integer representing bitwise logic based flags
     """
-    flags = ['enabled', 'raise', 'warn', 'email',
-             'dblog', 'txtlog', 'stdout', 'report']
+    flags = ['raise', 'warn', 'email', 'dblog',
+             'txtlog', 'stdout', 'report']
 
     def __init__(self, obj, defaultflags=None):
         """
@@ -32,18 +36,18 @@ class BitFlag(object):
         # the msb * 2 to get one more digit than
         # the number of flags
 
-        self.msb = 2 ** len(BitFlag.flags)
+        self.msb = 2 ** (len(BitFlag.flags) + 1)
 
         # if an integer was passed...
         # convert it to a boolean array
         if isinstance(obj, int):
             self.val = obj % (self.msb >> 1)
-            self.val += self.msb
+            tmp = self.val + self.msb
 
             self.bools = []
-            while self.val != 0:
-                self.bools.append(self.val % 2 == 1)
-                self.val >>= 1
+            while tmp != 0:
+                self.bools.append(tmp % 2 == 1)
+                tmp >>= 1
             self.bools = self.bools[:-1]
 
             for i, key in enumerate(BitFlag.flags):
@@ -51,8 +55,9 @@ class BitFlag(object):
 
         # a dict of the form {flags : bool, } was passed...
         # convert it to the boolean array just the same.
-        elif isinstance(obj, dict):
-
+        elif isinstance(obj, (dict,list)):
+            if isinstance(obj, list):
+                obj = dict(zip(obj,[True] * len(obj)))
             # if there are defaultflags, use them, otherwise assume all flages
             # are unset
             if defaultflags:
@@ -72,6 +77,15 @@ class BitFlag(object):
                 self.bools.append(val)
                 if val:
                     self.val += 2 ** i
+
+    @classmethod
+    def coerce(cls, key, value):
+        if not isinstance(value, BitFlag):
+            if isinstance(value, int):
+                return BitFlag(value)
+            return Mutable.coerce(key, value)
+        else:
+            return value
 
     @property
     def bin(self):
@@ -106,6 +120,8 @@ class BitFlag(object):
             if val:
                 self.val += 2 ** i
 
+        self.changed()
+
     def __call__(self):
         return self.val
 
@@ -120,3 +136,34 @@ class BitFlag(object):
             return BitFlag(other() | self())
         elif isinstance(other, int):
             return BitFlag(other | self())
+
+
+class BitFlagType(TypeDecorator):
+    """ SQLAlchemy type definition for the BitFlag object """
+
+    impl = Integer
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            value = value.val
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            value = BitFlag(value)
+        return value
+
+    def copy(self):
+        return BitFlagType()
+
+if __name__ == '__main__':
+    for v in [0, 1, 2, 3, 127, 128, 129, 255, 256, 257]:
+        print str(v) * 20
+        bf = BitFlag(v)
+        print bf
+        print bf.val
+        print bf.asdict()
+        print bf.bools
+        print bf.bin
+
+    bf = BitFlag(['enabled','stdout','report'])

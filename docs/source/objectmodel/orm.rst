@@ -12,6 +12,8 @@ Symbols
 
 .. autoclass:: trump.orm.SymbolTag
 
+.. autoclass:: trump.orm.SymbolHandle
+
 Feeds
 -----
 
@@ -22,6 +24,8 @@ Feeds
 .. autoclass:: trump.orm.FeedMunge
 
 .. autoclass:: trump.orm.FeedMungeArg
+
+.. autoclass:: trump.orm.FeedHandle
 
 Centralized Data Editing
 ------------------------
