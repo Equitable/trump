@@ -38,9 +38,7 @@
 
 
 
-
-
-###########################3333
+### Testing the Handle mutability
 
     sm = SymbolManager()
 
@@ -90,3 +88,44 @@
 
     print sm.ses.dirty
     sm.finish()
+
+###################################################
+# test tagging of a symbol from first principles
+
+    asymbol = Symbol("testsymbol","testdescription","T","tst","PRIORITY_FILL")
+    session.add(asymbol)
+
+
+    atag1 = SymbolTag("testag1")
+    asymbol.tags = [atag1]
+
+    asymbol.tags.append(SymbolTag("testag2"))
+
+    atag3 = SymbolTag("testag3",asymbol)
+    session.add(atag3)
+
+    atag4 = SymbolTag("testag4",asymbol.name)
+    session.add(atag4)
+
+    session.commit()
+
+    try:
+        atag5 = SymbolTag("testag5")
+        session.add(atag5)
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+
+    atag5.symname = asymbol.name
+    session.add(atag5)
+    session.commit()
+
+    asymbol.add_tags("testag6")
+
+    asymbol.add_tags(['testag7','testag8'])
+
+    asymbol.del_tags("testag1")
+
+    asymbol.del_tags(["testag2","testag3"])
+
+    session.close()

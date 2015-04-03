@@ -45,7 +45,7 @@ from sqlalchemy import event, Table, Column, ForeignKey, ForeignKeyConstraint,\
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.orm.session import object_session
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import ProgrammingError, IntegrityError
 from sqlalchemy.sql import and_
 from sqlalchemy import create_engine
 
@@ -307,20 +307,6 @@ class Symbol(Base, ReprMixin):
                 printed_cp = []
         return "\n".join(lines)
 
-    def add_tag(self, tag):
-        """
-        Add a tag object to a Symbol.  Tags can be used to search for sets of
-        symbols
-        """
-        # SQLA Adding a SymbolTag object, feels awkward/uneccessary.
-        # Should I be implementing this functionality a different way?
-        objs = object_session(self)
-        tmp = SymbolTag(tag=tag, symbol=self)
-        self.tags.append(tmp)
-
-        objs.add(tmp)
-        objs.commit()
-
     def add_override(self, dt_ind, value, dt_log=None, user=None, comment=None):
         """
         appends a single value and date pair, to a symbol object, to be
@@ -364,12 +350,33 @@ class Symbol(Base, ReprMixin):
         objs.add(tmp)
         objs.commit()
 
-    def del_tag(self):
-        """ remove a tag from a symbol """
-        raise NotImplementedError
+    def del_tags(self,tags):
+        """ remove a tag or tags from a symbol """
+        # SQLA Adding a SymbolTag object, feels awkward/uneccessary.
+        # Should I be implementing this functionality a different way?
+
+        if isinstance(tags,(str,unicode)):
+            tags = [tags]
+
+        objs = object_session(self)
+
+        docommit = False
+        for symboltag in self.tags:
+            if symboltag.tag in tags:
+                objs.delete(symboltag)
+                docommit = True
+
+        if docommit:
+            objs.commit()
 
     def add_tags(self, tags):
-        """  add a list of strings, representing tags, to the symbol. """
+        """ add a tag or tags to a symbol """
+        # SQLA Adding a SymbolTag object, feels awkward/uneccessary.
+        # Should I be implementing this functionality a different way?
+
+        if isinstance(tags,(str,unicode)):
+            tags = [tags]
+
         objs = object_session(self)
         tmps = [SymbolTag(tag=t, symbol=self) for t in tags]
         objs.add_all(tmps)
@@ -510,10 +517,14 @@ class SymbolTag(Base, ReprMixin):
     symname = Column('symname', String, ForeignKey('_symbols.name', **CC),
                      primary_key=True)
     tag = Column('tag', String, primary_key=True)
+
     symbol = relationship("Symbol")
 
-    def __init__(self, symbol, tag):
-        self.symbol = symbol
+    def __init__(self, tag, symbol=None):
+        if isinstance(symbol, (str,unicode)):
+            self.symname = symbol
+        else:
+            self.symbol = symbol
         self.tag = tag
 
 
@@ -970,19 +981,31 @@ except ProgrammingError as pgerr:
     raise
 
 if __name__ == '__main__':
+
+
+
     sm = SymbolManager()
+
+
 
     oil = sm.create('oil')
 
-    print sm.ses.dirty
+    oil.add_tags(['energy','badtag','commodities','futures'])
 
-    oil.handle.caching_of_feeds['txtlog'] = True
-    # oil.handle.caching_of_feeds = BitFlag(55)
-    print sm.ses.dirty
+    oil.del_tags("badtag")
 
-    print oil.handle.symbol
-
-    sm.complete()
-
-    print sm.ses.dirty
     sm.finish()
+
+    #
+    # print sm.ses.dirty
+    #
+    # oil.handle.caching_of_feeds['txtlog'] = True
+    # # oil.handle.caching_of_feeds = BitFlag(55)
+    # print sm.ses.dirty
+    #
+    # print oil.handle.symbol
+    #
+    # sm.complete()
+    #
+    # print sm.ses.dirty
+    # sm.finish()
