@@ -145,5 +145,30 @@
         for sym in syms:
             print sym.name
 
+###################################################
+# test that handles are updatable...
+    sm.finish()
+
+    sm = SymbolManager()
+
+    one = sm.create('symone')
+
+    print one
+
+    print one.handle
+
+    one.update_handle({'other' : BitFlag(16), 'validity_check' : 32})
+
+    one.handle.feed_aggregation_problem = BitFlag(16)
+
+    one.handle.caching_of_feeds = 5
+    print one.handle.caching_of_feeds.val
+    print one.handle.caching_of_feeds
+    one.handle.caching_of_feeds['email'] = False
+    print one.handle.caching_of_feeds
+
+    print one.handle
+
+    sm.complete()
 
     sm.finish()

@@ -107,7 +107,7 @@ class SymbolManager(object):
         print "Creating {}".format(sym.name)
         sym.add_alias(name)
 
-        sym.handle = SymbolHandle(sym)
+        sym.handle = SymbolHandle(sym=sym)
         self.ses.commit()
 
         return sym
@@ -225,6 +225,33 @@ class Symbol(Base, ReprMixin):
         self.datatable_exists = False
         # SQLAQ - Is this okay to do? It feels sneaky, dirty and wrong.
         session.add(self)
+
+    def update_handle(self, chkpnt_settings):
+        """
+        Update a symbol's handle checkpoint settings
+
+        :param chkpnt_settings, dict:
+            a dictionary where the keys are stings representing
+            individual handle checkpoint names, for a Symbol
+            (eg. caching_of_feeds, feed_aggregation_problem, ...)
+            See SymbolHandle.__table__.columns for the
+            current list.
+
+            The values can be either integer or BitFlags.
+
+        :return: None
+        """
+
+        objs = object_session(self)
+
+        # override with anything passed in
+        for checkpoint in chkpnt_settings:
+            if checkpoint in SymbolHandle.__table__.columns:
+                print "updating handle..."
+                settings = chkpnt_settings[checkpoint]
+                print settings
+                setattr(self.handle, checkpoint, settings)
+        objs.commit()
 
     def cache_feed(self, fid):
         raise NotImplementedError
@@ -397,7 +424,7 @@ class Symbol(Base, ReprMixin):
             tags = [tags]
 
         objs = object_session(self)
-        tmps = [SymbolTag(tag=t, symbol=self) for t in tags]
+        tmps = [SymbolTag(tag=t, sym=self) for t in tags]
         objs.add_all(tmps)
         objs.commit()
 
@@ -531,6 +558,12 @@ def __receive_load(target, context):
     target._init_datatable()
 
 
+def set_symbol_or_symname(self,sym):
+    if isinstance(sym, (str,unicode)):
+        setattr(self,"symname",sym)
+    else:
+        setattr(self,"symbol",sym)
+
 class SymbolTag(Base, ReprMixin):
     __tablename__ = '_symbol_tags'
     symname = Column('symname', String, ForeignKey('_symbols.name', **CC),
@@ -539,11 +572,8 @@ class SymbolTag(Base, ReprMixin):
 
     symbol = relationship("Symbol")
 
-    def __init__(self, tag, symbol=None):
-        if isinstance(symbol, (str,unicode)):
-            self.symname = symbol
-        else:
-            self.symbol = symbol
+    def __init__(self, tag, sym=None):
+        set_symbol_or_symname(self,sym)
         self.tag = tag
 
 
@@ -595,13 +625,21 @@ class SymbolHandle(Base, ReprMixin):
 
     symbol = relationship("Symbol")
 
-    def __init__(self,symbol):
-        self.symbol = symbol
+    def __init__(self, chkpnt_settings={}, sym=None):
+
+        set_symbol_or_symname(self,sym)
 
         self.caching_of_feeds = BitFlag(0)
         self.feed_aggregation_problem = BitFlag(['stdout'])
         self.validity_check = BitFlag(['report'])
         self.other = BitFlag(['raise'])
+
+        # override with anything passed in
+        for checkpoint in chkpnt_settings:
+            if checkpoint in SymbolHandle.__table__.columns:
+                settings = chkpnt_settings[checkpoint]
+                setattr(self,checkpoint, settings)
+
 
 class Feed(Base, ReprMixin):
     """
