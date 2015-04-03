@@ -22,8 +22,8 @@
 
 """
 Trump's Object Relational Model is the glue to the framework, used to create
-a Symbol's tags, alias, meta data, data feeds and their sources, munging and
-validity instructions.
+a Symbol's tags, alias, meta data, data feeds and their sources, munging,
+error handling and validity instructions.
 """
 
 # SQLAQ - running the uninstall script, then this script, in the same session
@@ -297,17 +297,6 @@ class Symbol(Base, ReprMixin):
         if len(self.aliases):
             als = ", ".join(x.alias for x in self.aliases)
             lines.append("  aliased = {}".format(als))
-        if len(self.validity):
-            lines.append("  validity =")
-            printed_cp = []
-            for vld in self.validity:
-                if vld.checkpoint not in printed_cp:
-                    printed_cp.append(vld.checkpoint)
-                    lines.append("    Checkpoint = {}".format(vld.checkpoint))
-                vlm = "      {} -> {} : {}".format(vld.logic,
-                                                   vld.key,
-                                                   vld.value)
-                lines.append(vlm)
         if len(self.feeds):
             lines.append("  feeds:")
 
@@ -316,14 +305,6 @@ class Symbol(Base, ReprMixin):
                                                        fed.ftype,
                                                        fed.source_str()))
                 printed_cp = []
-                for vld in fed.validity:
-                    if vld.checkpoint not in printed_cp:
-                        printed_cp.append(vld.checkpoint)
-                        chkpnt = "      Checkpoint = {}".format(vld.checkpoint)
-                        lines.append(chkpnt)
-                    lines.append("        {} -> {} : {}".format(vld.logic,
-                                                                vld.key,
-                                                                vld.value))
         return "\n".join(lines)
 
     def add_tag(self, tag):
@@ -616,7 +597,7 @@ class Feed(Base, ReprMixin):
     symbol = relationship("Symbol")
 
     def __init__(self, symbol, ftype, sourcing,
-                 munging=None, validity=None, meta=None, fnum=None):
+                 munging=None, meta=None, fnum=None):
         self.ftype = ftype
         self.state = "ON"
         self.symbol = symbol
@@ -654,7 +635,6 @@ class Feed(Base, ReprMixin):
 
         setinmeta('stype', sourcing)
         setinmeta('sourcing_key', sourcing)
-        setinmeta('vtype', validity)
 
         if meta:
             for key in meta:
@@ -753,8 +733,6 @@ class Feed(Base, ReprMixin):
         elif stype == 'PyDataDataReaderST':
             import pandas.io.data as pydata
 
-            print kwargs
-
             fmt = "%Y-%m-%d"
             if 'start' in kwargs:
                 kwargs['start'] = dt.datetime.strptime(kwargs['start'], fmt)
@@ -772,11 +750,6 @@ class Feed(Base, ReprMixin):
 
         else:
             raise Exception("Unknown Source Type : {}".format(stype))
-
-        # print self.data.tail(5)
-        # print type(self.data)
-        # print self.data.index
-        # print self.data.dtype
 
         # munge accordingly
         for mgn in self.munging:
@@ -796,18 +769,10 @@ class Feed(Base, ReprMixin):
                     kwargs[arg] = False
             if mgn.mtype == pab:
                 afunc = getattr(self.data, mgn.method)
-                # print mgn.method, func
-                # print kwargs
-                #self.data['2015-03-16'] = pd.np.nan
-                # print self.data.tail()
-                #self.data = func()
                 self.data = afunc(**kwargs)
-                # print self.data.tail()
             elif mgn.mtype == pnab:
                 lib = __import__('pandas', globals(), locals(), [], -1)
                 afunc = getattr(lib, mgn.method)
-                # print mgn.method, func
-                # print kwargs
                 self.data = afunc(self.data, **kwargs)
 
         # make sure it's named properly...
