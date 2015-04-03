@@ -98,10 +98,13 @@ class SymbolManager(object):
         """ Create, or gets if exists, a Symbol. """
         sym = self.try_to_get(name)
         if sym is not None:
-            print sym.name
+            print "Deleting {}".format(sym.name)
             self.ses.delete(sym)
             self.ses.commit()
+
         sym = Symbol(name, description, freq, units, agg_method)
+
+        print "Creating {}".format(sym.name)
         sym.add_alias(name)
 
         sym.handle = SymbolHandle(sym)
@@ -153,6 +156,22 @@ class SymbolManager(object):
             return None
         else:
             return syms[0]
+
+    def search_tag(self, tag):
+        """
+        Get a list of Symbol objects by searching a tag or partial tag.
+
+        Appending '%' will use SQL's "LIKE" functionality.
+        """
+
+        qry = self.ses.query(SymbolTag)
+
+        if "%" in tag:
+            syms = qry.filter(SymbolTag.tag.like(tag)).all()
+        else:
+            syms = qry.filter(SymbolTag.tag == tag).all()
+        syms = [tagged.symbol for tagged in syms]
+        return syms
 
 
 class Symbol(Base, ReprMixin):
@@ -981,31 +1000,4 @@ except ProgrammingError as pgerr:
     raise
 
 if __name__ == '__main__':
-
-
-
-    sm = SymbolManager()
-
-
-
-    oil = sm.create('oil')
-
-    oil.add_tags(['energy','badtag','commodities','futures'])
-
-    oil.del_tags("badtag")
-
-    sm.finish()
-
-    #
-    # print sm.ses.dirty
-    #
-    # oil.handle.caching_of_feeds['txtlog'] = True
-    # # oil.handle.caching_of_feeds = BitFlag(55)
-    # print sm.ses.dirty
-    #
-    # print oil.handle.symbol
-    #
-    # sm.complete()
-    #
-    # print sm.ses.dirty
-    # sm.finish()
+    pass

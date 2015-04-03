@@ -129,3 +129,21 @@
     asymbol.del_tags(["testag2","testag3"])
 
     session.close()
+
+###################################################
+# test that tag searching is working...
+
+    sm = SymbolManager()
+
+    sm.create('symone').add_tags(['alpha', 'beta', 'charlie', 'echo'])
+    sm.create('symtwo').add_tags(['alpha', 'charlie', 'delta', 'echofoxtrot'])
+    sm.create('symthr').add_tags(['alpha', 'beta', 'foxtrotecho'])
+
+    for crit in ("charlie", "echo", "%echo%", "%echo"):
+        syms = sm.search_tag(crit)
+        print "\nSeaching for {}".format(crit)
+        for sym in syms:
+            print sym.name
+
+
+    sm.finish()
