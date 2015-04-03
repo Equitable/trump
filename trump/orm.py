@@ -241,6 +241,10 @@ class Symbol(Base, ReprMixin):
 
         :return: None
         """
+        
+        # Note, for now, this function is nearly identical
+        # to the Feed version.  Careful when augmenting,
+        # to get the right one.
 
         objs = object_session(self)
 
@@ -634,7 +638,7 @@ class SymbolHandle(Base, ReprMixin):
         self.validity_check = BitFlag(['report'])
         self.other = BitFlag(['raise'])
 
-        # override with anything passed in
+        # override with anything passed in settings
         for checkpoint in chkpnt_settings:
             if checkpoint in SymbolHandle.__table__.columns:
                 settings = chkpnt_settings[checkpoint]
@@ -731,6 +735,37 @@ class Feed(Base, ReprMixin):
                         val = value
                     fmg.mungeargs.append(FeedMungeArg(arg, val, feedmunge=fmg))
                 self.munging.append(fmg)
+
+    def update_handle(self, chkpnt_settings):
+        """
+        Update a feeds's handle checkpoint settings
+
+        :param chkpnt_settings, dict:
+            a dictionary where the keys are stings representing
+            individual handle checkpoint names, for a Feed
+            (eg. api_failure, empty_feed, index_type_problem...)
+            See FeedHandle.__table__.columns for the
+            current list.
+
+            The values can be either integer or BitFlags.
+
+        :return: None
+        """
+
+        # Note, for now, this function is nearly identical
+        # to the Symbol version.  Careful when augmenting,
+        # to get the right one.
+
+        objs = object_session(self)
+
+        # override with anything passed in
+        for checkpoint in chkpnt_settings:
+            if checkpoint in FeedHandle.__table__.columns:
+                print "updating handle..."
+                settings = chkpnt_settings[checkpoint]
+                print settings
+                setattr(self.handle, checkpoint, settings)
+        objs.commit()
 
     def cache(self):
 
@@ -989,7 +1024,7 @@ class FeedHandle(Base, ReprMixin):
     fkey = ForeignKeyConstraint([symname, fnum], [Feed.symname, Feed.fnum])
     __table_args__ = (fkey, {})
 
-    def __init__(self, feed):
+    def __init__(self, chkpnt_settings={}, feed=None):
         self.feed = feed
 
         self.api_failure = BitFlag(['raise'])
@@ -1000,6 +1035,11 @@ class FeedHandle(Base, ReprMixin):
         self.non_monotonic = BitFlag(['raise'])
         self.other = BitFlag(['raised'])
 
+        # override with anything passed in settings
+        for checkpoint in chkpnt_settings:
+            if checkpoint in FeedHandle.__table__.columns:
+                settings = chkpnt_settings[checkpoint]
+                setattr(self,checkpoint, settings)
 
 class Override(Base, ReprMixin):
     __tablename__ = '_overrides'
