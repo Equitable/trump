@@ -37,7 +37,15 @@ error handling and validity instructions.
 #
 #        Why?
 
+import traceback as tb
+import warnings as wn
 import datetime as dt
+import sys
+
+def trumpwarn(message, category=UserWarning, filename = '', lineno = -1):
+    print ("TRUMP WARNING: " + str(message))
+
+wn.showwarning = trumpwarn
 
 import pandas as pd
 from sqlalchemy import event, Table, Column, ForeignKey, ForeignKeyConstraint,\
@@ -241,7 +249,7 @@ class Symbol(Base, ReprMixin):
 
         :return: None
         """
-        
+
         # Note, for now, this function is nearly identical
         # to the Feed version.  Careful when augmenting,
         # to get the right one.
@@ -305,10 +313,34 @@ class Symbol(Base, ReprMixin):
         for row in ords:
             data.loc[row.dt_ind, 'failsafe_feed999'] = row.value
 
-        if self.agg_method in apply_row:
-            data['final'] = data.apply(apply_row[self.agg_method], axis=1)
-        elif self.agg_method in choose_col:
-            data['final'] = choose_col[self.agg_method](data)
+        try:
+            if self.agg_method in apply_row:
+                data['final'] = data.apply(apply_row[self.agg_method], axis=1)
+            elif self.agg_method in choose_col:
+                data['final'] = choose_col[self.agg_method](data)
+        except:
+            handlr = self.handle.feed_aggregation_problem
+            msg = "There was a problem aggregating feeds for {}".format(self.symname)
+            print handlr
+            if handlr['stdout']:
+                print "\nTRUMP:\n{}\nThe following traceback was provided".format(msg)
+                tb.print_exc()
+            if handlr['warn']:
+                typ, val, tback = sys.exc_info()
+                tbextract = tb.extract_tb(tback)
+                tbstr = "The following information was provided in the traceback:\n"
+                for stacklvl in tbextract:
+                    tbstr += "   File '{}', line {}, in {}\n".format(*stacklvl)
+                tbstr += "{} : {}".format(typ.__name__, val)
+                wn.warn(msg + "\n" + tbstr)
+            if handlr['email']: raise NotImplementedError()
+            if handlr['dblog']: raise NotImplementedError()
+            if handlr['txtlog']: raise NotImplementedError()
+            if handlr['report']: raise NotImplementedError()
+            if handlr['raise']:
+                raise
+
+            self.data = pd.Series()
 
         # SQLAQ There are several states to deal with at this point
         # A) the datatable exists but a feed has been added
@@ -453,9 +485,10 @@ class Symbol(Base, ReprMixin):
             fed = Feed(self, obj.ftype,
                        obj.sourcing,
                        munging,
-                       obj.validity,
                        obj.meta,
                        fnum)
+
+
         elif isinstance(obj, Feed):
             fed = obj
         else:
@@ -736,6 +769,8 @@ class Feed(Base, ReprMixin):
                     fmg.mungeargs.append(FeedMungeArg(arg, val, feedmunge=fmg))
                 self.munging.append(fmg)
 
+        self.handle = FeedHandle(feed=self)
+
     def update_handle(self, chkpnt_settings):
         """
         Update a feeds's handle checkpoint settings
@@ -785,74 +820,101 @@ class Feed(Base, ReprMixin):
             for key in sourcing_overrides:
                 kwargs[key] = sourcing_overrides[key]
 
-        # Depending on the feed type, use the kwargs appropriately to
-        # populate a dataframe, self.data.
-        if stype == 'Quandl':
-            import Quandl as q
-            self.data = q.get(**kwargs)
-            try:
-                fn = kwargs['fieldname']
-            except KeyError:
-                raise KeyError("fieldname wasn't specified in Quandl Feed")
+        try:
+            # Depending on the feed type, use the kwargs appropriately to
+            # populate a dataframe, self.data.
 
-            try:
-                self.data = self.data[fn]
-            except KeyError:
-                kemsg = """{} was not found in list of Quandle headers:\n
-                         {}""".format(fn, str(self.data.columns))
-                raise KeyError(kemsg)
+            # For development of the handler, raise an exception...
+            # raise Exception("There was a problem of somekind!")
 
-        elif stype == 'psycopg2':
-            dbargs = ['dsn', 'user', 'password', 'host', 'database', 'port']
-            import psycopg2 as db
-            con_kwargs = {k: v for k, v in kwargs.items() if k in dbargs}
-            con = db.connect(**con_kwargs)
-            raise NotImplementedError("pyscopg2")
-        elif stype == 'DBAPI':
-            dbargs = ['dsn', 'user', 'password', 'host', 'database', 'port']
-            db = __import__(engine.driver)
-            con_kwargs = {k: v for k, v in kwargs.items() if k in dbargs}
+            if stype == 'Quandl':
+                import Quandl as q
+                self.data = q.get(**kwargs)
+                try:
+                    fn = kwargs['fieldname']
+                except KeyError:
+                    raise KeyError("fieldname wasn't specified in Quandl Feed")
 
-            print kwargs
-            print con_kwargs
+                try:
+                    self.data = self.data[fn]
+                except KeyError:
+                    kemsg = """{} was not found in list of Quandle headers:\n
+                             {}""".format(fn, str(self.data.columns))
+                    raise KeyError(kemsg)
 
-            con = db.connect(**con_kwargs)
-            cur = con.cursor()
+            elif stype == 'psycopg2':
+                dbargs = ['dsn', 'user', 'password', 'host', 'database', 'port']
+                import psycopg2 as db
+                con_kwargs = {k: v for k, v in kwargs.items() if k in dbargs}
+                con = db.connect(**con_kwargs)
+                raise NotImplementedError("pyscopg2")
+            elif stype == 'DBAPI':
+                dbargs = ['dsn', 'user', 'password', 'host', 'database', 'port']
+                db = __import__(engine.driver)
+                con_kwargs = {k: v for k, v in kwargs.items() if k in dbargs}
 
-            if 'command' in kwargs:
-                cur.execute(kwargs['command'])
-            elif set(['table', 'indexcol', 'datacol']).issubset(kwargs.keys()):
+                print kwargs
+                print con_kwargs
 
-                rel = (kwargs[c] for c in ['indexcol', 'datacol', 'table'])
-                qry = "SELECT {0},{1} FROM {2} ORDER BY {0};".format(*rel)
-                cur.execute(qry)
+                con = db.connect(**con_kwargs)
+                cur = con.cursor()
 
-            results = [(row[0], row[1]) for row in cur.fetchall()]
-            con.close()
-            ind, dat = zip(*results)
-            self.data = pd.Series(dat, ind)
-        elif stype == 'SQLAlchemy':
-            NotImplementedError("SQLAlchemy")
-        elif stype == 'PyDataDataReaderST':
-            import pandas.io.data as pydata
+                if 'command' in kwargs:
+                    cur.execute(kwargs['command'])
+                elif set(['table', 'indexcol', 'datacol']).issubset(kwargs.keys()):
 
-            fmt = "%Y-%m-%d"
-            if 'start' in kwargs:
-                kwargs['start'] = dt.datetime.strptime(kwargs['start'], fmt)
-            if 'end' in kwargs:
-                if kwargs['end'] == 'now':
-                    kwargs['end'] = dt.datetime.now()
-                else:
-                    kwargs['end'] = dt.datetime.strptime(kwargs['end'], fmt)
+                    rel = (kwargs[c] for c in ['indexcol', 'datacol', 'table'])
+                    qry = "SELECT {0},{1} FROM {2} ORDER BY {0};".format(*rel)
+                    cur.execute(qry)
 
-            col = kwargs['data_column']
-            del kwargs['data_column']
+                results = [(row[0], row[1]) for row in cur.fetchall()]
+                con.close()
+                ind, dat = zip(*results)
+                self.data = pd.Series(dat, ind)
+            elif stype == 'SQLAlchemy':
+                NotImplementedError("SQLAlchemy")
+            elif stype == 'PyDataDataReaderST':
+                import pandas.io.data as pydata
 
-            adf = pydata.DataReader(**kwargs)
-            self.data = adf[col]
+                fmt = "%Y-%m-%d"
+                if 'start' in kwargs:
+                    kwargs['start'] = dt.datetime.strptime(kwargs['start'], fmt)
+                if 'end' in kwargs:
+                    if kwargs['end'] == 'now':
+                        kwargs['end'] = dt.datetime.now()
+                    else:
+                        kwargs['end'] = dt.datetime.strptime(kwargs['end'], fmt)
 
-        else:
-            raise Exception("Unknown Source Type : {}".format(stype))
+                col = kwargs['data_column']
+                del kwargs['data_column']
+
+                adf = pydata.DataReader(**kwargs)
+                self.data = adf[col]
+
+            else:
+                raise Exception("Unknown Source Type : {}".format(stype))
+        except:
+            handlr = self.handle.api_failure
+            msg = "There was a problem caching feed #{} for {}".format(self.fnum,self.symname)
+            print handlr
+            if handlr['stdout']:
+                print "\nTRUMP:\n{}\nThe following traceback was provided".format(msg)
+                tb.print_exc()
+            if handlr['warn']:
+                typ, val, tback = sys.exc_info()
+                tbextract = tb.extract_tb(tback)
+                tbstr = "The following information was provided in the traceback:\n"
+                for stacklvl in tbextract:
+                    tbstr += "   File '{}', line {}, in {}\n".format(*stacklvl)
+                tbstr += "{} : {}".format(typ.__name__, val)
+                wn.warn(msg + "\n" + tbstr)
+            if handlr['email']: raise NotImplementedError()
+            if handlr['dblog']: raise NotImplementedError()
+            if handlr['txtlog']: raise NotImplementedError()
+            if handlr['report']: raise NotImplementedError()
+            if handlr['raise']:
+                raise
+            self.data = pd.Series()
 
         # munge accordingly
         for mgn in self.munging:

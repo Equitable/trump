@@ -287,7 +287,7 @@ class QuandlSecureFT(QuandlFT):
     Feed tamplate for a Quandl data source, authtoken left in config file.
     """
     def __init__(self, dataset, **kwargs):
-        super(QuandlSecureFT, self).__init__()
+        super(QuandlFT, self).__init__()
         tmp = {'dataset': dataset}
         tmp.update(kwargs)
         self.sourcing = tmp
