@@ -270,12 +270,22 @@ class Symbol(Base, ReprMixin):
             err_msg = "Symbol has no Feeds. Can't cache a feed-less Symbol."
             raise Exception(err_msg)
 
-        for afeed in self.feeds:
-            afeed.cache()
-            data.append(afeed.data)
-            cols.append(afeed.data.name)
+        try:
+            for afeed in self.feeds:
+                afeed.cache()
+                data.append(afeed.data)
+                cols.append(afeed.data.name)
+        except:
+            logic = self.handle.caching
+            msg = "There was a problem caching feeds for {}".format(self.name)
+            Handler(logic,msg).process()
 
-        data = pd.concat(data, axis=1)
+        try:
+            data = pd.concat(data, axis=1)
+        except:
+            logic = self.handle.concatenation
+            msg = "There was a problem concatenating feeds for {}".format(self.name)
+            Handler(logic,msg).process()
 
         data_len = len(data)
         data['override_feed000'] = [None] * data_len
@@ -311,11 +321,9 @@ class Symbol(Base, ReprMixin):
             elif self.agg_method in choose_col:
                 data['final'] = choose_col[self.agg_method](data)
         except:
-            logic = self.handle.feed_aggregation_problem
+            logic = self.handle.aggregation
             msg = "There was a problem aggregating feeds for {}".format(self.symname)
             Handler(logic,msg)
-
-            self.data = pd.Series()
 
         # SQLAQ There are several states to deal with at this point
         # A) the datatable exists but a feed has been added
@@ -342,6 +350,24 @@ class Symbol(Base, ReprMixin):
         data = data.reset_index()
         session.execute(self.datatable.insert(),
                         data.to_dict(orient='records'))
+
+        try:
+            if not self.isvalid():
+                raise Exception('{} is not valid'.format(self.name))
+        except:
+            logic = self.handle.validity_check
+            msg = "There was a problem during the validity check for {}".format(self.symname)
+            Handler(logic,msg)
+
+    def isvalid(self):
+
+        # loop through the validity checks associated with this symbol
+
+        # if any are False, return False.
+
+        # if all are True, return True.
+
+        return True
 
     @property
     def describe(self):
@@ -630,10 +656,10 @@ class SymbolHandle(Base, ReprMixin):
     symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
                      primary_key=True)
 
-    caching_of_feeds = Column('caching_of_feeds', BitFlagType)
-    feed_aggregation_problem = Column('feed_aggregation_problem', BitFlagType)
+    caching = Column('caching', BitFlagType)
+    concatenation = Column('concatenation', BitFlagType)
+    aggregation = Column('aggregation', BitFlagType)
     validity_check = Column('validity_check', BitFlagType)
-    other = Column('other', BitFlagType)
 
     symbol = relationship("Symbol")
 
@@ -641,10 +667,10 @@ class SymbolHandle(Base, ReprMixin):
 
         set_symbol_or_symname(self,sym)
 
-        self.caching_of_feeds = BitFlag(0)
-        self.feed_aggregation_problem = BitFlag(['stdout'])
+        self.caching = BitFlag(0)
+        self.concatenation = BitFlag(['raise'])
+        self.aggregation = BitFlag(['stdout'])
         self.validity_check = BitFlag(['report'])
-        self.other = BitFlag(['raise'])
 
         # override with anything passed in settings
         for checkpoint in chkpnt_settings:
@@ -875,6 +901,22 @@ class Feed(Base, ReprMixin):
 
             self.data = pd.Series()
 
+        try:
+            if len(self.data) == 0 or self.data.empty:
+                raise Exception('Feed is empty')
+        except:
+            logic = self.handle.empty_feed
+            msg = "The feed #{} for {} was empty".format(self.fnum,self.symname)
+            Handler(logic,msg).process()
+
+        try:
+            if not (self.data.index.is_monotonic and self.data.index.is_unique):
+                raise Exception('Feed index is not uniquely monotonic')
+        except:
+            logic = self.handle.monounique
+            msg = "The feed #{} for {} was not monotonic and unique.".format(self.fnum,self.symname)
+            Handler(logic,msg).process()
+
         # munge accordingly
         for mgn in self.munging:
             print mgn.mtype
@@ -1037,8 +1079,7 @@ class FeedHandle(Base, ReprMixin):
     index_type_problem = Column('index_type_problem', BitFlagType)
     index_property_problem = Column('index_property_problem', BitFlagType)
     data_type_problem = Column('data_type_problem', BitFlagType)
-    non_monotonic = Column('non_monotonic', BitFlagType)
-    other = Column('other', BitFlagType)
+    monounique = Column('monounique', BitFlagType)
 
     feed = relationship("Feed")
 
@@ -1053,8 +1094,7 @@ class FeedHandle(Base, ReprMixin):
         self.index_type_problem = BitFlag(['stdout','report'])
         self.index_property_problem = BitFlag(['stdout'])
         self.data_type_problem = BitFlag(['stdout','report'])
-        self.non_monotonic = BitFlag(['raise'])
-        self.other = BitFlag(['raised'])
+        self.monounique = BitFlag(['raise'])
 
         # override with anything passed in settings
         for checkpoint in chkpnt_settings:
