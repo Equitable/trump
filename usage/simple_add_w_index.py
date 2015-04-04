@@ -8,6 +8,12 @@ from datetime import datetime as dt
 sm = SymbolManager()
 
 oil = sm.create(name = "oil_front_month", overwrite=True)
+oil.index.case = "asfreq"
+oil.index.setkwargs(freq='W', method='ffill')
+
+print oil.index
+
+sm.ses.commit()
 
 f1 = QuandlFT(r"CHRIS/CME_CL3",fieldname='Settle')
 
@@ -17,8 +23,4 @@ oil.cache()
 
 print oil.df.tail()
 
-oil._reset_datatable()
-
-oil.cache()
-
-print oil.df.tail()
+print oil.df.index

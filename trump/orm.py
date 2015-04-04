@@ -42,13 +42,15 @@ import datetime as dt
 
 import pandas as pd
 from sqlalchemy import event, Table, Column, ForeignKey, ForeignKeyConstraint,\
-    String, Integer, Float, DateTime, MetaData, func
+    String, Integer, Float, Boolean, DateTime, MetaData, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.orm.session import object_session
-from sqlalchemy.exc import ProgrammingError, IntegrityError
+from sqlalchemy.exc import ProgrammingError, IntegrityError, NoSuchTableError
 from sqlalchemy.sql import and_
 from sqlalchemy import create_engine
+
+from indexing import tosqla, indexingtypes
 
 from trump.tools import ReprMixin, ProxyDict, BitFlag, BitFlagType, \
     isinstanceofany
@@ -80,6 +82,97 @@ CC = {'onupdate': "CASCADE", 'ondelete': "CASCADE"}
 CHECKPOINTS = ('EXCEPTION', 'CHECK')
 # STATE = ('ENABLED', 'DISABLED', 'ERROR')
 
+class Index(Base, ReprMixin):
+    __tablename__ = "_indicies"
+
+    symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
+                     primary_key=True)
+
+    name = Column("name", String, nullable=False)
+    indtype = Column("indtype", String, nullable=False)
+    case = Column("case", String)
+
+    kwargs = relationship("IndexKwarg", lazy="dynamic", cascade=ADO)
+
+    def __init__(self, name, indtype, case=None, kwargs={}, sym=None):
+
+        set_symbol_or_symname(self,sym)
+
+        self.name = name
+        self.indtype = indtype
+        self.case = case or "asis"
+        self.setkwargs(**kwargs)
+
+    def setkwargs(self, **kwargs):
+        if kwargs is not None:
+            list_of_kwargs = []
+            for kword, val in kwargs.iteritems():
+                list_of_kwargs.append(IndexKwarg(kword,val))
+            self.kwargs = list_of_kwargs
+        else:
+            self.kwargs = []
+
+    def getkwargs(self):
+        kwargs = {}
+        for indkw in self.kwargs:
+            kwargs[indkw.kword] = indkw.val
+        return kwargs
+
+
+class IndexKwarg(Base, ReprMixin):
+    __tablename__ = "_index_kwargs"
+
+    symname = Column('symname', String, ForeignKey('_indicies.symname', **CC),
+                     primary_key=True)
+
+    kword = Column('kword', String, primary_key=True)
+
+    nonecol = Column('nonecol', Boolean)
+    boolcol = Column('boolcol', Boolean)
+    strcol = Column('strcol', String)
+    intcol = Column('intcol', Integer)
+    floatcol = Column('floatcol', Float)
+
+    def __init__(self, kword, val=None):
+        self.kword = kword
+
+        self.setval(val)
+
+    def setval(self, val):
+        self.set_all_to_none()
+
+        if val is None:
+            self.nonecol = True
+        if isinstance(val, bool):
+            self.boolcol = val
+        if isinstance(val, (str, unicode)):
+            self.strcol = val
+        if isinstance(val, int):
+            self.intcol = val
+        if isinstance(val, float):
+            self.floatcol = val
+
+    @property
+    def val(self):
+
+        if self.nonecol:
+            return None
+        if self.boolcol in (True, False):
+            return self.boolcol
+        if self.strcol is not None:
+            return self.strcol
+        if self.intcol is not None:
+            return self.intcol
+        if self.floatcol is not None:
+            return self.floatcol
+        return None
+
+    def set_all_to_none(self):
+        self.nonecol = False
+        self.boolcol = None
+        self.strcol = None
+        self.intcol = None
+        self.floatcol = None
 
 class SymbolManager(object):
     """
@@ -96,7 +189,8 @@ class SymbolManager(object):
         """
         self.ses.close()
 
-    def create(self, name, description=None, freq=None, units=None,
+    def create(self, name, description=None, units=None,
+
                agg_method="PRIORITY_FILL", overwrite=False):
         """ Create, or gets if exists, a Symbol. """
         sym = self.try_to_get(name)
@@ -113,7 +207,7 @@ class SymbolManager(object):
                 msg = msg.format(name)
                 raise Exception(msg)
 
-        sym = Symbol(name, description, freq, units, agg_method)
+        sym = Symbol(name, description, units, agg_method)
 
         print "Creating {}".format(sym.name)
         sym.add_alias(name)
@@ -194,12 +288,11 @@ class Symbol(Base, ReprMixin):
 
     name = Column('name', String, primary_key=True)
     description = Column('description', String)
-    freq = Column('freq', String)
     units = Column('units', String)
     agg_method = Column('agg_method', String)
 
+    index = relationship('Index', uselist=False, backref='_symbols', cascade=ADO)
     handle = relationship("SymbolHandle", uselist=False, backref='_symbols', cascade=ADO)
-
     tags = relationship("SymbolTag", cascade=ADO)
     aliases = relationship("SymbolAlias", cascade=ADO)
     validity = relationship("SymbolValidity", cascade=ADO)
@@ -208,8 +301,9 @@ class Symbol(Base, ReprMixin):
     # overrides = relationship("Override",cascade="save-update",
     #              passive_deletes=True)
 
-    def __init__(self, name, description=None, freq=None, units=None,
-                 agg_method="PRIORITY_FILL"):
+    def __init__(self, name, description=None, units=None,
+                 agg_method="PRIORITY_FILL",
+                 indexname="unnamed", indextyp="DatetimeIndex"):
         """
         Parameters
         ----------
@@ -218,8 +312,6 @@ class Symbol(Base, ReprMixin):
             as a primary key across the trump installation.
         description : str, optional
             a description of the symbol, just for notes.
-        freq : str, optional
-            a pandas dateoffset string.
         units : str, optional
             a string representing the units for the data.
         agg_method : str, default PRIORITY_FILL
@@ -229,8 +321,9 @@ class Symbol(Base, ReprMixin):
         """
         self.name = name
         self.description = description
-        self.freq = freq
         self.units = units
+
+        self.index = Index(indexname, indextyp, sym=name)
         self.agg_method = agg_method
         self.datatable = None
         self.datatable_exists = False
@@ -337,6 +430,8 @@ class Symbol(Base, ReprMixin):
             msg = "There was a problem aggregating feeds for {}".format(self.symname)
             Handler(logic,msg)
 
+
+
         # SQLAQ There are several states to deal with at this point
         # A) the datatable exists but a feed has been added
         # B) the datatable doesn't exist and needs to be created
@@ -349,16 +444,20 @@ class Symbol(Base, ReprMixin):
         # a more elegant answer.  A check, of somekind prior to deletion?
 
         # if not self.datatable_exists:
-        #     self._init_datatable()
+        #     self._init_datatable() #older version of _init_datatable
         # delete(self.datatable).execute()
-        # self._init_datatable()
+        # self._init_datatable() #older version of _init_datatable
 
         # Is this the best way to check?
         # if engine.dialect.has_table(session.connection(), self.name):
         #    delete(self.datatable).execute()
-        self._init_datatable()
+        self._refresh_datatable_schema()
 
-        data.index.name = 'datetime'
+        indt = indexingtypes[self.index.indtype]
+        indt = indt(data, self.index.case, self.index.getkwargs())
+        data = indt.final_dataframe()
+
+        data.index.name = 'indx'
         data = data.reset_index()
         session.execute(self.datatable.insert(),
                         data.to_dict(orient='records'))
@@ -528,7 +627,7 @@ class Symbol(Base, ReprMixin):
     def data(self):
         dtbl = self.datatable
         if isinstance(dtbl, Table):
-            return session.query(dtbl.c.datetime, dtbl.c.final).all()
+            return session.query(dtbl.c.indx, dtbl.c.final).all()
         else:
             raise Exception("Symbol has no datatable")
 
@@ -537,8 +636,13 @@ class Symbol(Base, ReprMixin):
         """ returns the dataframe representation of the symbol's final data """
         data = self.data()
         adf = pd.DataFrame(data)
-        adf.columns = ['dateindex', self.name]
-        adf = adf.set_index('dateindex')
+        adf.columns = [self.index.name, self.name]
+        adf = adf.set_index(self.index.name)
+
+        indt = indexingtypes[self.index.indtype]
+        indt = indt(adf, self.index.case, self.index.getkwargs())
+        adf = indt.final_series()
+
         return adf
 
     def del_feed(self):
@@ -581,10 +685,19 @@ class Symbol(Base, ReprMixin):
         Instantiates the .datatable attribute, pointing to a table in the
         database that stores all the cached data
         """
-        self.datatable = self._datatable_factory()
-        self.datatable.drop(checkfirst=True)
-        self.datatable.create()
+        try:
+            self.datatable = Table(self.name, metadata, autoload=True)
+        except NoSuchTableError:
+            print "Creating datatable, cause it doesn't exist"
+            self.datatable = self._datatable_factory()
+            self.datatable.create()
         self.datatable_exists = True
+
+    def _refresh_datatable_schema(self):
+            self.datatable = self._datatable_factory()
+            self.datatable.drop(checkfirst=True)
+            self.datatable.create()
+            self.datatable_exists = True
 
     def _datatable_factory(self):
         """
@@ -594,11 +707,20 @@ class Symbol(Base, ReprMixin):
         feed_cols = ['feed{0:03d}'.format(i + 1) for i in range(self.n_feeds)]
         feed_cols = ['override_feed000'] + feed_cols + ['failsafe_feed999']
 
+        print tosqla
+        print self.index.indtype
+
+        sqlatyp = tosqla[self.index.indtype]
+        print sqlatyp
+
         atbl = Table(self.name, metadata,
-                     Column('datetime', DateTime, primary_key=True),
+                     Column('indx', sqlatyp, primary_key=True),
                      Column('final', Float),
                      *(Column(feed_col, Float) for feed_col in feed_cols),
                      extend_existing=True)
+
+        # Note: extend_existing=True has been removed, because _init_datable
+        # should only be called after checking/dropping, depending on the case.
         return atbl
 
 
@@ -1151,4 +1273,13 @@ except ProgrammingError as pgerr:
     raise
 
 if __name__ == '__main__':
-    pass
+
+    ind = Index("newind", "date_range")
+
+    session.add(ind)
+
+    ind.setkwargs({'start' : '201001', 'end' : '201002', 'freq' : None })
+
+    session.commit()
+
+    print ind.getkwargs()
