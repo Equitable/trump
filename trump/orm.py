@@ -97,13 +97,20 @@ class SymbolManager(object):
         self.ses.close()
 
     def create(self, name, description=None, freq=None, units=None,
-               agg_method="PRIORITY_FILL"):
+               agg_method="PRIORITY_FILL", overwrite=False):
         """ Create, or gets if exists, a Symbol. """
         sym = self.try_to_get(name)
+
+
         if sym is not None:
-            print "Deleting {}".format(sym.name)
-            self.ses.delete(sym)
-            self.ses.commit()
+            if overwrite:
+                print "Deleting {}".format(sym.name)
+                self.ses.delete(sym)
+                self.ses.commit()
+            else:
+                msg = 'Symbol {} already exists. \
+                      Consider setting overwrite to True.'.format(name)
+                raise Exception(msg)
 
         sym = Symbol(name, description, freq, units, agg_method)
 
@@ -261,7 +268,7 @@ class Symbol(Base, ReprMixin):
         objs.commit()
 
     def cache(self):
-        """ Re-caches the Symbol's datatable by quering each Feed. """
+        """ Re-caches the Symbol's datatable by querying each Feed. """
 
         data = []
         cols = ['final', 'override_feed000', 'failsafe_feed999']
