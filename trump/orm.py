@@ -108,8 +108,9 @@ class SymbolManager(object):
                 self.ses.delete(sym)
                 self.ses.commit()
             else:
-                msg = 'Symbol {} already exists. \
-                      Consider setting overwrite to True.'.format(name)
+                msg = 'Symbol {} already exists.\n' + \
+                      'Consider setting overwrite to True.'
+                msg = msg.format(name)
                 raise Exception(msg)
 
         sym = Symbol(name, description, freq, units, agg_method)
@@ -236,6 +237,10 @@ class Symbol(Base, ReprMixin):
         # SQLAQ - Is this okay to do? It feels sneaky, dirty and wrong.
         session.add(self)
 
+    def _reset_datatable(self):
+        self.datatable.drop(checkfirst=True)
+        self.datatable_exists = False
+
     def update_handle(self, chkpnt_settings):
         """
         Update a symbol's handle checkpoint settings
@@ -357,6 +362,7 @@ class Symbol(Base, ReprMixin):
         data = data.reset_index()
         session.execute(self.datatable.insert(),
                         data.to_dict(orient='records'))
+        session.commit()
 
         try:
             if not self.isvalid():
@@ -521,7 +527,6 @@ class Symbol(Base, ReprMixin):
 
     def data(self):
         dtbl = self.datatable
-        print type(dtbl)
         if isinstance(dtbl, Table):
             return session.query(dtbl.c.datetime, dtbl.c.final).all()
         else:
