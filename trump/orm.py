@@ -37,15 +37,8 @@ error handling and validity instructions.
 #
 #        Why?
 
-import traceback as tb
-import warnings as wn
+
 import datetime as dt
-import sys
-
-def trumpwarn(message, category=UserWarning, filename = '', lineno = -1):
-    print ("TRUMP WARNING: " + str(message))
-
-wn.showwarning = trumpwarn
 
 import pandas as pd
 from sqlalchemy import event, Table, Column, ForeignKey, ForeignKeyConstraint,\
@@ -62,6 +55,8 @@ from trump.tools import ReprMixin, ProxyDict, BitFlag, BitFlagType, \
 from trump.extensions.symbol_aggs import apply_row, choose_col
 from trump.templating import bFeed, pab, pnab
 from trump.options import read_config, read_settings
+
+from handling import Handler
 
 BitFlag.associate_with(BitFlagType)
 
@@ -265,9 +260,6 @@ class Symbol(Base, ReprMixin):
                 setattr(self.handle, checkpoint, settings)
         objs.commit()
 
-    def cache_feed(self, fid):
-        raise NotImplementedError
-
     def cache(self):
         """ Re-caches the Symbol's datatable by quering each Feed. """
 
@@ -319,26 +311,9 @@ class Symbol(Base, ReprMixin):
             elif self.agg_method in choose_col:
                 data['final'] = choose_col[self.agg_method](data)
         except:
-            handlr = self.handle.feed_aggregation_problem
+            logic = self.handle.feed_aggregation_problem
             msg = "There was a problem aggregating feeds for {}".format(self.symname)
-            print handlr
-            if handlr['stdout']:
-                print "\nTRUMP:\n{}\nThe following traceback was provided".format(msg)
-                tb.print_exc()
-            if handlr['warn']:
-                typ, val, tback = sys.exc_info()
-                tbextract = tb.extract_tb(tback)
-                tbstr = "The following information was provided in the traceback:\n"
-                for stacklvl in tbextract:
-                    tbstr += "   File '{}', line {}, in {}\n".format(*stacklvl)
-                tbstr += "{} : {}".format(typ.__name__, val)
-                wn.warn(msg + "\n" + tbstr)
-            if handlr['email']: raise NotImplementedError()
-            if handlr['dblog']: raise NotImplementedError()
-            if handlr['txtlog']: raise NotImplementedError()
-            if handlr['report']: raise NotImplementedError()
-            if handlr['raise']:
-                raise
+            Handler(logic,msg)
 
             self.data = pd.Series()
 
@@ -894,26 +869,10 @@ class Feed(Base, ReprMixin):
             else:
                 raise Exception("Unknown Source Type : {}".format(stype))
         except:
-            handlr = self.handle.api_failure
+            logic = self.handle.api_failure
             msg = "There was a problem caching feed #{} for {}".format(self.fnum,self.symname)
-            print handlr
-            if handlr['stdout']:
-                print "\nTRUMP:\n{}\nThe following traceback was provided".format(msg)
-                tb.print_exc()
-            if handlr['warn']:
-                typ, val, tback = sys.exc_info()
-                tbextract = tb.extract_tb(tback)
-                tbstr = "The following information was provided in the traceback:\n"
-                for stacklvl in tbextract:
-                    tbstr += "   File '{}', line {}, in {}\n".format(*stacklvl)
-                tbstr += "{} : {}".format(typ.__name__, val)
-                wn.warn(msg + "\n" + tbstr)
-            if handlr['email']: raise NotImplementedError()
-            if handlr['dblog']: raise NotImplementedError()
-            if handlr['txtlog']: raise NotImplementedError()
-            if handlr['report']: raise NotImplementedError()
-            if handlr['raise']:
-                raise
+            Handler(logic,msg).process()
+
             self.data = pd.Series()
 
         # munge accordingly
