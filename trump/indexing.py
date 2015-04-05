@@ -2,7 +2,8 @@ import inspect
 import sys
 
 import pandas as pd
-from pandas.tseries.index import DatetimeIndex as pdDatetimeIndex
+
+pdDatetimeIndex = pd.tseries.index.DatetimeIndex
 
 from sqlalchemy import DateTime, Integer, String
 
