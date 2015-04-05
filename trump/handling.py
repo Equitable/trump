@@ -3,15 +3,18 @@ import warnings as wn
 import sys
 
 
-def trumpwarn(message, category=UserWarning, filename = '', lineno = -1):
+def trumpwarn(message, category=UserWarning, filename='', lineno=-1):
     print ("TRUMP WARNING: " + str(message))
 
 wn.showwarning = trumpwarn
 
+
 class Handler(object):
+
     def __init__(self, logic, msg=None):
         self.logic = logic
         self.msg = msg or "There was a problem"
+
     def process(self):
         print self.logic
 
@@ -28,13 +31,17 @@ class Handler(object):
             tbstr += "{} : {}".format(typ.__name__, val)
             wn.warn(self.msg + "\n" + tbstr)
 
-        if self.logic['email']: raise NotImplementedError()
+        if self.logic['email']:
+            raise NotImplementedError()
 
-        if self.logic['dblog']: raise NotImplementedError()
+        if self.logic['dblog']:
+            raise NotImplementedError()
 
-        if self.logic['txtlog']: raise NotImplementedError()
+        if self.logic['txtlog']:
+            raise NotImplementedError()
 
-        if self.logic['report']: raise NotImplementedError()
+        if self.logic['report']:
+            raise NotImplementedError()
 
         if self.logic['raise']:
             raise

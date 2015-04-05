@@ -8,6 +8,7 @@ from sqlalchemy import DateTime, Integer, String
 
 
 class IndexImplementor(object):
+
     """ IndexImplementors are the final step applied to data prior
         to a) the datatable getting cached and b) the data being served.
 
@@ -17,6 +18,7 @@ class IndexImplementor(object):
         They need to be able to handle
     """
     sqlatyp = Integer
+
     def __init__(self, df_or_s, case, kwargs):
         self.data = df_or_s
 
@@ -26,13 +28,12 @@ class IndexImplementor(object):
     def final_dataframe(self):
         return self.data
 
+
 class DatetimeIndex(IndexImplementor):
     sqlatyp = DateTime
+
     def __init__(self, dfors, case, kwargs):
         self.data = dfors
-
-        print "self.data = "
-        print self.data
 
         if case == 'asis':
             if isinstance(self.data.index, pdDatetimeIndex):
@@ -55,31 +56,38 @@ class DatetimeIndex(IndexImplementor):
         else:
             raise Exception("Indexing case '{}' unsupported".format(case))
 
-    def default(self,kwargs):
+    def default(self, kwargs):
         start = pd.to_datetime(self.data.index[0])
         end = pd.to_datetime(self.data.index[-1])
-        newind = pdDatetimeIndex(start=start,end=end,**kwargs)
+        newind = pdDatetimeIndex(start=start, end=end, **kwargs)
         self.data = self.data.reindex(newind)
+
 
 class PeriodIndex(IndexImplementor):
     sqlatyp = DateTime
+
     def __init__(self, df_or_s, case, kwargs):
         raise NotImplementedError()
+
 
 class IntIndex(IndexImplementor):
     sqlatyp = Integer
+
     def __init__(self, df_or_s, case, kwargs):
         raise NotImplementedError()
 
+
 class StrIndex(IndexImplementor):
     sqlatyp = String
+
     def __init__(self, df_or_s, case, kwargs):
         raise NotImplementedError()
+
 
 def pred(c):
     return inspect.isclass(c) and c.__module__ == pred.__module__
 
 classes = inspect.getmembers(sys.modules[__name__], pred)
 
-indexingtypes = {cls[0] : cls[1] for cls in classes}
-tosqla = {cls[0] : cls[1].sqlatyp for cls in classes}
+indexingtypes = {cls[0]: cls[1] for cls in classes}
+tosqla = {cls[0]: cls[1].sqlatyp for cls in classes}

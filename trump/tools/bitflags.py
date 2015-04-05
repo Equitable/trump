@@ -10,6 +10,7 @@ from sqlalchemy.ext.mutable import Mutable
 
 
 class BitFlag(Mutable, object):
+
     """
     Semi-efficiently encode and decode a boolean array
     as an an integer representing bitwise logic based flags
@@ -55,9 +56,9 @@ class BitFlag(Mutable, object):
 
         # a dict of the form {flags : bool, } was passed...
         # convert it to the boolean array just the same.
-        elif isinstance(obj, (dict,list)):
+        elif isinstance(obj, (dict, list)):
             if isinstance(obj, list):
-                obj = dict(zip(obj,[True] * len(obj)))
+                obj = dict(zip(obj, [True] * len(obj)))
             # if there are defaultflags, use them, otherwise assume all flages
             # are unset
             if defaultflags:
@@ -139,6 +140,7 @@ class BitFlag(Mutable, object):
 
 
 class BitFlagType(TypeDecorator):
+
     """ SQLAlchemy type definition for the BitFlag object """
 
     impl = Integer
@@ -166,4 +168,4 @@ if __name__ == '__main__':
         print bf.bools
         print bf.bin
 
-    bf = BitFlag(['enabled','stdout','report'])
+    bf = BitFlag(['enabled', 'stdout', 'report'])

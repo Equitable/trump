@@ -46,7 +46,7 @@ from sqlalchemy import event, Table, Column, ForeignKey, ForeignKeyConstraint,\
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.orm.session import object_session
-from sqlalchemy.exc import ProgrammingError, IntegrityError, NoSuchTableError
+from sqlalchemy.exc import ProgrammingError, NoSuchTableError
 from sqlalchemy.sql import and_
 from sqlalchemy import create_engine
 
@@ -82,6 +82,7 @@ CC = {'onupdate': "CASCADE", 'ondelete': "CASCADE"}
 CHECKPOINTS = ('EXCEPTION', 'CHECK')
 # STATE = ('ENABLED', 'DISABLED', 'ERROR')
 
+
 class Index(Base, ReprMixin):
     __tablename__ = "_indicies"
 
@@ -96,7 +97,7 @@ class Index(Base, ReprMixin):
 
     def __init__(self, name, indtype, case=None, kwargs={}, sym=None):
 
-        set_symbol_or_symname(self,sym)
+        set_symbol_or_symname(self, sym)
 
         self.name = name
         self.indtype = indtype
@@ -107,7 +108,7 @@ class Index(Base, ReprMixin):
         if kwargs is not None:
             list_of_kwargs = []
             for kword, val in kwargs.iteritems():
-                list_of_kwargs.append(IndexKwarg(kword,val))
+                list_of_kwargs.append(IndexKwarg(kword, val))
             self.kwargs = list_of_kwargs
         else:
             self.kwargs = []
@@ -174,10 +175,13 @@ class IndexKwarg(Base, ReprMixin):
         self.intcol = None
         self.floatcol = None
 
+
 class SymbolManager(object):
+
     """
     A SymbolManager handles the creation, getting and deletion of symbols.
     """
+
     def __init__(self, ses=None):
         self.ses = ses or session
 
@@ -194,7 +198,6 @@ class SymbolManager(object):
                agg_method="PRIORITY_FILL", overwrite=False):
         """ Create, or gets if exists, a Symbol. """
         sym = self.try_to_get(name)
-
 
         if sym is not None:
             if overwrite:
@@ -250,7 +253,7 @@ class SymbolManager(object):
         doesn't exist.
         """
         syms = self.try_to_get(symbol)
-        if syms == None:
+        if syms is None:
             raise Exception("Symbol {} does not exist".format(symbol))
         else:
             return syms
@@ -280,6 +283,7 @@ class SymbolManager(object):
 
 
 class Symbol(Base, ReprMixin):
+
     """
     agg_method : see extensions.symbol_aggs.py and look at the wrapped function
     names.
@@ -291,8 +295,10 @@ class Symbol(Base, ReprMixin):
     units = Column('units', String)
     agg_method = Column('agg_method', String)
 
-    index = relationship('Index', uselist=False, backref='_symbols', cascade=ADO)
-    handle = relationship("SymbolHandle", uselist=False, backref='_symbols', cascade=ADO)
+    index = relationship('Index', uselist=False, backref='_symbols',
+                         cascade=ADO)
+    handle = relationship("SymbolHandle", uselist=False, backref='_symbols',
+                         cascade=ADO)
     tags = relationship("SymbolTag", cascade=ADO)
     aliases = relationship("SymbolAlias", cascade=ADO)
     validity = relationship("SymbolValidity", cascade=ADO)
@@ -317,7 +323,7 @@ class Symbol(Base, ReprMixin):
         agg_method : str, default PRIORITY_FILL
             the method used for aggregating feeds, see 
             trump.extensions.symbol_aggs.py for the list of available options.
-            
+
         """
         self.name = name
         self.description = description
@@ -382,14 +388,16 @@ class Symbol(Base, ReprMixin):
                 cols.append(afeed.data.name)
         except:
             logic = self.handle.caching
-            msg = "There was a problem caching feeds for {}".format(self.name)
-            Handler(logic,msg).process()
+            msg = "There was a problem caching feeds for {}"
+            msg = msg.format(self.name)
+            Handler(logic, msg).process()
 
         try:
             data = pd.concat(data, axis=1)
         except:
             logic = self.handle.concatenation
-            msg = "There was a problem concatenating feeds for {}".format(self.name)
+            msg = "There was a problem concatenating feeds for {}"
+            msg = msg.format(self.name)
             Handler(logic,msg).process()
 
         data_len = len(data)
@@ -427,9 +435,9 @@ class Symbol(Base, ReprMixin):
                 data['final'] = choose_col[self.agg_method](data)
         except:
             logic = self.handle.aggregation
-            msg = "There was a problem aggregating feeds for {}".format(self.symname)
+            msg = "There was a problem aggregating feeds for {}"
+            msg = msg.format(self.symname)
             Handler(logic,msg)
-
 
 
         # SQLAQ There are several states to deal with at this point
@@ -468,7 +476,8 @@ class Symbol(Base, ReprMixin):
                 raise Exception('{} is not valid'.format(self.name))
         except:
             logic = self.handle.validity_check
-            msg = "There was a problem during the validity check for {}".format(self.symname)
+            msg = "There was a problem during the validity check for {}"
+            msg = msg.format(self.symname)
             Handler(logic,msg)
 
     def isvalid(self):
@@ -545,12 +554,12 @@ class Symbol(Base, ReprMixin):
         objs.add(tmp)
         objs.commit()
 
-    def del_tags(self,tags):
+    def del_tags(self, tags):
         """ remove a tag or tags from a symbol """
         # SQLA Adding a SymbolTag object, feels awkward/uneccessary.
         # Should I be implementing this functionality a different way?
 
-        if isinstance(tags,(str,unicode)):
+        if isinstance(tags, (str, unicode)):
             tags = [tags]
 
         objs = object_session(self)
@@ -569,7 +578,7 @@ class Symbol(Base, ReprMixin):
         # SQLA Adding a SymbolTag object, feels awkward/uneccessary.
         # Should I be implementing this functionality a different way?
 
-        if isinstance(tags,(str,unicode)):
+        if isinstance(tags, (str, unicode)):
             tags = [tags]
 
         objs = object_session(self)
@@ -600,7 +609,6 @@ class Symbol(Base, ReprMixin):
                        munging,
                        obj.meta,
                        fnum)
-
 
         elif isinstance(obj, Feed):
             fed = obj
@@ -665,7 +673,6 @@ class Symbol(Base, ReprMixin):
                                                 key=key,
                                                 value=value,
                                                 symbol=self))
-        #self = session.merge(self)
         session.commit()
 
     def set_description(self, description):
@@ -694,10 +701,10 @@ class Symbol(Base, ReprMixin):
         self.datatable_exists = True
 
     def _refresh_datatable_schema(self):
-            self.datatable = self._datatable_factory()
-            self.datatable.drop(checkfirst=True)
-            self.datatable.create()
-            self.datatable_exists = True
+        self.datatable = self._datatable_factory()
+        self.datatable.drop(checkfirst=True)
+        self.datatable.create()
+        self.datatable_exists = True
 
     def _datatable_factory(self):
         """
@@ -707,20 +714,13 @@ class Symbol(Base, ReprMixin):
         feed_cols = ['feed{0:03d}'.format(i + 1) for i in range(self.n_feeds)]
         feed_cols = ['override_feed000'] + feed_cols + ['failsafe_feed999']
 
-        print tosqla
-        print self.index.indtype
-
         sqlatyp = tosqla[self.index.indtype]
-        print sqlatyp
 
         atbl = Table(self.name, metadata,
                      Column('indx', sqlatyp, primary_key=True),
                      Column('final', Float),
                      *(Column(feed_col, Float) for feed_col in feed_cols),
                      extend_existing=True)
-
-        # Note: extend_existing=True has been removed, because _init_datable
-        # should only be called after checking/dropping, depending on the case.
         return atbl
 
 
@@ -730,11 +730,12 @@ def __receive_load(target, context):
     target._init_datatable()
 
 
-def set_symbol_or_symname(self,sym):
-    if isinstance(sym, (str,unicode)):
-        setattr(self,"symname",sym)
+def set_symbol_or_symname(self, sym):
+    if isinstance(sym, (str, unicode)):
+        setattr(self, "symname", sym)
     else:
-        setattr(self,"symbol",sym)
+        setattr(self, "symbol", sym)
+
 
 class SymbolTag(Base, ReprMixin):
     __tablename__ = '_symbol_tags'
@@ -745,7 +746,7 @@ class SymbolTag(Base, ReprMixin):
     symbol = relationship("Symbol")
 
     def __init__(self, tag, sym=None):
-        set_symbol_or_symname(self,sym)
+        set_symbol_or_symname(self, sym)
         self.tag = tag
 
 
@@ -799,7 +800,7 @@ class SymbolHandle(Base, ReprMixin):
 
     def __init__(self, chkpnt_settings={}, sym=None):
 
-        set_symbol_or_symname(self,sym)
+        set_symbol_or_symname(self, sym)
 
         self.caching = BitFlag(0)
         self.concatenation = BitFlag(['raise'])
@@ -810,10 +811,11 @@ class SymbolHandle(Base, ReprMixin):
         for checkpoint in chkpnt_settings:
             if checkpoint in SymbolHandle.__table__.columns:
                 settings = chkpnt_settings[checkpoint]
-                setattr(self,checkpoint, settings)
+                setattr(self, checkpoint, settings)
 
 
 class Feed(Base, ReprMixin):
+
     """
     The Feed object stores parameters associated with souring and munging
     a single series.
@@ -827,7 +829,8 @@ class Feed(Base, ReprMixin):
     state = Column('state', String, nullable=False)
     ftype = Column('ftype', String, nullable=False)
 
-    handle = relationship("FeedHandle", uselist=False, backref='_feeds', cascade=ADO)
+    handle = relationship("FeedHandle", uselist=False, backref='_feeds',
+                          cascade=ADO)
 
     tags = relationship("FeedTag", cascade=ADO)
     sourcing = relationship("FeedSource", lazy="dynamic", cascade=ADO)
@@ -1030,7 +1033,8 @@ class Feed(Base, ReprMixin):
                 raise Exception("Unknown Source Type : {}".format(stype))
         except:
             logic = self.handle.api_failure
-            msg = "There was a problem caching feed #{} for {}".format(self.fnum,self.symname)
+            msg = "There was a problem caching feed #{} for {}"
+            msg = msg.format(self.fnum,self.symname)
             Handler(logic,msg).process()
 
             self.data = pd.Series()
@@ -1048,7 +1052,8 @@ class Feed(Base, ReprMixin):
                 raise Exception('Feed index is not uniquely monotonic')
         except:
             logic = self.handle.monounique
-            msg = "The feed #{} for {} was not monotonic and unique.".format(self.fnum,self.symname)
+            msg = "The feed #{} for {} was not monotonic and unique."
+            msg = msg.format(self.fnum,self.symname)
             Handler(logic,msg).process()
 
         # munge accordingly
@@ -1166,7 +1171,8 @@ class FeedMunge(Base, ReprMixin):
     feed = relationship("Feed")
     mungeargs = relationship("FeedMungeArg", lazy="dynamic", cascade=ADO)
 
-    fkey = ForeignKeyConstraint([symname, fnum], [Feed.symname, Feed.fnum])
+    fkey = ForeignKeyConstraint([symname, fnum],
+                                [Feed.symname, Feed.fnum])
     __table_args__ = (fkey, {})
 
     def __init__(self, order, mtype, method, feed):
@@ -1202,6 +1208,7 @@ class FeedMungeArg(Base, ReprMixin):
         self.value = value
         self.feedmunge = feedmunge
 
+
 class FeedHandle(Base, ReprMixin):
     __tablename__ = "_feed_handle"
 
@@ -1217,24 +1224,26 @@ class FeedHandle(Base, ReprMixin):
 
     feed = relationship("Feed")
 
-    fkey = ForeignKeyConstraint([symname, fnum], [Feed.symname, Feed.fnum])
+    fkey = ForeignKeyConstraint([symname, fnum],
+                                [Feed.symname, Feed.fnum])
     __table_args__ = (fkey, {})
 
     def __init__(self, chkpnt_settings={}, feed=None):
         self.feed = feed
 
         self.api_failure = BitFlag(['raise'])
-        self.empty_feed = BitFlag(['stdout','report'])
-        self.index_type_problem = BitFlag(['stdout','report'])
+        self.empty_feed = BitFlag(['stdout', 'report'])
+        self.index_type_problem = BitFlag(['stdout', 'report'])
         self.index_property_problem = BitFlag(['stdout'])
-        self.data_type_problem = BitFlag(['stdout','report'])
+        self.data_type_problem = BitFlag(['stdout', 'report'])
         self.monounique = BitFlag(['raise'])
 
         # override with anything passed in settings
         for checkpoint in chkpnt_settings:
             if checkpoint in FeedHandle.__table__.columns:
                 settings = chkpnt_settings[checkpoint]
-                setattr(self,checkpoint, settings)
+                setattr(self, checkpoint, settings)
+
 
 class Override(Base, ReprMixin):
     __tablename__ = '_overrides'
@@ -1263,7 +1272,6 @@ class FailSafe(Base, ReprMixin):
     user = Column('user', String, nullable=True)
     comment = Column('comment', String, nullable=True)
 
-
 try:
     Base.metadata.create_all(engine)
     print "Trump is ready."
@@ -1278,7 +1286,8 @@ if __name__ == '__main__':
 
     session.add(ind)
 
-    ind.setkwargs({'start' : '201001', 'end' : '201002', 'freq' : None })
+    kw = {'start': '201001', 'end': '201002', 'freq': None}
+    ind.setkwargs(kw)
 
     session.commit()
 
