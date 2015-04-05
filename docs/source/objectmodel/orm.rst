@@ -3,11 +3,14 @@ Object Model
 
 .. image:: sqla-orm.png
 
+Symbol Manager
+------------------------
+
 .. autoclass:: trump.orm.SymbolManager
-   :members: create, delete, get, finish
+   :members: create, delete, get, complete, finish
 
 Symbols
--------
+------------
    
 .. autoclass:: trump.orm.Symbol
    :members: cache, describe
@@ -16,10 +19,17 @@ Symbols
 
 .. autoclass:: trump.orm.SymbolHandle
 
+.. autoclass:: trump.orm.Index
+   :members: setkwargs, getkwargs
+
+.. autoclass:: trump.orm.IndexKwarg
+   :members: setval, val
+
 Feeds
------
+--------
 
 .. autoclass:: trump.orm.Feed
+   :members: cache
 
 .. autoclass:: trump.orm.FeedMeta
 
@@ -29,8 +39,10 @@ Feeds
 
 .. autoclass:: trump.orm.FeedHandle
 
+.. automodule :: trump.indexing
+
 Centralized Data Editing
-------------------------
+----------------------------------
 
 Each trump datatable comes with two extra columns beyond the feeds, index and final.  
 
