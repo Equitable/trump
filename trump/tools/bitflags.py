@@ -12,8 +12,55 @@ from sqlalchemy.ext.mutable import Mutable
 class BitFlag(Mutable, object):
 
     """
-    Semi-efficiently encode and decode a boolean array
-    as an an integer representing bitwise logic based flags
+    An object used to encode and decode a boolean array
+    as an an integer representing bitwise logic-flags.
+
+    There are 7 hardcoded flags:
+
+    - raise
+    - warn
+    - email
+    - dblog
+    - txtlog
+    - stdout
+    - report
+
+    Each can be set to True or False, with convenience
+    either at instantiation, or key-base set operations.
+
+    Example of instatiation, setting the email and stdout
+    flag to True::
+
+        BitFlag(['email','stdout'])
+
+    Example of instatiation, setting the email then,
+    later setting stdout flag to True::
+
+        bf = BitFlag(['email'])
+        bf['stdout'] = True
+
+    After either running either of these, the BitFlag
+    will have a value of::
+
+        >>> bf.val == 36
+        True
+
+        >>> print bf
+        raise warn EMAIL dblog txtlog STDOUT report
+
+        >>> print bf.bin_str
+        00100100
+
+        >>> print bf.email
+        True
+
+    ...because the 3rd and 6th bit are set.
+
+    .. warning::
+
+       Flag state can be read from the accessors named
+       after the flags, however, they can't be written to.
+
     """
     flags = ['raise', 'warn', 'email', 'dblog',
              'txtlog', 'stdout', 'report']
@@ -29,8 +76,6 @@ class BitFlag(Mutable, object):
             one or more flags.  Only applicable
             when a dictionary is passed to obj.  It's
             ignored when obj is an integer.
-        :return:
-            BitFlag
         """
 
         # calculate an msb-like number, which is actually
@@ -59,7 +104,7 @@ class BitFlag(Mutable, object):
         elif isinstance(obj, (dict, list)):
             if isinstance(obj, list):
                 obj = dict(zip(obj, [True] * len(obj)))
-            # if there are defaultflags, use them, otherwise assume all flages
+            # if there are defaultflags, use them, otherwise assume all flags
             # are unset
             if defaultflags:
                 defaults = defaultflags
@@ -124,15 +169,37 @@ class BitFlag(Mutable, object):
         self.changed()
 
     def __call__(self):
+        """
+        Calling a BitFlag object returns it's integer value.
+
+        :return: int
+        """
         return self.val
 
     def __and__(self, other):
+        """
+        :param other: int, BitFlag
+
+        BitFlag and integers work with the and
+        operator using bitwise logic.
+
+        :return: BitFlag
+        """
+
         if isinstance(other, BitFlag):
             return BitFlag(other() & self())
         elif isinstance(other, int):
             return BitFlag(other & self())
 
     def __or__(self, other):
+        """
+        :param other: int, BitFlag
+
+        BitFlag and integers work with the or
+        operator using bitwise logic.
+
+        :return: BitFlag
+        """
         if isinstance(other, BitFlag):
             return BitFlag(other() | self())
         elif isinstance(other, int):
@@ -141,7 +208,9 @@ class BitFlag(Mutable, object):
 
 class BitFlagType(TypeDecorator):
 
-    """ SQLAlchemy type definition for the BitFlag object """
+    """ SQLAlchemy type definition for the BitFlag implementation.
+        A BitFlag is a python object that wraps bitwise logic for hardcoded
+        flags into a single integer value for quick database access and use."""
 
     impl = Integer
 
@@ -168,4 +237,9 @@ if __name__ == '__main__':
         print bf.bools
         print bf.bin
 
-    bf = BitFlag(['enabled', 'stdout', 'report'])
+    bf = BitFlag(['email', 'stdout'])
+    print bf
+    print bf.val
+    print bf.bin
+    print bf.bin_str
+    print bf.email
