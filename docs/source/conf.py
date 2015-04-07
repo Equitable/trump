@@ -18,8 +18,14 @@ import os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
 
+sys.path.insert(0, os.path.split(os.path.abspath('..'))[0])
+
+print "Using the following sys.path:\n"
+for i in sys.path:
+    print i
+
+print ""
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -281,3 +287,8 @@ class Mock(MagicMock):
 
 MOCK_MODULES = ['pandas']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+autoclass_content = 'both'
+autodoc_member_order = 'bycode'
+autodoc_mock_imports = 'pandas'
+autodoc_default_flags = 'show-inheritance'

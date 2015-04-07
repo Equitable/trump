@@ -90,8 +90,13 @@ class Index(Base, ReprMixin):
                      primary_key=True)
 
     name = Column("name", String, nullable=False)
+    """string to name the index, only used when serving."""
+
     indtype = Column("indtype", String, nullable=False)
+    """string representing a :py:class:`~trump.indexing.IndexImplementor`."""
+
     case = Column("case", String)
+    """string used in a :class:`~.indexing.IndexImplementor` switch statement."""
 
     kwargs = relationship("IndexKwarg", lazy="dynamic", cascade=ADO)
 
@@ -180,9 +185,17 @@ class SymbolManager(object):
 
     """
     A SymbolManager handles the creation, getting and deletion of symbols.
+
+    Behind the scenes, it also maintain a global SQLAlchemy session.
     """
 
     def __init__(self, ses=None):
+        """
+        :param ses: session
+            Will attempt to use the global SQLAlchemy session, unless
+            specified otherwise.
+
+        """
         self.ses = ses or session
 
     def finish(self):
@@ -191,12 +204,33 @@ class SymbolManager(object):
 
         Call after doing any work with Trump.
         """
+        self.complete()
         self.ses.close()
 
     def create(self, name, description=None, units=None,
-
                agg_method="PRIORITY_FILL", overwrite=False):
-        """ Create, or gets if exists, a Symbol. """
+        """
+        Create, or get if exists, a Symbol.
+
+        :param name: str
+            a symbol's name is a primary key, used across
+            the Trump ORM.
+        :param description:
+            an arbitrary string, used to store user information
+            related to the symbol.
+        :param units:
+            the functionality associated with units, is not
+            yet implemented, however, for now, this is simply
+            a string used to denote the units of the final
+            data Series.
+        :param agg_method: str
+            the aggregation method, used to calculate
+            the final feed.
+        :param overwrite: boolean
+            set to True, to delete an existing symbol
+        :return: Symbol
+        """
+        """ Create, or gets if exists, a specific Symbol. """
         sym = self.try_to_get(name)
 
         if sym is not None:
@@ -221,7 +255,10 @@ class SymbolManager(object):
         return sym
 
     def delete(self, symbol):
-        """ Deletes a Symbol. """
+        """
+        Deletes a Symbol.
+        :param symbol: str or Symbol
+        """
         if isinstance(symbol, str):
             sym = self.get(symbol)
         elif isinstance(symbol, Symbol):
@@ -232,14 +269,15 @@ class SymbolManager(object):
         self.ses.commit()
 
     def complete(self):
-        """ commits any changes to the session  """
+        """ commits any changes to the database  """
         self.ses.commit()
 
     def exists(self, symbol):
         """
         checks to see if a symbol exists
+        :param symbol: str or Symbol
 
-        returns boolean
+        :returns: bool
         """
         syms = self.ses.query(Symbol).filter(Symbol.name == symbol).all()
         if len(syms) == 0:
@@ -251,6 +289,9 @@ class SymbolManager(object):
         """
         Gets a Symbol based on name, which is expected to exist. Errors if it
         doesn't exist.
+
+        :param symbol: str
+
         """
         syms = self.try_to_get(symbol)
         if syms is None:
@@ -283,11 +324,6 @@ class SymbolManager(object):
 
 
 class Symbol(Base, ReprMixin):
-
-    """
-    agg_method : see extensions.symbol_aggs.py and look at the wrapped function
-    names.
-    """
     __tablename__ = '_symbols'
 
     name = Column('name', String, primary_key=True)
@@ -311,18 +347,20 @@ class Symbol(Base, ReprMixin):
                  agg_method="PRIORITY_FILL",
                  indexname="unnamed", indextyp="DatetimeIndex"):
         """
-        Parameters
-        ----------
-        name : str
+        :param name: str
             The name of the symbol to be added to the database, serves
             as a primary key across the trump installation.
-        description : str, optional
+        :param description: str, optional
             a description of the symbol, just for notes.
-        units : str, optional
+        :param units: str, optional
             a string representing the units for the data.
-        agg_method : str, default PRIORITY_FILL
+        :param agg_method: str, default PRIORITY_FILL
             the method used for aggregating feeds, see 
             trump.extensions.symbol_aggs.py for the list of available options.
+        :param indexname: str
+            a proprietary name assigned to the index.
+        :param indextyp: str
+            a string matching one of the classes in indexing.py
 
         """
         self.name = name
@@ -344,7 +382,7 @@ class Symbol(Base, ReprMixin):
         """
         Update a symbol's handle checkpoint settings
 
-        :param chkpnt_settings, dict:
+        :param: chkpnt_settings, dict
             a dictionary where the keys are stings representing
             individual handle checkpoint names, for a Symbol
             (eg. caching_of_feeds, feed_aggregation_problem, ...)
@@ -513,8 +551,8 @@ class Symbol(Base, ReprMixin):
 
     def add_override(self, dt_ind, value, dt_log=None, user=None, comment=None):
         """
-        appends a single value and date pair, to a symbol object, to be
-        used during the final steps of the aggregation of the datatable
+        Appends a single value and date pair, to a symbol object, to be
+        used during the final steps of the aggregation of the datatable.
 
         Overrides, get applied with highest priority.
         """
@@ -535,7 +573,7 @@ class Symbol(Base, ReprMixin):
     def add_fail_safe(self, dt_ind, value,
                       dt_log=None, user=None, comment=None):
         """
-        appends a single value and date pair, to a symbol object, to be
+        Appends a single value and date pair, to a symbol object, to be
         used during the final steps of the aggregation of the datatable.
 
         Failsafes, get applied with highest priority.
@@ -633,6 +671,9 @@ class Symbol(Base, ReprMixin):
             session.add(a)
 
     def data(self):
+        """
+        :return: rows from the datatable
+        """
         dtbl = self.datatable
         if isinstance(dtbl, Table):
             return session.query(dtbl.c.indx, dtbl.c.final).all()
@@ -726,7 +767,7 @@ class Symbol(Base, ReprMixin):
 
 @event.listens_for(Symbol, 'load')
 def __receive_load(target, context):
-    """ loads a symbols data table upon being queried """
+    """ loads a symbols datatable upon being queried """
     target._init_datatable()
 
 
@@ -786,6 +827,17 @@ class SymbolValidity(Base, ReprMixin):
 
 
 class SymbolHandle(Base, ReprMixin):
+    """
+    Stores instructions about specific handle points during
+    Symbol caching:
+
+    .. code-block:: python
+
+        sh = SymbolHandle({'aggregation' : BitFlag(36)}, aSymbol)
+        >>> sh.aggregation['email']
+        True
+
+    """
     __tablename__ = "_symbol_handle"
 
     symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
@@ -1210,6 +1262,17 @@ class FeedMungeArg(Base, ReprMixin):
 
 
 class FeedHandle(Base, ReprMixin):
+    """
+    Stores instructions about specific handle points during
+    Feed caching:
+
+    .. code-block:: python
+
+        fh = FeedHandle({'api_failure' : BitFlag(36)}, aSymbol.feeds[0])
+        >>> fh.api_failure['email']
+        True
+
+    """
     __tablename__ = "_feed_handle"
 
     symname = Column('symname', String, primary_key=True)
@@ -1229,6 +1292,13 @@ class FeedHandle(Base, ReprMixin):
     __table_args__ = (fkey, {})
 
     def __init__(self, chkpnt_settings={}, feed=None):
+        """
+        :param chkpnt_settings: dict
+            A dictionary with keys matchin names of the handle points
+            and the values either integers or BitFlags
+        :param feed: Feed
+            The feed that this FeedHandle is associated with it.
+        """
         self.feed = feed
 
         self.api_failure = BitFlag(['raise'])
@@ -1246,32 +1316,90 @@ class FeedHandle(Base, ReprMixin):
 
 
 class Override(Base, ReprMixin):
+    """
+    An override represents a single datapoint with an associated
+    index value, applied to a Symbol's datatable after sourcing all the
+    data, and will be applied after any aggregation logic
+
+    .. note::
+
+       only datetime based indices with float-based data currently work with
+       Overrides
+
+    """
     __tablename__ = '_overrides'
 
     symname = Column('symname', String, primary_key=True)
+    """ symbol name, for the override"""
+
     ornum = Column('ornum', Integer, primary_key=True)
+    """ Override number, uniquely assigned to every override"""
+
     dt_ind = Column('dt_ind', DateTime, nullable=False)
+    """ the datetime index used for overriding."""
 
     value = Column('value', Float, nullable=False)
+    """ the value of the data point used for overriding"""
 
     dt_log = Column('dt_log', DateTime, nullable=False)
+    """ datetime that the override was created"""
+
     user = Column('user', String, nullable=True)
+    """ user name or process name that created the override"""
+
     comment = Column('comment', String, nullable=True)
+    """ a user field to store an arbitrary string about the override"""
+
+    # make a constructor just so sphinx doesn't pick up the
+    # base's __init__'s doc string.
+
+    def __init__(self, *args, **kwargs):
+        super(FailSafe, self).__init__(*args, **kwargs)
 
 
 class FailSafe(Base, ReprMixin):
+    """
+    A FailSafe represents a single datapoint with an associated
+    index value, applied to a Symbol's datatable after sourcing all the
+    data, and will be applied after any aggregation logic, only
+    where no other datapoint exists. It's a back-up datapoint,
+    used only by Trump, when an NA exists.
+
+    .. note::
+
+       only datetime based indices with float-based data currently work with
+       Overrides
+
+    """
+
     __tablename__ = '_failsafes'
 
     symname = Column('symname', String, primary_key=True)
+    """ symbol name, for the override"""
+
     fsnum = Column('fsnum', Integer, primary_key=True)
+    """ Failsafe number, uniquely assigned to every FailSafe"""
+
     dt_ind = Column('dt_ind', DateTime, nullable=False)
+    """ The datetime index used for the FailSafe."""
 
     value = Column('value', Float, nullable=False)
+    """ The value of the data point used for the FailSafe."""
 
     dt_log = Column('dt_log', DateTime, nullable=False)
-    user = Column('user', String, nullable=True)
-    comment = Column('comment', String, nullable=True)
+    """ datetime of the FailSafe creation."""
 
+    user = Column('user', String, nullable=True)
+    """ user name or process name that created the FailSafe"""
+
+    comment = Column('comment', String, nullable=True)
+    """ user field to store an arbitrary string about the FailSafe"""
+
+    # make a constructor just so sphinx doesn't pick up the
+    # base's __init__'s doc string.
+
+    def __init__(self, *args, **kwargs):
+        super(FailSafe, self).__init__(*args, **kwargs)
 try:
     Base.metadata.create_all(engine)
     print "Trump is ready."
@@ -1287,7 +1415,7 @@ if __name__ == '__main__':
     session.add(ind)
 
     kw = {'start': '201001', 'end': '201002', 'freq': None}
-    ind.setkwargs(kw)
+    ind.setkwargs(**kw)
 
     session.commit()
 

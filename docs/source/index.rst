@@ -25,13 +25,14 @@ With a focus on business processes, Trump's long run goals enable data feeds to 
 * **Aggregated**, *intelligently* - on a symbol by symbol basis, feeds can be combined and used in an extensible number of ways.
 * **Customized**, *dynamically* - extensibility is possible at the templating, munging, aggregation, and validity steps.
 
+Table of Contents
+--------------------------
+
 .. toctree::
-   :hidden:
    :maxdepth: 3
    
-   installation
-   configure
-   uninstall
+   install
+   dataflow
    usage
    objectmodel/orm
    templating/templates
@@ -43,4 +44,3 @@ Index
 
 * :ref:`genindex`
 * :ref:`search`
-

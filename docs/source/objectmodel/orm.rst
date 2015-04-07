@@ -1,14 +1,35 @@
 Object Model
 ============
 
-.. image:: sqla-orm.png
+Trump's persistent object model all starts with a :py:class:`~trump.orm.Symbol`, it's 
+:py:class:`~trump.orm.Index`, and an associated list of :py:class:`~trump.orm.Feed` objects. Each
+of these objects, along with supporting objects, store details persistently about sourcing, munging,
+and validating data, so that a :py:class:`~trump.orm.Symbol` can :py:meth:`~trump.orm.Symbol.cache`
+the data provided from the various :py:class:`~trump.orm.Feed` objects,
+in a single table or serve up pandas.Series at anytime.
+
+A map of all the classes involved in the ORM is presented below.
+
+   
+.. figure:: sqla-orm.png
+
+   The persistent Trump ORM, excluding each symbol's datatable. 
+
+.. note::
+
+   Trump's template system consists of objects, which are external to the ORM.
+   Templates are used to expedite construction of ORM objects.  Nothing about any template,
+   persists.
+   
+Symbol Manager
+--------------
 
 .. autoclass:: trump.orm.SymbolManager
-   :members: create, delete, get, finish
+   :members: create, delete, get, complete, finish
 
 Symbols
 -------
-   
+
 .. autoclass:: trump.orm.Symbol
    :members: cache, describe
 
@@ -16,8 +37,32 @@ Symbols
 
 .. autoclass:: trump.orm.SymbolHandle
 
+Indices
+~~~~~~~~
+
+A :py:class:`~trump.orm.Symbol` object's :py:class:`~trump.orm.Index` stores the information
+required for Trump to cache and serve data with different types of pandas indices.  
+
+.. warning::
+
+   A Trump :py:class:`~trump.orm.Index` does not contain a list of hashable values, like a pandas
+   index.  It should not be confused with the datatable's index, however it is used in the creation
+   of the datatable's index.  A more appropriate name for the class might be IndexCreationKwargs.
+
+.. autoclass:: trump.orm.Index
+   :members:
+
+.. autoclass:: trump.orm.IndexKwarg
+   :members:
+
+Index Types
+~~~~~~~~~~~
+
+.. automodule:: trump.indexing
+   :members: IndexImplementor, DatetimeIndex, PeriodIndex, StrIndex, IntIndex
+
 Feeds
------
+--------
 
 .. autoclass:: trump.orm.Feed
 
@@ -27,20 +72,72 @@ Feeds
 
 .. autoclass:: trump.orm.FeedMungeArg
 
-.. autoclass:: trump.orm.FeedHandle
-
 Centralized Data Editing
-------------------------
+----------------------------------
 
 Each trump datatable comes with two extra columns beyond the feeds, index and final.  
 
 The two columns are populated by any existing overrides and failsafes, which survive
 caching, and modification to feeds.  
 
-The Override will get applied blindly regardless of feeds, and the failsafes are used
-only when data isn't availabe.  Once it becomes available for a specific index in the datatable,
-the failsafe is ignored.
+Any Override will get applied blindly regardless of feeds, while the failsafes are used
+only when data isn't availabe for a specific point.  Once a datapoint becomes available for a specific
+index in the datatable, the failsafe is ignored.
 
 .. autoclass:: trump.orm.Override
+   :members:
 
 .. autoclass:: trump.orm.FailSafe
+   :members:
+   :no-members: __init__
+
+Error Handling
+--------------------
+
+The Symbol & Feed objects have a single SymbolHandle and FeedHandle object accessed
+via their .handle attribute. They both work identically. The only difference is the
+column names that each have.  Each column, aside from symname,
+represents a checkpoint during caching, which could cause errors external to trump.
+
+The integer stored in each column, is a serialized BitFlag object, which is uses bit-wise
+logic to save the settings associated with what to do upon an exception.
+
+The Symbol's possible exception-inducing checkpoints include:
+
+- caching (of feeds)
+- concatenation (of feeds)
+- aggregation (of final value column)
+- validity_check
+
+The Feed's possible exception-inducing checkpoints include:
+
+- api_failure
+- empty_feed
+- index_type_problem
+- index_property_problem
+- data_type_problem
+- monounique
+
+For example, if a feed source is prone to problems, set the api_failure to print the trace by setting the BitFlag object's 'stdout' flag to True, and the other flags to False.
+If there's a problem, Trump will attempt to continue, and hope that there is another feed with good data available.  However, if a source should be reliably available,
+you may want to set the BitFlag object's 'raise' flag to True.
+
+.. autoclass:: trump.orm.SymbolHandle
+   :members:
+
+.. autoclass:: trump.orm.FeedHandle
+   :members:
+
+BitFlags
+------------
+
+Trump stores instructions regarding how to handle exceptions in specific points of the cache
+process using a serializable object representing a list of boolean values calleda BitFlag.
+There are two objects which make the BitFlag implementation work.  There is the BitFlag object, which
+converts dictionaries and integers to bitwise logic, and then there is the BitFlagType which give
+SQLAlchemy the ability to create columns, and handle them appropriately, containing BitFlag objects.
+
+.. autoclass:: trump.tools.bitflags.BitFlag
+  :members: bin, bin_str, asdict, __and__, __or__
+
+.. autoclass:: trump.tools.bitflags.BitFlagType

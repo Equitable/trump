@@ -2,34 +2,101 @@ import inspect
 import sys
 
 import pandas as pd
-from pandas.tseries.index import DatetimeIndex as pdDatetimeIndex
+
+pdDatetimeIndex = pd.tseries.index.DatetimeIndex
 
 from sqlalchemy import DateTime, Integer, String
 
 
 class IndexImplementor(object):
 
-    """ IndexImplementors are the final step applied to data prior
-        to a) the datatable getting cached and b) the data being served.
-
-        The goal is that the transformations applied should be
-        indempotent, and dataframe/series agnostic.
-
-        They need to be able to handle
     """
+    IndexImplementor is the base required to implement
+    an index of a specific type.  The
+    same instance is created at two points in
+    the Trump dataflow:
+
+    1. the datatable getting cached and
+    2. the data being served.
+
+    The IndexImplementor should be
+    indempotent, and dataframe/series agnostic.
+    """
+
     sqlatyp = Integer
 
     def __init__(self, df_or_s, case, kwargs):
+        """
+        :param df_or_s:
+            A pandas.Dataframe or pandas.Series, used
+            with caution as to the point in time of use.
+        :param case: str
+            This should match a case used to switch
+            the logic created in each subclass of IndexImplementor
+
+        :param kwargs: dict
+        """
         self.data = df_or_s
 
     def final_series(self):
+        """
+        Should only be called when serving the final
+        result.  In this case, at instantiation, df_or_s
+        should be a pandas.Series,
+
+        :return: pandas.Series
+        """
+
+        # When Trump is serving up the final data,
+        # it should be impossible that df_or_s isn't
+        # a Series.  If, for any reason that it isn't,
+        # it should be converted into one here.
+
         return self.data
 
     def final_dataframe(self):
+        """
+        Should only be called when caching the feeds.
+        In this case, at instantiation, df_or_s
+        should be a pandas.Dataframe,
+
+        :return: pd.Dataframe
+        """
+
+        # if it's possible that df_or_s isn't a
+        # pandas.Dataframe, at the time of instatiation of the
+        # IndexImplementor, than it should be converted
+        # into one here.
+
         return self.data
 
 
 class DatetimeIndex(IndexImplementor):
+    """
+    Implements a pandas DatetimeIndex
+
+    Cases include:
+
+    * **asis** - Cache timestamps to the database and drop
+      any intelligence associated with the index, such as frequency.
+      serve a Series with a DatetimeIndex, without frequency.
+
+    * **asfreq** - Apply 'asfreq' logic prior to cache, and
+      apply the same logic when serving.
+
+    * **date_range** - Create a new index, using pandas date_range(), at
+      time of cache...  NotImplemented yet.
+
+    * **guess** - Attempt to guess the frequency at time of cache,
+      and time of serve. NotImplemented yet.
+
+    * **guess_post** - Attempt to guess the frequency at time of serve,
+      but store the cache unsaved. NotImplemented yet.
+
+    If a non-DatetimeIndex is passed, a rudimentary
+    attempt to convert it to a DatetimeIndex is applied
+    by inspecting the start and end, then using any saved kwargs.
+    """
     sqlatyp = DateTime
 
     def __init__(self, dfors, case, kwargs):
@@ -46,13 +113,10 @@ class DatetimeIndex(IndexImplementor):
                 self.data = self.data.asfreq(**kwargs)
             else:
                 self.default(kwargs)
-
-        elif case == 'freqchng':
-            if isinstance(self.data.index, pdDatetimeIndex):
-                self.data = self.data.asfreq(**kwargs)
-            else:
-                self.default(kwargs)
-
+        elif case == 'guess':
+            raise NotImplementedError()
+        elif case == 'guess_post':
+            raise NotImplementedError()
         else:
             raise Exception("Indexing case '{}' unsupported".format(case))
 
@@ -64,6 +128,11 @@ class DatetimeIndex(IndexImplementor):
 
 
 class PeriodIndex(IndexImplementor):
+    """
+    Implements a pandas PeriodIndex
+
+    NotImplemented, yet.
+    """
     sqlatyp = DateTime
 
     def __init__(self, df_or_s, case, kwargs):
@@ -71,6 +140,11 @@ class PeriodIndex(IndexImplementor):
 
 
 class IntIndex(IndexImplementor):
+    """
+    Implements a pandas Int64Index
+
+    NotImplemented, yet.
+    """
     sqlatyp = Integer
 
     def __init__(self, df_or_s, case, kwargs):
@@ -78,16 +152,26 @@ class IntIndex(IndexImplementor):
 
 
 class StrIndex(IndexImplementor):
+    """
+    Implements a pandas Index consisting of string objects.
+
+    NotImplemented, yet.
+    """
     sqlatyp = String
 
     def __init__(self, df_or_s, case, kwargs):
         raise NotImplementedError()
 
 
-def pred(c):
-    return inspect.isclass(c) and c.__module__ == pred.__module__
+def _pred(aclass):
+    """
+    :param aclass
+    :return: boolean
+    """
+    isaclass = inspect.isclass(aclass)
+    return isaclass and aclass.__module__ == _pred.__module__
 
-classes = inspect.getmembers(sys.modules[__name__], pred)
+classes = inspect.getmembers(sys.modules[__name__], _pred)
 
 indexingtypes = {cls[0]: cls[1] for cls in classes}
 tosqla = {cls[0]: cls[1].sqlatyp for cls in classes}
