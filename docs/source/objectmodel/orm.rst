@@ -1,15 +1,14 @@
-Object Model
-============
+Object-relational Model
+=======================
 
-Trump's persistent object model all starts with a :py:class:`~trump.orm.Symbol`, it's 
-:py:class:`~trump.orm.Index`, and an associated list of :py:class:`~trump.orm.Feed` objects. Each
-of these objects, along with supporting objects, store details persistently about sourcing, munging,
-and validating data, so that a :py:class:`~trump.orm.Symbol` can :py:meth:`~trump.orm.Symbol.cache`
+Trump's persistent object model, made possible by it's object-relational model (ORM), all starts with
+a :py:class:`~trump.orm.Symbol`, and an associated list of :py:class:`~trump.orm.Feed` objects. A symbol's it's :py:class:`~trump.orm.Index`, 
+can further enhance the intelligence that Trump can serve via pandas. Supporting objects, store details persistently about error handling,
+sourcing, munging, and validation, so that a :py:class:`~trump.orm.Symbol` can :py:meth:`~trump.orm.Symbol.cache`
 the data provided from the various :py:class:`~trump.orm.Feed` objects,
-in a single table or serve up pandas.Series at anytime.
+in a single table or serve up a fresh pandas.Series at anytime.
 
 A map of all the classes involved in the ORM is presented below.
-
    
 .. figure:: sqla-orm.png
 
@@ -35,10 +34,8 @@ Symbols
 
 .. autoclass:: trump.orm.SymbolTag
 
-.. autoclass:: trump.orm.SymbolHandle
-
 Indices
-~~~~~~~~
+~~~~~~~
 
 A :py:class:`~trump.orm.Symbol` object's :py:class:`~trump.orm.Index` stores the information
 required for Trump to cache and serve data with different types of pandas indices.  
@@ -56,31 +53,34 @@ required for Trump to cache and serve data with different types of pandas indice
    :members:
 
 Index Types
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 .. automodule:: trump.indexing
    :members: IndexImplementor, DatetimeIndex, PeriodIndex, StrIndex, IntIndex
 
 Feeds
---------
+-----
 
 .. autoclass:: trump.orm.Feed
 
 .. autoclass:: trump.orm.FeedMeta
+
+Feed Munging
+~~~~~~~~~~~~
 
 .. autoclass:: trump.orm.FeedMunge
 
 .. autoclass:: trump.orm.FeedMungeArg
 
 Centralized Data Editing
-----------------------------------
+------------------------
 
 Each trump datatable comes with two extra columns beyond the feeds, index and final.  
 
-The two columns are populated by any existing overrides and failsafes, which survive
+The two columns are populated by any existing :py:class:`~trump.orm.Override` and :py:class:`~trump.orm.FailSafe` objects which survive
 caching, and modification to feeds.  
 
-Any Override will get applied blindly regardless of feeds, while the failsafes are used
+Any :py:class:`~trump.orm.Override` will get applied blindly regardless of feeds, while the :py:class:`~trump.orm.FailSafe` objects are used
 only when data isn't availabe for a specific point.  Once a datapoint becomes available for a specific
 index in the datatable, the failsafe is ignored.
 
@@ -89,27 +89,29 @@ index in the datatable, the failsafe is ignored.
 
 .. autoclass:: trump.orm.FailSafe
    :members:
-   :no-members: __init__
 
 Error Handling
---------------------
+--------------
 
 The Symbol & Feed objects have a single SymbolHandle and FeedHandle object accessed
 via their .handle attribute. They both work identically. The only difference is the
 column names that each have.  Each column, aside from symname,
 represents a checkpoint during caching, which could cause errors external to trump.
+The integer stored in each column is a serialized BitFlag object, which uses bit-wise
+logic to save the settings associated with what to do upon an exception.  What to do,
+mainly means deciding between various printing, logging, warning or raising options.
 
-The integer stored in each column, is a serialized BitFlag object, which is uses bit-wise
-logic to save the settings associated with what to do upon an exception.
-
-The Symbol's possible exception-inducing checkpoints include:
+The Symbol's possible exception-inducing handle-points include:
 
 - caching (of feeds)
 - concatenation (of feeds)
 - aggregation (of final value column)
 - validity_check
 
-The Feed's possible exception-inducing checkpoints include:
+.. autoclass:: trump.orm.SymbolHandle
+   :members:
+
+The Feed's possible exception-inducing handle-points include:
 
 - api_failure
 - empty_feed
@@ -118,18 +120,16 @@ The Feed's possible exception-inducing checkpoints include:
 - data_type_problem
 - monounique
 
+.. autoclass:: trump.orm.FeedHandle
+   :members:
+
 For example, if a feed source is prone to problems, set the api_failure to print the trace by setting the BitFlag object's 'stdout' flag to True, and the other flags to False.
 If there's a problem, Trump will attempt to continue, and hope that there is another feed with good data available.  However, if a source should be reliably available,
 you may want to set the BitFlag object's 'raise' flag to True.
 
-.. autoclass:: trump.orm.SymbolHandle
-   :members:
-
-.. autoclass:: trump.orm.FeedHandle
-   :members:
 
 BitFlags
-------------
+~~~~~~~~
 
 Trump stores instructions regarding how to handle exceptions in specific points of the cache
 process using a serializable object representing a list of boolean values calleda BitFlag.

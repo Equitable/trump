@@ -1,5 +1,5 @@
-Trump
-=====
+Introduction
+============
 
 Persistent Objectification of Indexed Data
 ------------------------------------------
@@ -25,19 +25,33 @@ With a focus on business processes, Trump's long run goals enable data feeds to 
 * **Aggregated**, *intelligently* - on a symbol by symbol basis, feeds can be combined and used in an extensible number of ways.
 * **Customized**, *dynamically* - extensibility is possible at the templating, munging, aggregation, and validity steps.
 
-Table of Contents
---------------------------
+Getting Started
+---------------
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
    
    install
-   dataflow
    usage
+   dataflow
+   
+Object Model
+------------
+
+.. toctree::
+   :maxdepth: 4
+
+   framework   
    objectmodel/orm
-   templating/templates
-   framework
    planning
+
+Template Classes
+----------------
+
+.. toctree::
+   :maxdepth: 4
+   
+   templating/templates
 
 Index
 -----

@@ -860,7 +860,13 @@ class SymbolHandle(Base, ReprMixin):
     symbol = relationship("Symbol")
 
     def __init__(self, chkpnt_settings={}, sym=None):
-
+        """
+        :param chkpnt_settings: dict
+            A dictionary with keys matching names of the handle points
+            and the values either integers or BitFlags
+        :param str or sym: Symbol
+            The Symbol that this SymbolHandle is associated with it.
+        """
         set_symbol_or_symname(self, sym)
 
         self.caching = BitFlag(0)
