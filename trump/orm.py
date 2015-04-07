@@ -62,9 +62,18 @@ from handling import Handler
 
 BitFlag.associate_with(BitFlagType)
 
-ENGINE_STR = read_config('readwrite')['engine']
+try:
+    ENGINE_STR = read_config('readwrite')['engine']
+except:
+    print ("Problem reading trump.cfg.  Continuing using an in-memory "
+           "SQLlite database. Trump was not designed to work in-memory, "
+           "because, What's the point of non-persistent persistent objects?")
+    ENGINE_STR = "sqlite://"
+
 engine = create_engine(ENGINE_STR, echo=False)
-print ENGINE_STR
+
+print "Using engine: {}".format(ENGINE_STR)
+
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
 
