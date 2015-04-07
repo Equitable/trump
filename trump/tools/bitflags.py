@@ -124,6 +124,7 @@ class BitFlag(Mutable, object):
                 if val:
                     self.val += 2 ** i
 
+    # coerce is required to complete the SQLA mutability contract.
     @classmethod
     def coerce(cls, key, value):
         if not isinstance(value, BitFlag):
@@ -208,18 +209,30 @@ class BitFlag(Mutable, object):
 
 class BitFlagType(TypeDecorator):
 
-    """ SQLAlchemy type definition for the BitFlag implementation.
-        A BitFlag is a python object that wraps bitwise logic for hardcoded
-        flags into a single integer value for quick database access and use."""
+    """ 
+    SQLAlchemy type definition for the BitFlag implementation.
+    A BitFlag is a python object that wraps bitwise logic for hardcoded
+    flags into a single integer value for quick database access and use."""
 
     impl = Integer
+    
+    def __init__(self, *args, **kwargs):
+        super(BitFlagType, self).__init__(*args, **kwargs)
 
     def process_bind_param(self, value, dialect):
+        """
+        When SQLAlchemy binds a BitFlag, it converts it
+        to an integer for storage in the database.
+        """
         if value is not None:
             value = value.val
         return value
 
     def process_result_value(self, value, dialect):
+        """
+        When SQLAlchemy gets an integer from a BitFlagType
+        column, it converts it to a BitFlag object.
+        """
         if value is not None:
             value = BitFlag(value)
         return value

@@ -287,3 +287,8 @@ class Mock(MagicMock):
 
 MOCK_MODULES = ['pandas']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+autoclass_content = 'both'
+autodoc_member_order = 'bycode'
+autodoc_mock_imports = 'pandas'
+autodoc_default_flags = 'show-inheritance'
