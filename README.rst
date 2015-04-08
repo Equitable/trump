@@ -10,6 +10,11 @@ Trump
    :target: https://readthedocs.org/projects/trump/?badge=latest
    :alt: Documentation Status
 
+.. image:: https://travis-ci.org/Equitable/trump.svg
+   :target: http://travis-ci.org/Equitable/trump/builds
+   :alt: Travis CI
+
+   
 ------------------------------------------
 Persistent Objectification of Indexed Data
 ------------------------------------------
