@@ -12,7 +12,7 @@ Trump
 
 .. image:: https://travis-ci.org/Equitable/trump.svg
    :target: http://travis-ci.org/Equitable/trump/builds
-   :alt: Travis CI
+   :alt: Travis CI Status
 
    
 ------------------------------------------
