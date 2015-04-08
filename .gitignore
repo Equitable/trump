@@ -6,3 +6,4 @@ dist/*
 build/*
 docs/build/*
 .idea/
+.coverage

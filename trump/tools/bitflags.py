@@ -87,7 +87,7 @@ class BitFlag(Mutable, object):
         # if an integer was passed...
         # convert it to a boolean array
         if isinstance(obj, int):
-            self.val = obj % (self.msb >> 1)
+            self.val = obj % self.msb
             tmp = self.val + self.msb
 
             self.bools = []
@@ -240,19 +240,3 @@ class BitFlagType(TypeDecorator):
     def copy(self):
         return BitFlagType()
 
-if __name__ == '__main__':
-    for v in [0, 1, 2, 3, 127, 128, 129, 255, 256, 257]:
-        print str(v) * 20
-        bf = BitFlag(v)
-        print bf
-        print bf.val
-        print bf.asdict()
-        print bf.bools
-        print bf.bin
-
-    bf = BitFlag(['email', 'stdout'])
-    print bf
-    print bf.val
-    print bf.bin
-    print bf.bin_str
-    print bf.email
