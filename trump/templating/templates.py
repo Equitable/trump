@@ -272,7 +272,10 @@ class QuandlFT(bFeed):
     def __init__(self, dataset, **kwargs):
         super(QuandlFT, self).__init__()
 
-        authtoken = read_settings()['Quandl']['userone']['authtoken']
+        if 'authtoken' not in kwargs:
+            authtoken = read_settings()['Quandl']['userone']['authtoken']
+        else:
+            authtoken = kwargs['authtoken']
         tmp = {'dataset': dataset, 'authtoken': authtoken}
         tmp.update(kwargs)
         self.sourcing = tmp

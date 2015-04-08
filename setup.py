@@ -14,7 +14,7 @@ def copy_cfg_sample_if_not_exists(p):
         if ".cfg_sample" in f:
             newf = f.replace(".cfg_sample",".cfg")
             if not os.path.isfile(os.path.join(p,newf)):
-                print "\nCreating {} from sample file.".format(newf)
+                print "\nCreating {} from sample file.".format(os.path.join(p,newf))
                 shutil.copy(os.path.join(p,f),os.path.join(p,newf))
             else:
                 print "\n{} already exists, will overwrite momentarily. Break execution to stop.".format(newf)
