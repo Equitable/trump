@@ -53,7 +53,7 @@ Trump will use parameters for a source in the following order:
 
 .. code-block:: python
 
-   myfeed = QuandlFT(authkey='XXXXXXXX') #Assuming the template doesn't clober the value.
+   myfeed = QuandlFT(authtoken='XXXXXXXX') #Assuming the template doesn't clober the value.
    
 2. Specified implicitly using default value or logic derived in the template. (Eg. Database Names)
 
@@ -61,8 +61,8 @@ Trump will use parameters for a source in the following order:
 
    class QuandlFT(object):
       def __init__(authtoken ='XXXXXXXXX'):
-         if len(authkey) == 8:
-            self.authtoken = authkey
+         if len(authtoken) == 8:
+            self.authtoken = authtoken
          else:
             self.authtoken = 'YYYYYYYYY'
            
@@ -88,7 +88,7 @@ contents of templating/settings/Quandl.cfg:
 .. code-block:: text
 
    [userone]
-   authkey = XXXXXXXXX
+   authtoken = XXXXXXXXX
 
 5. Specified on disk encrypted sources via an encrypted config file. (Eg. top-secret passwords)
 
