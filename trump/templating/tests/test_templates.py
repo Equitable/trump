@@ -1,5 +1,5 @@
 
-from trump.templating.templates import QuandlFT
+from ..templates import QuandlFT
 
 class TestTemplates(object):
 

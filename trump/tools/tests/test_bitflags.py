@@ -1,5 +1,5 @@
 
-from trump.tools.bitflags import BitFlag
+from ..bitflags import BitFlag
 
 class TestBitFlag(object):
     def test_instantiation(self):
