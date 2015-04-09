@@ -14,6 +14,9 @@ Trump
    :target: http://travis-ci.org/Equitable/trump/builds
    :alt: Travis CI Status
 
+.. image:: https://coveralls.io/repos/Equitable/trump/badge.svg 
+   :target: https://coveralls.io/r/Equitable/trump
+   :alt: Coveralls.io
    
 ------------------------------------------
 Persistent Objectification of Indexed Data
