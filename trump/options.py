@@ -13,6 +13,7 @@ Parses config files at runtime, but still enables importing of this module
 """
 import os
 import ConfigParser
+import warnings
 
 def get_from_nested(keys, adict):
     print "gfn called on {} and {}".format(str(keys), str(adict))
@@ -49,6 +50,8 @@ def _read_options(paths,fname_def=None):
         for fn, f in config_files.iteritems():
             cfg_files[fn] = f
 
+        sample_files_exposed = []
+
         confg = {}
 
         for src, fil in cfg_files.iteritems():
@@ -57,6 +60,19 @@ def _read_options(paths,fname_def=None):
             cfpr.read(os.path.join(config_dir, fil))
             for sec in cfpr.sections():
                 confg[src][sec] = dict(cfpr.items(sec))
+
+            if ".cfg_sample" in fil:
+                sample_files_exposed.append(fil)
+
+
+        if len(sample_files_exposed) > 0:
+            msg = ", ".join(sample_files_exposed)
+            body = "{} sample configuration files have been exposed. " \
+                  "Rename *.cfg_sample to *.cfg, and populate the " \
+                  "correct settings in the config and settings " \
+                  "directories to avoid this warning."
+            msg = body.format(msg)
+            warnings.warn(msg)
 
         keys = []
 
@@ -90,4 +106,7 @@ if __name__ == '__main__':
     print settings
 
     settings = read_settings(fname='Quandl', sect='userone', sett='authkey', default='XXXX')
+    print settings
+
+    settings = read_settings()
     print settings
