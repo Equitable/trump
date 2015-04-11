@@ -117,7 +117,7 @@ class MultiExampleMT(bMunging, mixin_pnab, mixin_pab):
         self.bld_add(**add_kwargs)
 
 class SimpleExampleMT(bMunging, mixin_pnab, mixin_pab):
-    """ Example munging template, which has defauls to forward fill,
+    """ Example munging template, which has defaults to forward fill,
         and a minimum period argument of 5"""
     def __init__(self, periods, window):
         super(SimpleExampleMT, self).__init__()

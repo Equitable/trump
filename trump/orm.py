@@ -63,7 +63,7 @@ from handling import Handler
 BitFlag.associate_with(BitFlagType)
 
 try:
-    ENGINE_STR = read_config('readwrite')['engine']
+    ENGINE_STR = read_config('readwrite','engine')
 except:
     print ("Problem reading trump.cfg.  Continuing using an in-memory "
            "SQLlite database. Trump was not designed to work in-memory, "
