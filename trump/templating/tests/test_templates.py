@@ -1,5 +1,7 @@
 
-from ..templates import QuandlFT, QuandlSecureFT, GoogleFinanceFT, YahooFinanceFT, StLouisFEDRT
+from ..templates import QuandlFT, QuandlSecureFT, \
+                        GoogleFinanceFT, YahooFinanceFT, StLouisFEDRT, \
+                        EconFT
 
 class TestTemplates(object):
 
@@ -41,4 +43,18 @@ class TestTemplates(object):
                                   'end': 'now',
                                   'data_source' : 'fred',
                                   'data_column' : 'xxx'}
-        assert ftemp.meta == {'stype' : 'PyDataDataReaderST'}        
+        assert ftemp.meta == {'stype' : 'PyDataDataReaderST'}
+
+    def test_econ_ft(self):
+        ftemp = EconFT("xxx")
+        print ftemp.sourcing
+        assert ftemp.sourcing == {'datacol': 'value',
+                                  'indexcol': 'date',
+                                  'keycol': 'name',
+                                  'user': 'username',
+                                  'key': 'xxx',
+                                  'table': 'econ',
+                                  'password': 'password123',
+                                  'dbinstype': 'KEYCOL'}
+        assert ftemp.meta == {'sourcing_key': 'explicit',
+                              'stype': 'DBAPI'}
