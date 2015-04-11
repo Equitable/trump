@@ -1,6 +1,7 @@
 from ..orm import SymbolManager
 
-from ..templating.templates import GoogleFinanceFT, SimpleExampleMT
+from ..templating.templates import GoogleFinanceFT, YahooFinanceFT,\
+    SimpleExampleMT
 
 class TestORM(object):
 
@@ -55,3 +56,48 @@ class TestORM(object):
         assert df.ix['2015-03-31'][0] == 188.77
 
         assert df.index.freq == 'M'
+
+    def test_two_symbols(self):
+
+        sm = SymbolManager()
+
+        sym = sm.create("TSLA", overwrite=True)
+
+        fdgoog = GoogleFinanceFT("MSFT")
+        fdyhoo = YahooFinanceFT("MSFT")
+
+        sym.add_feed(fdgoog)
+        sym.add_feed(fdyhoo)
+
+        sym.cache()
+
+        df = sym.df
+
+        assert sym.n_feeds == 2
+        assert round(sym.df.ix['2015-04-10'][0],2) == 41.72
+
+    def test_tag_and_search(self):
+
+        sm = SymbolManager()
+
+        sym = sm.create("MSFT", overwrite=True)
+
+        fdmsft = YahooFinanceFT("MSFT")
+
+        sym.add_feed(fdmsft)
+
+        sym.add_tags(['tech','software'])
+
+        results = sm.search_tag('tech')
+
+        msft = results[0]
+
+        msft.cache()
+
+        assert msft.df.ix['2015-04-10'][0] == 41.72
+
+        results = sm.search_tag('soft%')
+
+        msft2 = results[0]
+
+        assert msft2 is msft
