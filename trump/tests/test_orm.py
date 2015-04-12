@@ -11,7 +11,7 @@ class TestORM(object):
 
         sym = sm.create("TSLA", overwrite=True)
 
-        fd = GoogleFinanceFT("TSLA")
+        fd = GoogleFinanceFT("TSLA", start='2015-04-01', end='2015-04-13')
 
         sym.add_feed(fd)
 
@@ -42,7 +42,7 @@ class TestORM(object):
 
         sym = sm.create("TSLA", overwrite=True)
 
-        fd = GoogleFinanceFT("TSLA")
+        fd = GoogleFinanceFT("TSLA", start='2015-02-01', end='2015-04-05')
 
         sym.add_feed(fd)
 
@@ -75,8 +75,7 @@ class TestORM(object):
 
         # the 13th is the last row, and it should be blank because
         # we only fetched through the 10th.
-        print ans[-5]
-        print ans[-1]
+        # As of now, the third column from the last, is the 'google' feed.
         assert ans[-1][-3] is None
 
         df = sym.df
@@ -99,10 +98,6 @@ class TestORM(object):
         results = sm.search_tag('tech')
 
         msft = results[0]
-
-        msft.cache()
-
-        assert msft.df.ix['2015-04-10'][0] == 41.72
 
         results = sm.search_tag('soft%')
 
