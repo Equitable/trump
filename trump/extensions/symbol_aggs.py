@@ -23,7 +23,7 @@ There are row-based, and column-based, function builders, just to stay
 organized.
 """
 from types import FunctionType
-
+import pandas as pd
 
 def apply_row_funcs():
     """
@@ -40,9 +40,11 @@ def apply_row_funcs():
         """
         adf.index = [int(x[-3:]) for x in adf.index]
         adf = adf.sort_index()
-        for n in adf.values:
-            if n is not None:
-                return n
+        adf = adf.dropna()
+        if len(adf) > 0:
+            return adf.values[0]
+        else:
+            return pd.np.nan
 
     def mean_fill(adf):
         """ Looks at each row, and calculates the mean """

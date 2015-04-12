@@ -16,7 +16,6 @@ import ConfigParser
 import warnings
 
 def get_from_nested(keys, adict):
-    print "gfn called on {} and {}".format(str(keys), str(adict))
     if len(keys) > 0:
         if keys[0] in adict:
             return get_from_nested(keys[1:],adict[keys[0]])

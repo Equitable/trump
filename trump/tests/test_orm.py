@@ -61,22 +61,30 @@ class TestORM(object):
 
         sm = SymbolManager()
 
-        sym = sm.create("TSLA", overwrite=True)
+        sym = sm.create("MSFT", overwrite=True)
 
-        fdgoog = GoogleFinanceFT("MSFT")
-        fdyhoo = YahooFinanceFT("MSFT")
+        fdgoog = GoogleFinanceFT("MSFT", start='2015-03-01', end='2015-03-10')
+        fdyhoo = YahooFinanceFT("MSFT", start='2015-03-01', end='2015-03-14')
 
         sym.add_feed(fdgoog)
         sym.add_feed(fdyhoo)
 
         sym.cache()
 
+        ans = sym.alldata()
+
+        # the 13th is the last row, and it should be blank because
+        # we only fetched through the 10th.
+        print ans[-5]
+        print ans[-1]
+        assert ans[-1][-3] is None
+
         df = sym.df
 
         assert sym.n_feeds == 2
-        assert round(sym.df.ix['2015-04-10'][0],2) == 41.72
+        assert round(df.ix['2015-03-13'][0], 2) == 41.38
 
-    def test_tag_and_search(self):
+    def test_tags_and_search(self):
 
         sm = SymbolManager()
 
@@ -101,3 +109,9 @@ class TestORM(object):
         msft2 = results[0]
 
         assert msft2 is msft
+
+        msft.del_tags('tech')
+
+        results = sm.search_tag('tech')
+
+        assert len(results) == 0

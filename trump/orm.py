@@ -63,7 +63,7 @@ from handling import Handler
 BitFlag.associate_with(BitFlagType)
 
 try:
-    ENGINE_STR = read_config('readwrite','engine')
+    ENGINE_STR = read_config(sect='readwrite',sett='engine')
 except:
     print ("Problem reading trump.cfg.  Continuing using an in-memory "
            "SQLlite database. Trump was not designed to work in-memory, "
@@ -476,6 +476,7 @@ class Symbol(Base, ReprMixin):
             data.loc[row.dt_ind, 'failsafe_feed999'] = row.value
 
         try:
+            data = data.fillna(value=pd.np.nan)
             if self.agg_method in apply_row:
                 data['final'] = data.apply(apply_row[self.agg_method], axis=1)
             elif self.agg_method in choose_col:
@@ -483,7 +484,7 @@ class Symbol(Base, ReprMixin):
         except:
             logic = self.handle.aggregation
             msg = "There was a problem aggregating feeds for {}"
-            msg = msg.format(self.symname)
+            msg = msg.format(self.name)
             Handler(logic,msg)
 
 
@@ -686,6 +687,16 @@ class Symbol(Base, ReprMixin):
         dtbl = self.datatable
         if isinstance(dtbl, Table):
             return session.query(dtbl.c.indx, dtbl.c.final).all()
+        else:
+            raise Exception("Symbol has no datatable")
+
+    def alldata(self):
+        """
+        :return: all data from the datatable
+        """
+        dtbl = self.datatable
+        if isinstance(dtbl, Table):
+            return session.query(dtbl).all()
         else:
             raise Exception("Symbol has no datatable")
 

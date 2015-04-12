@@ -306,9 +306,11 @@ class QuandlSecureFT(QuandlFT):
 
 class GoogleFinanceFT(bFeed):
     """ PyData reader feed, generalized for google finance. """
-    def __init__(self, name, column='Close', start='1995-01-01'):
+    def __init__(self, name, column='Close',
+                 start='1995-01-01', end='now'):
         super(GoogleFinanceFT, self).__init__()
-        source = PyDataDataReaderST('google', name, column=column, start=start)
+        source = PyDataDataReaderST('google', name, column=column,
+                                    start=start, end=end)
         self.sourcing = source.as_dict
         self.set_stype(source)
 
@@ -321,10 +323,11 @@ class GoogleFinanceFT(bFeed):
 
 class StLouisFEDRT(bFeed):
     """ PyData reader feed, generalized for St Louis FED. """
-    def __init__(self, name, column=None, start='1995-01-01'):
+    def __init__(self, name, column=None, start='1995-01-01', end='now'):
         super(StLouisFEDRT, self).__init__()
         acol = column or name
-        source = PyDataDataReaderST('fred', name, acol, start=start)
+        source = PyDataDataReaderST('fred', name, acol,
+                                    start=start, end=end)
         self.sourcing = source.as_dict
         self.set_stype(source)
 
@@ -337,9 +340,10 @@ class StLouisFEDRT(bFeed):
 
 class YahooFinanceFT(bFeed):
     """ PyData reader feed, generalized for Yahoo Finance. """
-    def __init__(self, name, column='Close', start='1995-01-01'):
+    def __init__(self, name, column='Close', start='1995-01-01', end='now'):
         super(YahooFinanceFT, self).__init__()
-        source = PyDataDataReaderST('yahoo', name, column=column, start=start)
+        source = PyDataDataReaderST('yahoo', name, column=column,
+                                    start=start, end=end)
         self.sourcing = source.as_dict
         self.set_stype(source)
 
