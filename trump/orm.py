@@ -274,7 +274,7 @@ class SymbolManager(object):
             sym = symbol
         else:
             raise Exception("Invalid symbol {}".format((repr(symbol))))
-        del sym
+        self.ses.delete(sym)
         self.ses.commit()
 
     def complete(self):
@@ -288,7 +288,13 @@ class SymbolManager(object):
 
         :returns: bool
         """
-        syms = self.ses.query(Symbol).filter(Symbol.name == symbol).all()
+
+        if isinstance(symbol, str):
+            sym = symbol
+        elif isinstance(symbol, Symbol):
+            sym = symbol.name
+
+        syms = self.ses.query(Symbol).filter(Symbol.name == sym).all()
         if len(syms) == 0:
             return False
         else:

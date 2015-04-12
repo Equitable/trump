@@ -3,6 +3,8 @@ from ..orm import SymbolManager
 from ..templating.templates import GoogleFinanceFT, YahooFinanceFT,\
     SimpleExampleMT
 
+import pytest
+
 class TestORM(object):
 
     def test_symbol_creation(self):
@@ -110,3 +112,26 @@ class TestORM(object):
         results = sm.search_tag('tech')
 
         assert len(results) == 0
+
+    def test_existence_deletion(self):
+
+        sm = SymbolManager()
+
+        sym = sm.create("new", overwrite=True)
+
+        fdtemp = YahooFinanceFT("NEW")
+
+        sym.add_feed(fdtemp)
+
+        assert sm.exists("new")
+        assert sm.exists(sym)
+
+        sm.delete(sym)
+
+        assert not sm.exists('new')
+
+        with pytest.raises(Exception) as excinfo:
+            sm.delete(0)
+        assert 'Invalid symbol' in excinfo.value.message
+
+        assert not sm.exists(sym)
