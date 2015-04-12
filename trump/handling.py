@@ -16,8 +16,6 @@ class Handler(object):
         self.msg = msg or "There was a problem"
 
     def process(self):
-        print self.logic
-
         if self.logic['stdout']:
             print "\nTRUMP:\n{}\nThe following traceback was provided".format(self.msg)
             tb.print_exc()
