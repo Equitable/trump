@@ -25,6 +25,29 @@ organized.
 from types import FunctionType
 import pandas as pd
 
+nan = pd.np.nan
+
+def sorted_feed_cols(df):
+    """
+    takes a dataframe's columns that would be of the form:
+    ['feed003', 'failsafe_feed999', 'override_feed000', 'feed001', 'feed002']
+    and returns:
+    ['override_feed000', 'feed001', 'feed002', 'feed003', 'failsafe_feed999']
+    """
+    cols = df.columns
+    ind = [int(c.split("feed")[1]) for c in cols]
+    cols = zip(ind,cols)
+    cols.sort()
+    cols = [c[1] for c in cols]
+    return cols
+
+def _row_wise_priority(adf):
+    adf = adf.dropna()
+    if len(adf) > 0:
+        return adf.values[0]
+    else:
+        return nan
+
 def apply_row_funcs():
     """
     Builds a dictionary of row-based logic to be applied by
@@ -38,26 +61,49 @@ def apply_row_funcs():
         Looks at each row, and chooses the value from the highest priority
         (lowest #) feed, one row at a time.
         """
-        adf.index = [int(x[-3:]) for x in adf.index]
-        adf = adf.sort_index()
-        adf = adf.dropna()
-        if len(adf) > 0:
-            return adf.values[0]
-        else:
-            return pd.np.nan
+
+        # the logic to apply overrides, values from certain feeds,
+        # or the failsafes, is needed for high-level functions
+        # in this same file.
+
+        # so "priority_fill" just wraps this, for organization
+        # purposes.
+        return _row_wise_priority(adf)
 
     def mean_fill(adf):
         """ Looks at each row, and calculates the mean """
-        adf.index = [int(x[-3:]) for x in adf.index]
-        return adf.values.mean
+        ordpt = adf.values[0]
+        if not pd.isnull(ordpt):
+            return ordpt
 
-    def mode_fill(adf):
+        fdmn = adf.iloc[1:-1].mean()
+        if not pd.isnull(fdmn):
+            return fdmn
+
+        flspt = adf.values[-1]
+        if not pd.isnull(flspt):
+            return flspt
+
+        return nan
+
+    def median_fill(adf):
         """ Looks at each row, and chooses the mode """
-        adf.index = [int(x[-3:]) for x in adf.index]
-        return adf.values.mode
+        ordpt = adf.values[0]
+        if not pd.isnull(ordpt):
+            return ordpt
+
+        fdmn = adf.iloc[1:-1].median()
+        if not pd.isnull(fdmn):
+            return fdmn
+
+        flspt = adf.values[-1]
+        if not pd.isnull(flspt):
+            return flspt
+
+        return nan
 
     lcls = locals().items()
-    return {k.upper(): v for k, v in lcls  if isinstance(v, FunctionType)}
+    return {k : v for k, v in lcls  if isinstance(v, FunctionType)}
 
 
 def choose_col_funcs():
@@ -72,16 +118,96 @@ def choose_col_funcs():
         """
         Looks at each column, and counts the column the most recently updated
         """
-        raise NotImplementedError
+
+        # just look at the feeds, ignore overrides and failsafes:
+        feeds_only = adf[adf.columns[1:-1]]
+
+        # find the most populated feed
+        cnt_df = feeds_only.count()
+        cnt = cnt_df.max()
+        selected_feeds = cnt_df[cnt_df == cnt]
+
+        # if there aren't any feeds, the first feed will work...
+        if len(selected_feeds) == 0:
+            pre_final = adf['feed001'] # if there all empyty
+                                  # they should all be
+                                  # equally empty
+        else:
+            #if there's one or more, take the highest priority one
+            pre_final = adf[selected_feeds.index[0]]
+
+
+        # create the final, applying the override and failsafe logic...
+        final_df = pd.concat([adf.override_feed000,
+                              pre_final,
+                              adf.failsafe_feed999], axis=1)
+        final_df = final_df.apply(_row_wise_priority, axis=1)
+        return final_df
 
     def most_recent(adf):
         """
         Looks at each column, and chooses the feed with the most recent data
         """
-        raise NotImplementedError
+        # just look at the feeds, ignore overrides and failsafes:
+        feeds_only = adf[adf.columns[1:-1]]
+
+        # find the feeds with the most recent data...
+        feeds_with_data = feeds_only.dropna(how='all')
+        selected_feeds = feeds_with_data.T.dropna().index
+
+        # if there aren't any feeds, the first feed will work...
+        if len(selected_feeds) == 0:
+            pre_final = adf['feed001'] # if there all empyty
+                                  # they should all be
+                                  # equally empty
+        else:
+            #if there's one or more, take the highest priority one
+            pre_final = adf[selected_feeds[0]]
+
+
+        # create the final, applying the override and failsafe logic...
+        final_df = pd.concat([adf.override_feed000,
+                              pre_final,
+                              adf.failsafe_feed999], axis=1)
+        final_df = final_df.apply(_row_wise_priority, axis=1)
+        return final_df
 
     lcls = locals().items()
-    return {k.upper(): v for k, v in lcls if isinstance(v, FunctionType)}
+    return {k : v for k, v in lcls if isinstance(v, FunctionType)}
 
 apply_row = apply_row_funcs()
 choose_col = choose_col_funcs()
+
+if __name__ == '__main__':
+    fun = choose_col['most_populated']
+
+    def make_fake_feed_data(l=10):
+        dr = pd.date_range(start='2015-01-10', periods=l, freq='D')
+        data = pd.np.random.rand(l)
+        return pd.Series(data,dr)
+
+    ors = make_fake_feed_data(1).shift(1,freq='D')
+    s1 = make_fake_feed_data(10)
+    s2 = make_fake_feed_data(5)
+    s3 = make_fake_feed_data(7)
+    fls = make_fake_feed_data(1).shift(8,freq='D')
+
+    s1.iloc[6] = pd.np.nan
+    s1.iloc[8] = pd.np.nan
+
+    cols = ['override_'] + [''] * 3
+    cols = [c + "feed{0:03d}".format(i) for i, c in enumerate(cols)]
+    cols = cols + ['failsafe_feed999']
+
+    df = pd.concat([ors, s1, s2, s3, fls], axis=1)
+    df.columns = cols
+    df['final'] = fun(df)
+
+    print df
+
+    #assert df['final'].iloc[1] == df['override_feed000'].iloc[1]
+    #assert df['final'].iloc[-1] == df['feed001'].iloc[-1]
+    #assert df['final'].iloc[-2] == df['failsafe_feed999'].iloc[-2]
+    #assert df['final'].iloc[-4] == df['feed003'].iloc[-4]
+
+
