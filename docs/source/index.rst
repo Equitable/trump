@@ -43,6 +43,7 @@ Object Model
 
    framework   
    objectmodel/orm
+   aggregation
    planning
 
 Template Classes
@@ -52,7 +53,7 @@ Template Classes
    :maxdepth: 4
    
    templating/templates
-
+   
 Index
 -----
 
