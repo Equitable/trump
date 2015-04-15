@@ -54,8 +54,7 @@ from indexing import tosqla, indexingtypes
 
 from trump.tools import ReprMixin, ProxyDict, BitFlag, BitFlagType,\
     isinstanceofany
-from trump.extensions.symbol_aggs import sorted_feed_cols,\
-    apply_row, choose_col
+from trump.extensions.symbol_aggs import FeedAggregator, sorted_feed_cols
 from trump.templating import bFeed, pab, pnab
 from trump.options import read_config, read_settings
 
@@ -486,11 +485,7 @@ class Symbol(Base, ReprMixin):
             data = data.fillna(value=pd.np.nan)
 
             data = data[sorted_feed_cols(data)]
-            print data
-            if self.agg_method in apply_row:
-                data['final'] = data.apply(apply_row[self.agg_method], axis=1)
-            elif self.agg_method in choose_col:
-                data['final'] = choose_col[self.agg_method](data)
+            data['final'] = FeedAggregator(self.agg_method).aggregate(data)
         except:
             logic = self.handle.aggregation
             msg = "There was a problem aggregating feeds for {}"
