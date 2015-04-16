@@ -22,7 +22,6 @@ This module creates the functions that get used in symbol aggregation
 There are row-based, and column-based, function builders, just to stay
 organized.
 """
-from types import FunctionType
 import pandas as pd
 
 nan = pd.np.nan
@@ -74,7 +73,8 @@ class ApplyRow(object):
     
     @staticmethod
     def mean_fill(adf):
-        """ Looks at each row, and calculates the mean """
+        """ Looks at each row, and calculates the mean. Honours
+        the Trump override/failsafe logic. """
         ordpt = adf.values[0]
         if not pd.isnull(ordpt):
             return ordpt
@@ -91,7 +91,8 @@ class ApplyRow(object):
     
     @staticmethod
     def median_fill(adf):
-        """ Looks at each row, and chooses the mode """
+        """ Looks at each row, and chooses the median. Honours
+        the Trump override/failsafe logic. """
         ordpt = adf.values[0]
         if not pd.isnull(ordpt):
             return ordpt
@@ -105,6 +106,18 @@ class ApplyRow(object):
             return flspt
 
         return nan
+
+    @staticmethod
+    def custom(adf):
+        """
+        A custom Apply-Row Aggregator can be defined,
+        as any function which accepts a Series, and returns
+        any number-like object, which will get
+        assigned to the Dataframe's 'final' column in
+        using the pandas .apply, function.
+        """
+        return [0] * len(adf)
+
 
 class ChooseCol(object):
     """
@@ -173,6 +186,16 @@ class ChooseCol(object):
                               adf.failsafe_feed999], axis=1)
         final_df = final_df.apply(_row_wise_priority, axis=1)
         return final_df
+
+    @staticmethod
+    def custom(adf):
+        """
+        A custom Choose-Column Aggregator can be defined,
+        as any function which accepts a dataframe, and returns
+        any Series-like object, which will get
+        assigned to the Dataframe's 'final' column.
+        """
+        return [0] * len(adf)
 
 class FeedAggregator(ApplyRow, ChooseCol):
     def __init__(self,method):
