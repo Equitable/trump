@@ -130,8 +130,8 @@ class ChooseCol(object):
     @staticmethod
     def most_populated(adf):
         """
-        Looks at each column, and counts the column the most recently updated
-        """
+        Looks at each column, using the one with the most values
+        Honours the Trump override/failsafe logic. """
 
         # just look at the feeds, ignore overrides and failsafes:
         feeds_only = adf[adf.columns[1:-1]]
@@ -143,7 +143,7 @@ class ChooseCol(object):
 
         # if there aren't any feeds, the first feed will work...
         if len(selected_feeds) == 0:
-            pre_final = adf['feed001'] # if there all empyty
+            pre_final = adf['feed001'] # if they are all empty
                                   # they should all be
                                   # equally empty
         else:
@@ -162,7 +162,7 @@ class ChooseCol(object):
     def most_recent(adf):
         """
         Looks at each column, and chooses the feed with the most recent data
-        """
+        point. Honours the Trump override/failsafe logic. """
         # just look at the feeds, ignore overrides and failsafes:
         feeds_only = adf[adf.columns[1:-1]]
 
