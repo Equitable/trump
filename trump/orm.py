@@ -101,20 +101,20 @@ class Index(Base, ReprMixin):
     name = Column("name", String, nullable=False)
     """string to name the index, only used when serving."""
 
-    indtype = Column("indtype", String, nullable=False)
-    """string representing a :py:class:`~trump.indexing.IndexImplementor`."""
+    indimp = Column("indimp", String, nullable=False)
+    """string representing a :py:class:`~trump.indexing.IndexImplementer`."""
 
     case = Column("case", String)
-    """string used in a :class:`~.indexing.IndexImplementor` switch statement."""
+    """string used in a :class:`~.indexing.IndexImplementer` switch statement."""
 
     kwargs = relationship("IndexKwarg", lazy="dynamic", cascade=ADO)
 
-    def __init__(self, name, indtype, case=None, kwargs={}, sym=None):
+    def __init__(self, name, indimp, case=None, kwargs={}, sym=None):
 
         set_symbol_or_symname(self, sym)
 
         self.name = name
-        self.indtype = indtype
+        self.indimp = indimp
         self.case = case or "asis"
         self.setkwargs(**kwargs)
 
@@ -360,7 +360,7 @@ class Symbol(Base, ReprMixin):
 
     def __init__(self, name, description=None, units=None,
                  agg_method="PRIORITY_FILL",
-                 indexname="unnamed", indextyp="DatetimeIndex"):
+                 indexname="unnamed", indeximp="DatetimeIndexImp"):
         """
         :param name: str
             The name of the symbol to be added to the database, serves
@@ -374,15 +374,15 @@ class Symbol(Base, ReprMixin):
             trump.extensions.symbol_aggs.py for the list of available options.
         :param indexname: str
             a proprietary name assigned to the index.
-        :param indextyp: str
-            a string matching one of the classes in indexing.py
+        :param indeximp: str
+            a string representing an index implementer (one of the classes in indexing.py)
 
         """
         self.name = name
         self.description = description
         self.units = units
 
-        self.index = Index(indexname, indextyp, sym=name)
+        self.index = Index(indexname, indeximp, sym=name)
         self.agg_method = agg_method
         self.datatable = None
         self.datatable_exists = False
@@ -514,7 +514,7 @@ class Symbol(Base, ReprMixin):
         #    delete(self.datatable).execute()
         self._refresh_datatable_schema()
 
-        indt = indexingtypes[self.index.indtype]
+        indt = indexingtypes[self.index.indimp]
         indt = indt(data, self.index.case, self.index.getkwargs())
         data = indt.final_dataframe()
 
@@ -713,7 +713,7 @@ class Symbol(Base, ReprMixin):
         adf.columns = [self.index.name, self.name]
         adf = adf.set_index(self.index.name)
 
-        indt = indexingtypes[self.index.indtype]
+        indt = indexingtypes[self.index.indimp]
         indt = indt(adf, self.index.case, self.index.getkwargs())
         adf = indt.final_series()
 
@@ -780,7 +780,7 @@ class Symbol(Base, ReprMixin):
         feed_cols = ['feed{0:03d}'.format(i + 1) for i in range(self.n_feeds)]
         feed_cols = ['override_feed000'] + feed_cols + ['failsafe_feed999']
 
-        sqlatyp = tosqla[self.index.indtype]
+        sqlatyp = tosqla[self.index.indimp]
 
         atbl = Table(self.name, metadata,
                      Column('indx', sqlatyp, primary_key=True),
