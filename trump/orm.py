@@ -424,7 +424,7 @@ class Symbol(Base, ReprMixin):
                 setattr(self.handle, checkpoint, settings)
         objs.commit()
 
-    def cache(self):
+    def cache(self, checkvalidity=True):
         """ Re-caches the Symbol's datatable by querying each Feed. """
 
         data = []
@@ -524,15 +524,17 @@ class Symbol(Base, ReprMixin):
                         data.to_dict(orient='records'))
         session.commit()
 
-        try:
-            if not self.isvalid():
-                raise Exception('{} is not valid'.format(self.name))
-        except:
-            logic = self.handle.validity_check
-            msg = "There was a problem during the validity check for {}"
-            msg = msg.format(self.symname)
-            Handler(logic,msg)
+        if checkvalidity:
+            try:
+                if not self.isvalid:
+                    raise Exception('{} is not valid'.format(self.name))
+            except:
+                logic = self.handle.validity_check
+                msg = "There was a problem during the validity check for {}"
+                msg = msg.format(self.symname)
+                Handler(logic,msg)  
 
+    @property
     def isvalid(self):
 
         # loop through the validity checks associated with this symbol
