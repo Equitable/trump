@@ -52,8 +52,9 @@ from sqlalchemy import create_engine
 
 from indexing import tosqla, indexingtypes
 
-from trump.tools import ReprMixin, ProxyDict, BitFlag, BitFlagType,\
-    isinstanceofany
+from trump.tools import ReprMixin, ProxyDict, isinstanceofany, \
+    BitFlag, BitFlagType, ReprObjType
+
 from trump.extensions.symbol_aggs import FeedAggregator, sorted_feed_cols
 from trump.templating import bFeed, pab, pnab
 from trump.options import read_config, read_settings
@@ -459,27 +460,27 @@ class Symbol(Base, ReprMixin):
 
         objs = object_session(self)
 
-        qry = objs.query(Override.dt_ind,
+        qry = objs.query(Override.ind,
                          func.max(Override.dt_log).label('max_dt_log'))
-        grb = qry.group_by(Override.dt_ind).subquery()
+        grb = qry.group_by(Override.ind).subquery()
 
         qry = objs.query(Override)
-        ords = qry.join((grb, and_(Override.dt_ind == grb.c.dt_ind,
+        ords = qry.join((grb, and_(Override.ind == grb.c.ind,
                                    Override.dt_log == grb.c.max_dt_log))).all()
 
         for row in ords:
-            data.loc[row.dt_ind, 'override_feed000'] = row.value
+            data.loc[row.ind, 'override_feed000'] = row.val
 
-        qry = objs.query(FailSafe.dt_ind,
+        qry = objs.query(FailSafe.ind,
                          func.max(FailSafe.dt_log).label('max_dt_log'))
-        grb = qry.group_by(FailSafe.dt_ind).subquery()
+        grb = qry.group_by(FailSafe.ind).subquery()
 
         qry = objs.query(FailSafe)
-        ords = qry.join((grb, and_(FailSafe.dt_ind == grb.c.dt_ind,
+        ords = qry.join((grb, and_(FailSafe.ind == grb.c.ind,
                                    FailSafe.dt_log == grb.c.max_dt_log))).all()
 
         for row in ords:
-            data.loc[row.dt_ind, 'failsafe_feed999'] = row.value
+            data.loc[row.ind, 'failsafe_feed999'] = row.val
 
         try:
             data = data.fillna(value=pd.np.nan)
@@ -566,9 +567,9 @@ class Symbol(Base, ReprMixin):
                 printed_cp = []
         return "\n".join(lines)
 
-    def add_override(self, dt_ind, value, dt_log=None, user=None, comment=None):
+    def add_override(self, ind, val, dt_log=None, user=None, comment=None):
         """
-        Appends a single value and date pair, to a symbol object, to be
+        Appends a single indexed-value pair, to a symbol object, to be
         used during the final steps of the aggregation of the datatable.
 
         Overrides, get applied with highest priority.
@@ -579,18 +580,18 @@ class Symbol(Base, ReprMixin):
             dt_log = dt.datetime.now()
 
         tmp = Override(symname=self.name,
-                       dt_ind=dt_ind,
-                       value=value,
+                       ind=ind,
+                       val=val,
                        dt_log=dt_log,
                        user=user,
                        comment=comment)
         objs.add(tmp)
         objs.commit()
 
-    def add_fail_safe(self, dt_ind, value,
+    def add_fail_safe(self, ind, val,
                       dt_log=None, user=None, comment=None):
         """
-        Appends a single value and date pair, to a symbol object, to be
+        Appends a single indexed-value, to a symbol object, to be
         used during the final steps of the aggregation of the datatable.
 
         Failsafes, get applied with highest priority.
@@ -601,8 +602,8 @@ class Symbol(Base, ReprMixin):
             dt_log = dt.datetime.now()
 
         tmp = FailSafe(symname=self.name,
-                       dt_ind=dt_ind,
-                       value=value,
+                       ind=ind,
+                       val=val,
                        dt_log=dt_log,
                        user=user,
                        comment=comment)
@@ -1350,14 +1351,9 @@ class FeedHandle(Base, ReprMixin):
 
 class Override(Base, ReprMixin):
     """
-    An override represents a single datapoint with an associated
+    An Override represents a single datapoint with an associated
     index value, applied to a Symbol's datatable after sourcing all the
     data, and will be applied after any aggregation logic
-
-    .. note::
-
-       only datetime based indices with float-based data currently work with
-       Overrides
 
     """
     __tablename__ = '_overrides'
@@ -1368,11 +1364,11 @@ class Override(Base, ReprMixin):
     ornum = Column('ornum', Integer, primary_key=True)
     """ Override number, uniquely assigned to every override"""
 
-    dt_ind = Column('dt_ind', DateTime, nullable=False)
-    """ the datetime index used for overriding."""
+    ind = Column('ind', ReprObjType, nullable=False)
+    """ the repr of the object used in the Symbol's index."""
 
-    value = Column('value', Float, nullable=False)
-    """ the value of the data point used for overriding"""
+    val = Column('val', ReprObjType, nullable=False)
+    """ the repr of the object used as the Symbol's value."""
 
     dt_log = Column('dt_log', DateTime, nullable=False)
     """ datetime that the override was created"""
@@ -1387,7 +1383,7 @@ class Override(Base, ReprMixin):
     # base's __init__'s doc string.
 
     def __init__(self, *args, **kwargs):
-        super(FailSafe, self).__init__(*args, **kwargs)
+        super(Override, self).__init__(*args, **kwargs)
 
 
 class FailSafe(Base, ReprMixin):
@@ -1413,11 +1409,11 @@ class FailSafe(Base, ReprMixin):
     fsnum = Column('fsnum', Integer, primary_key=True)
     """ Failsafe number, uniquely assigned to every FailSafe"""
 
-    dt_ind = Column('dt_ind', DateTime, nullable=False)
-    """ The datetime index used for the FailSafe."""
+    ind = Column('ind', ReprObjType, nullable=False)
+    """ the repr of the object used in the Symbol's index."""
 
-    value = Column('value', Float, nullable=False)
-    """ The value of the data point used for the FailSafe."""
+    val = Column('val', ReprObjType, nullable=False)
+    """ the repr of the object used as the Symbol's value."""
 
     dt_log = Column('dt_log', DateTime, nullable=False)
     """ datetime of the FailSafe creation."""
