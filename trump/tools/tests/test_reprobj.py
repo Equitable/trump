@@ -3,7 +3,7 @@ from sqlalchemy import Column, MetaData, Integer, create_engine, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-ENGINE_STR = "sqlite:///D:\\trumptests.db"
+ENGINE_STR = "sqlite:///"
 engine = create_engine(ENGINE_STR, echo=False)
 
 Base = declarative_base()
@@ -27,7 +27,7 @@ Base.metadata.create_all(engine)
 import datetime as dt
 
 class TestReprObj(object):
-    def test_check_reprobjs():
+    def test_check_reprobjs(self):
         for tobj in [1, 2.0, 'three', dt.date(2014, 1, 1)]:
             ttyp = type(tobj)
             
@@ -39,7 +39,6 @@ class TestReprObj(object):
             lastid = session.query(func.max(ReprObjExample.idcol).label('lastid')).one()[0]
             results = session.query(ReprObjExample).filter(ReprObjExample.idcol == lastid).all()[0]
             
-            raw_input("?")
             assert results.excol == tobj
             assert type(results.excol) == ttyp
             
