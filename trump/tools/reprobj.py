@@ -1,9 +1,22 @@
 """
 Creates the ReprObjType object, which enables any python object to be stored
 as a string in a database.
+
+In order for Trump to support it, reprobj.py needs to be able to run
+an exec command, of the object's repr, successfully.  So, extra
+import statements may be needed and added in such a way that the import
+statement matches the object's repr.
 """
 
 from sqlalchemy.types import TypeDecorator, String
+
+# Wrap any needed third-party libraries or modules, in a try-pass statetment.
+# to ensure any other users, stay sane.  Example was done with the 
+# datetime, which obviously all users have.
+
+try: import datetime
+except: pass
+
 
 class ReprObjType(TypeDecorator):
 
@@ -33,7 +46,8 @@ class ReprObjType(TypeDecorator):
         column, it converts it to the python equivalent via exec.
         """
         if value is not None:
-            exec("value = " + value)
+            cmd = "value = {}".format(value)
+            exec(cmd)
         return value
 
     def copy(self):
