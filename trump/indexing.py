@@ -115,13 +115,13 @@ class DatetimeIndexImp(IndexImplementer):
             else:
                 self.default(kwargs)
         
-		elif case == 'guess':
+	elif case == 'guess':
             raise NotImplementedError()
         
-		elif case == 'guess_post':
+	elif case == 'guess_post':
             raise NotImplementedError()
         
-		else:
+	else:
             raise Exception("Indexing case '{}' unsupported".format(case))
 
     def default(self, kwargs):
