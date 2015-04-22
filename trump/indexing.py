@@ -69,7 +69,10 @@ class IndexImplementer(object):
         # IndexImplementer, than it should be converted
         # into one here.
 
-        return self.data
+        if isinstance(self.data, pd.Series):
+            return self.data.to_frame()
+        else:
+            return self.data
 
 
 class DatetimeIndexImp(IndexImplementer):
