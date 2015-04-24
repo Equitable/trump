@@ -69,7 +69,10 @@ class IndexImplementer(object):
         # IndexImplementer, than it should be converted
         # into one here.
 
-        return self.data
+        if isinstance(self.data, pd.Series):
+            return self.data.to_frame()
+        else:
+            return self.data
 
 
 class DatetimeIndexImp(IndexImplementer):
@@ -115,13 +118,13 @@ class DatetimeIndexImp(IndexImplementer):
             else:
                 self.default(kwargs)
         
-		elif case == 'guess':
+	elif case == 'guess':
             raise NotImplementedError()
         
-		elif case == 'guess_post':
+	elif case == 'guess_post':
             raise NotImplementedError()
         
-		else:
+	else:
             raise Exception("Indexing case '{}' unsupported".format(case))
 
     def default(self, kwargs):
