@@ -52,10 +52,10 @@ from sqlalchemy import create_engine
 
 from indexing import tosqla, indexingtypes
 
-from trump.tools import ReprMixin, ProxyDict, BitFlag, BitFlagType,\
-    isinstanceofany
-from trump.extensions.symbol_aggs import sorted_feed_cols,\
-    apply_row, choose_col
+from trump.tools import ReprMixin, ProxyDict, isinstanceofany, \
+    BitFlag, BitFlagType, ReprObjType
+
+from trump.extensions.symbol_aggs import FeedAggregator, sorted_feed_cols
 from trump.templating import bFeed, pab, pnab
 from trump.options import read_config, read_settings
 
@@ -102,20 +102,20 @@ class Index(Base, ReprMixin):
     name = Column("name", String, nullable=False)
     """string to name the index, only used when serving."""
 
-    indtype = Column("indtype", String, nullable=False)
-    """string representing a :py:class:`~trump.indexing.IndexImplementor`."""
+    indimp = Column("indimp", String, nullable=False)
+    """string representing a :py:class:`~trump.indexing.IndexImplementer`."""
 
     case = Column("case", String)
-    """string used in a :class:`~.indexing.IndexImplementor` switch statement."""
+    """string used in a :class:`~.indexing.IndexImplementer` switch statement."""
 
     kwargs = relationship("IndexKwarg", lazy="dynamic", cascade=ADO)
 
-    def __init__(self, name, indtype, case=None, kwargs={}, sym=None):
+    def __init__(self, name, indimp, case=None, kwargs={}, sym=None):
 
         set_symbol_or_symname(self, sym)
 
         self.name = name
-        self.indtype = indtype
+        self.indimp = indimp
         self.case = case or "asis"
         self.setkwargs(**kwargs)
 
@@ -361,7 +361,7 @@ class Symbol(Base, ReprMixin):
 
     def __init__(self, name, description=None, units=None,
                  agg_method="PRIORITY_FILL",
-                 indexname="unnamed", indextyp="DatetimeIndex"):
+                 indexname="unnamed", indeximp="DatetimeIndexImp"):
         """
         :param name: str
             The name of the symbol to be added to the database, serves
@@ -375,15 +375,15 @@ class Symbol(Base, ReprMixin):
             trump.extensions.symbol_aggs.py for the list of available options.
         :param indexname: str
             a proprietary name assigned to the index.
-        :param indextyp: str
-            a string matching one of the classes in indexing.py
+        :param indeximp: str
+            a string representing an index implementer (one of the classes in indexing.py)
 
         """
         self.name = name
         self.description = description
         self.units = units
 
-        self.index = Index(indexname, indextyp, sym=name)
+        self.index = Index(indexname, indeximp, sym=name)
         self.agg_method = agg_method
         self.datatable = None
         self.datatable_exists = False
@@ -425,7 +425,7 @@ class Symbol(Base, ReprMixin):
                 setattr(self.handle, checkpoint, settings)
         objs.commit()
 
-    def cache(self):
+    def cache(self, checkvalidity=True):
         """ Re-caches the Symbol's datatable by querying each Feed. """
 
         data = []
@@ -460,37 +460,33 @@ class Symbol(Base, ReprMixin):
 
         objs = object_session(self)
 
-        qry = objs.query(Override.dt_ind,
+        qry = objs.query(Override.ind,
                          func.max(Override.dt_log).label('max_dt_log'))
-        grb = qry.group_by(Override.dt_ind).subquery()
+        grb = qry.group_by(Override.ind).subquery()
 
         qry = objs.query(Override)
-        ords = qry.join((grb, and_(Override.dt_ind == grb.c.dt_ind,
+        ords = qry.join((grb, and_(Override.ind == grb.c.ind,
                                    Override.dt_log == grb.c.max_dt_log))).all()
 
         for row in ords:
-            data.loc[row.dt_ind, 'override_feed000'] = row.value
+            data.loc[row.ind, 'override_feed000'] = row.val
 
-        qry = objs.query(FailSafe.dt_ind,
+        qry = objs.query(FailSafe.ind,
                          func.max(FailSafe.dt_log).label('max_dt_log'))
-        grb = qry.group_by(FailSafe.dt_ind).subquery()
+        grb = qry.group_by(FailSafe.ind).subquery()
 
         qry = objs.query(FailSafe)
-        ords = qry.join((grb, and_(FailSafe.dt_ind == grb.c.dt_ind,
+        ords = qry.join((grb, and_(FailSafe.ind == grb.c.ind,
                                    FailSafe.dt_log == grb.c.max_dt_log))).all()
 
         for row in ords:
-            data.loc[row.dt_ind, 'failsafe_feed999'] = row.value
+            data.loc[row.ind, 'failsafe_feed999'] = row.val
 
         try:
             data = data.fillna(value=pd.np.nan)
 
             data = data[sorted_feed_cols(data)]
-            print data
-            if self.agg_method in apply_row:
-                data['final'] = data.apply(apply_row[self.agg_method], axis=1)
-            elif self.agg_method in choose_col:
-                data['final'] = choose_col[self.agg_method](data)
+            data['final'] = FeedAggregator(self.agg_method).aggregate(data)
         except:
             logic = self.handle.aggregation
             msg = "There was a problem aggregating feeds for {}"
@@ -519,7 +515,7 @@ class Symbol(Base, ReprMixin):
         #    delete(self.datatable).execute()
         self._refresh_datatable_schema()
 
-        indt = indexingtypes[self.index.indtype]
+        indt = indexingtypes[self.index.indimp]
         indt = indt(data, self.index.case, self.index.getkwargs())
         data = indt.final_dataframe()
 
@@ -529,15 +525,17 @@ class Symbol(Base, ReprMixin):
                         data.to_dict(orient='records'))
         session.commit()
 
-        try:
-            if not self.isvalid():
-                raise Exception('{} is not valid'.format(self.name))
-        except:
-            logic = self.handle.validity_check
-            msg = "There was a problem during the validity check for {}"
-            msg = msg.format(self.symname)
-            Handler(logic,msg)
+        if checkvalidity:
+            try:
+                if not self.isvalid:
+                    raise Exception('{} is not valid'.format(self.name))
+            except:
+                logic = self.handle.validity_check
+                msg = "There was a problem during the validity check for {}"
+                msg = msg.format(self.symname)
+                Handler(logic,msg)  
 
+    @property
     def isvalid(self):
 
         # loop through the validity checks associated with this symbol
@@ -569,9 +567,9 @@ class Symbol(Base, ReprMixin):
                 printed_cp = []
         return "\n".join(lines)
 
-    def add_override(self, dt_ind, value, dt_log=None, user=None, comment=None):
+    def add_override(self, ind, val, dt_log=None, user=None, comment=None):
         """
-        Appends a single value and date pair, to a symbol object, to be
+        Appends a single indexed-value pair, to a symbol object, to be
         used during the final steps of the aggregation of the datatable.
 
         Overrides, get applied with highest priority.
@@ -582,18 +580,18 @@ class Symbol(Base, ReprMixin):
             dt_log = dt.datetime.now()
 
         tmp = Override(symname=self.name,
-                       dt_ind=dt_ind,
-                       value=value,
+                       ind=ind,
+                       val=val,
                        dt_log=dt_log,
                        user=user,
                        comment=comment)
         objs.add(tmp)
         objs.commit()
 
-    def add_fail_safe(self, dt_ind, value,
+    def add_fail_safe(self, ind, val,
                       dt_log=None, user=None, comment=None):
         """
-        Appends a single value and date pair, to a symbol object, to be
+        Appends a single indexed-value, to a symbol object, to be
         used during the final steps of the aggregation of the datatable.
 
         Failsafes, get applied with highest priority.
@@ -604,8 +602,8 @@ class Symbol(Base, ReprMixin):
             dt_log = dt.datetime.now()
 
         tmp = FailSafe(symname=self.name,
-                       dt_ind=dt_ind,
-                       value=value,
+                       ind=ind,
+                       val=val,
                        dt_log=dt_log,
                        user=user,
                        comment=comment)
@@ -718,7 +716,7 @@ class Symbol(Base, ReprMixin):
         adf.columns = [self.index.name, self.name]
         adf = adf.set_index(self.index.name)
 
-        indt = indexingtypes[self.index.indtype]
+        indt = indexingtypes[self.index.indimp]
         indt = indt(adf, self.index.case, self.index.getkwargs())
         adf = indt.final_series()
 
@@ -785,7 +783,7 @@ class Symbol(Base, ReprMixin):
         feed_cols = ['feed{0:03d}'.format(i + 1) for i in range(self.n_feeds)]
         feed_cols = ['override_feed000'] + feed_cols + ['failsafe_feed999']
 
-        sqlatyp = tosqla[self.index.indtype]
+        sqlatyp = tosqla[self.index.indimp]
 
         atbl = Table(self.name, metadata,
                      Column('indx', sqlatyp, primary_key=True),
@@ -1353,14 +1351,9 @@ class FeedHandle(Base, ReprMixin):
 
 class Override(Base, ReprMixin):
     """
-    An override represents a single datapoint with an associated
+    An Override represents a single datapoint with an associated
     index value, applied to a Symbol's datatable after sourcing all the
     data, and will be applied after any aggregation logic
-
-    .. note::
-
-       only datetime based indices with float-based data currently work with
-       Overrides
 
     """
     __tablename__ = '_overrides'
@@ -1371,11 +1364,11 @@ class Override(Base, ReprMixin):
     ornum = Column('ornum', Integer, primary_key=True)
     """ Override number, uniquely assigned to every override"""
 
-    dt_ind = Column('dt_ind', DateTime, nullable=False)
-    """ the datetime index used for overriding."""
+    ind = Column('ind', ReprObjType, nullable=False)
+    """ the repr of the object used in the Symbol's index."""
 
-    value = Column('value', Float, nullable=False)
-    """ the value of the data point used for overriding"""
+    val = Column('val', ReprObjType, nullable=False)
+    """ the repr of the object used as the Symbol's value."""
 
     dt_log = Column('dt_log', DateTime, nullable=False)
     """ datetime that the override was created"""
@@ -1390,7 +1383,7 @@ class Override(Base, ReprMixin):
     # base's __init__'s doc string.
 
     def __init__(self, *args, **kwargs):
-        super(FailSafe, self).__init__(*args, **kwargs)
+        super(Override, self).__init__(*args, **kwargs)
 
 
 class FailSafe(Base, ReprMixin):
@@ -1416,11 +1409,11 @@ class FailSafe(Base, ReprMixin):
     fsnum = Column('fsnum', Integer, primary_key=True)
     """ Failsafe number, uniquely assigned to every FailSafe"""
 
-    dt_ind = Column('dt_ind', DateTime, nullable=False)
-    """ The datetime index used for the FailSafe."""
+    ind = Column('ind', ReprObjType, nullable=False)
+    """ the repr of the object used in the Symbol's index."""
 
-    value = Column('value', Float, nullable=False)
-    """ The value of the data point used for the FailSafe."""
+    val = Column('val', ReprObjType, nullable=False)
+    """ the repr of the object used as the Symbol's value."""
 
     dt_log = Column('dt_log', DateTime, nullable=False)
     """ datetime of the FailSafe creation."""

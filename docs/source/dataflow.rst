@@ -1,42 +1,60 @@
-Dataflow
+Data Flow
 =========
-The flow of information in Trump, is slightly unorthodox, because it's centralizes data by design.
-The first-principles approach to using trump, excludes any usage of templates of anykind, and, would look something like this:
+Trump centralizes the flow of information using two concepts:
 
+1. Objectification
+2. Caching
+
+Objectification
+---------------
+
+The objectification happens via an addition-like setup entailing the instantiation of one or more symbols.  
+The objectification enables downstream applications to work with Sybols names in order to force the caching, and be served reliable data.
+
+There are two approaches to perform the objectification instantiation of Symbols
+
+1. First Principles (from ORM)
+2. Template Based (from Python Classes + ORM)
+ 
 First Principles
----------------------
+^^^^^^^^^^^^^^^^
+
+The first principles approach to using Trump is basically direct access to the SQLAlchemy-based object-relational model.
+It's time consuming to develop, but necessary to understand in order to design intelligent templates.
 
 Using Trump's ORM, the process is something akin to:
 
-1. Instantiate a new :py:class:`~trump.orm.Symbol`
-2. Optionally, add some :py:class:`~trump.orm.SymbolTag`
-3. Optionally, adjust the symbol's :py:class:`~trump.orm.Index` case and type
-4. Optionally, adjust the symbol's :py:class:`~trump.orm.SymbolHandle` handlepoints
-5. Instantiate one ore more :py:class:`~trump.orm.Feed` objects
-6. For each Feed, update :py:class:`~trump.orm.FeedMeta`, :py:class:`~trump.orm.FeedSource` details
-7. Optionally, adjust each feed's :py:class:`~trump.orm.FeedMunge` instructions
-8. Optionally, adjust each feed's :py:class:`~trump.orm.FeedHandle` handlepoints
-9. Anytime the data is potentially updated, cache the Symbol.  This process uses each feed's source to retrieve a fresh copy, and save the data and compute a final version in the symbol's datatable.
-10. Any process, including non-python ones, can retrieve the data from the cached database table.
-11. Any python application, can retrieve a pandas Series and check the Symbol's validity.
-12. Detect problems, add :py:class:`~trump.orm.Override` and :py:class:`~trump.orm.Failsafe` objects to "fix" a Symbol's final result.
+For Every Symbol:
+
+	1. Instantiate a new :py:class:`~trump.orm.Symbol`
+	2. Optionally, add some :py:class:`~trump.orm.SymbolTag`
+	3. Optionally, adjust the symbol's :py:class:`~trump.orm.Index` case and type
+	4. Optionally, adjust the symbol's :py:class:`~trump.orm.SymbolHandle` handlepoints
+	5. Instantiate one ore more :py:class:`~trump.orm.Feed` objects
+	6. For each Feed, update :py:class:`~trump.orm.FeedMeta`, :py:class:`~trump.orm.FeedSource` details
+	7. Optionally, adjust each feed's :py:class:`~trump.orm.FeedMunge` instructions
+	8. Optionally, adjust each feed's :py:class:`~trump.orm.FeedHandle` handlepoints
 
 Template Based
------------------------
+^^^^^^^^^^^^^^
 
-By using, and setting up, Trump templates, step 0 and 1 of this process, replaces steps 1 to 8 of the first-principles approach.  Then, step 2 to 4 are the same as 10 to 12.
+By setting up, and using Trump template classes, the two steps below replace steps 1 to 8 of the first principles approach. 
 
-0. Create custom templates for common sources of proprietary.
-1. Instantiate a new :py:class:`~trump.orm.Symbol` using a template containing Tag, Feed, Source and Handle settings.
-2. Anytime the data is needed, cache the Symbol.  This process uses each feed's source to retrieve a fresh copy, and saves in the database where Trumpe is installed.
-3. Any python application, can retrieve a pandas Series and check the Symbol's validity.
-4. Detect problems, add :py:class:`~trump.orm.Override` and :py:class:`~trump.orm.Failsafe` objects to "fix" a Symbol's final result.
+For Every Kind of Symbol:
+
+	1. Create custom templates for common sources of proprietary.
+
+For Every Symbol:
+
+	2. Instantiate a new :py:class:`~trump.orm.Symbol` using a template containing Tag, Feed, Source and Handle settings.
+
+In practice, it's inevitable that compatible templates will be used where possible, and 	
 
 Caching
------------
+-------
 
-The cache process, is more than just caching.  When executed, data from each Feed is queried, and and munged according to predefined,
-per-feed settings.  Then, it's concatenated into a pandas Dataframe. A :py:class:`~trump.indexing.IndexImplementor` corrects the index.
-An aggregation method converts the dataframe into a single Series. Single values are overrode, and blanks get populated, based on any previously
+The cache process, is more than just caching, but that's the main purpose.  When executed, data from each Feed is queried, and munged according to predefined instructions,
+on a per-feed basis.  Then, it's concatenated into a pandas Dataframe. A :py:class:`~trump.indexing.IndexImplementor` corrects the index.
+An aggregation method converts the Dataframe into a single Series. Single values are overrode, and blanks get populated, based on any previously
 defined :py:class:`~trump.orm.Override` and :py:class:`~trump.orm.FailSafe` associated with the symbol being cached.
-This entire result is then stored in the symbol's datatable, where it can be quickly queried to either use the data, or run validity checks.
+This entire result is then stored in the symbol's datatable, where it can be quickly checked for validity and served to applications.

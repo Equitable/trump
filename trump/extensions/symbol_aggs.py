@@ -22,7 +22,6 @@ This module creates the functions that get used in symbol aggregation
 There are row-based, and column-based, function builders, just to stay
 organized.
 """
-from types import FunctionType
 import pandas as pd
 
 nan = pd.np.nan
@@ -48,14 +47,16 @@ def _row_wise_priority(adf):
     else:
         return nan
 
-def apply_row_funcs():
+class ApplyRow(object):
     """
-    Builds a dictionary of row-based logic to be applied by
-    Trump's aggregation step.
+    Mixer used to identify row-based logic methods for
+    Trump's Feed aggregation step.
 
     All these functions, should take in a dataframe of multiple columns,
     and return a DataFrame with a single column, or a Series.
     """
+
+    @staticmethod
     def priority_fill(adf):
         """
         Looks at each row, and chooses the value from the highest priority
@@ -69,9 +70,11 @@ def apply_row_funcs():
         # so "priority_fill" just wraps this, for organization
         # purposes.
         return _row_wise_priority(adf)
-
+    
+    @staticmethod
     def mean_fill(adf):
-        """ Looks at each row, and calculates the mean """
+        """ Looks at each row, and calculates the mean. Honours
+        the Trump override/failsafe logic. """
         ordpt = adf.values[0]
         if not pd.isnull(ordpt):
             return ordpt
@@ -85,9 +88,11 @@ def apply_row_funcs():
             return flspt
 
         return nan
-
+    
+    @staticmethod
     def median_fill(adf):
-        """ Looks at each row, and chooses the mode """
+        """ Looks at each row, and chooses the median. Honours
+        the Trump override/failsafe logic. """
         ordpt = adf.values[0]
         if not pd.isnull(ordpt):
             return ordpt
@@ -102,11 +107,19 @@ def apply_row_funcs():
 
         return nan
 
-    lcls = locals().items()
-    return {k : v for k, v in lcls  if isinstance(v, FunctionType)}
+    @staticmethod
+    def custom(adf):
+        """
+        A custom Apply-Row Aggregator can be defined,
+        as any function which accepts a Series, and returns
+        any number-like object, which will get
+        assigned to the Dataframe's 'final' column in
+        using the pandas .apply, function.
+        """
+        return [0] * len(adf)
 
 
-def choose_col_funcs():
+class ChooseCol(object):
     """
     Builds a dictionary of column-based logic to be applied by
     Trump's aggregation step.
@@ -114,10 +127,11 @@ def choose_col_funcs():
     All these functions, should take in a dataframe of multiple columns,
     and return a DataFrame with a single column, or a Series.
     """
+    @staticmethod
     def most_populated(adf):
         """
-        Looks at each column, and counts the column the most recently updated
-        """
+        Looks at each column, using the one with the most values
+        Honours the Trump override/failsafe logic. """
 
         # just look at the feeds, ignore overrides and failsafes:
         feeds_only = adf[adf.columns[1:-1]]
@@ -129,7 +143,7 @@ def choose_col_funcs():
 
         # if there aren't any feeds, the first feed will work...
         if len(selected_feeds) == 0:
-            pre_final = adf['feed001'] # if there all empyty
+            pre_final = adf['feed001'] # if they are all empty
                                   # they should all be
                                   # equally empty
         else:
@@ -144,10 +158,11 @@ def choose_col_funcs():
         final_df = final_df.apply(_row_wise_priority, axis=1)
         return final_df
 
+    @staticmethod
     def most_recent(adf):
         """
         Looks at each column, and chooses the feed with the most recent data
-        """
+        point. Honours the Trump override/failsafe logic. """
         # just look at the feeds, ignore overrides and failsafes:
         feeds_only = adf[adf.columns[1:-1]]
 
@@ -172,14 +187,33 @@ def choose_col_funcs():
         final_df = final_df.apply(_row_wise_priority, axis=1)
         return final_df
 
-    lcls = locals().items()
-    return {k : v for k, v in lcls if isinstance(v, FunctionType)}
+    @staticmethod
+    def custom(adf):
+        """
+        A custom Choose-Column Aggregator can be defined,
+        as any function which accepts a dataframe, and returns
+        any Series-like object, which will get
+        assigned to the Dataframe's 'final' column.
+        """
+        return [0] * len(adf)
 
-apply_row = apply_row_funcs()
-choose_col = choose_col_funcs()
+class FeedAggregator(ApplyRow, ChooseCol):
+    def __init__(self,method):
+        try:
+            self.meth = getattr(self, method)
+        except:
+            raise "{} is not an arggregator method".format(method)
+        self.methname = method
+    def aggregate(self,df):
+        if self.methname in ApplyRow.__dict__:
+            return df.apply(self.meth, axis=1)
+        elif self.methname in ChooseCol.__dict__:
+            return self.meth(df)
+        else:
+            NotImplemented("This code path could be an ugly implementation, " + \
+                           "of a default?")
 
 if __name__ == '__main__':
-    fun = choose_col['most_populated']
 
     def make_fake_feed_data(l=10):
         dr = pd.date_range(start='2015-01-10', periods=l, freq='D')
@@ -201,7 +235,7 @@ if __name__ == '__main__':
 
     df = pd.concat([ors, s1, s2, s3, fls], axis=1)
     df.columns = cols
-    df['final'] = fun(df)
+    df['final'] = FeedAggregator('most_populated').aggregate(df)
 
     print df
 

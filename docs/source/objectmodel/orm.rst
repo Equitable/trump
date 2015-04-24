@@ -56,7 +56,7 @@ Index Types
 ^^^^^^^^^^^
 
 .. automodule:: trump.indexing
-   :members: IndexImplementor, DatetimeIndex, PeriodIndex, StrIndex, IntIndex
+   :members: IndexImplementor, DatetimeIndexImp, PeriodIndexImp, StrIndexImp, IntIndexImp
 
 Feeds
 -----

@@ -8,10 +8,10 @@ pdDatetimeIndex = pd.tseries.index.DatetimeIndex
 from sqlalchemy import DateTime, Integer, String
 
 
-class IndexImplementor(object):
+class IndexImplementer(object):
 
     """
-    IndexImplementor is the base required to implement
+    IndexImplementer is the base required to implement
     an index of a specific type.  The
     same instance is created at two points in
     the Trump dataflow:
@@ -19,7 +19,7 @@ class IndexImplementor(object):
     1. the datatable getting cached and
     2. the data being served.
 
-    The IndexImplementor should be
+    The IndexImplementer should be
     indempotent, and dataframe/series agnostic.
     """
 
@@ -32,10 +32,11 @@ class IndexImplementor(object):
             with caution as to the point in time of use.
         :param case: str
             This should match a case used to switch
-            the logic created in each subclass of IndexImplementor
+            the logic created in each subclass of IndexImplementer
 
         :param kwargs: dict
         """
+		
         self.data = df_or_s
 
     def final_series(self):
@@ -65,13 +66,13 @@ class IndexImplementor(object):
 
         # if it's possible that df_or_s isn't a
         # pandas.Dataframe, at the time of instatiation of the
-        # IndexImplementor, than it should be converted
+        # IndexImplementer, than it should be converted
         # into one here.
 
         return self.data
 
 
-class DatetimeIndex(IndexImplementor):
+class DatetimeIndexImp(IndexImplementer):
     """
     Implements a pandas DatetimeIndex
 
@@ -101,7 +102,7 @@ class DatetimeIndex(IndexImplementor):
 
     def __init__(self, dfors, case, kwargs):
         self.data = dfors
-
+	
         if case == 'asis':
             if isinstance(self.data.index, pdDatetimeIndex):
                 pass
@@ -113,11 +114,14 @@ class DatetimeIndex(IndexImplementor):
                 self.data = self.data.asfreq(**kwargs)
             else:
                 self.default(kwargs)
-        elif case == 'guess':
+        
+		elif case == 'guess':
             raise NotImplementedError()
-        elif case == 'guess_post':
+        
+		elif case == 'guess_post':
             raise NotImplementedError()
-        else:
+        
+		else:
             raise Exception("Indexing case '{}' unsupported".format(case))
 
     def default(self, kwargs):
@@ -127,7 +131,7 @@ class DatetimeIndex(IndexImplementor):
         self.data = self.data.reindex(newind)
 
 
-class PeriodIndex(IndexImplementor):
+class PeriodIndexImp(IndexImplementer):
     """
     Implements a pandas PeriodIndex
 
@@ -139,7 +143,7 @@ class PeriodIndex(IndexImplementor):
         raise NotImplementedError()
 
 
-class IntIndex(IndexImplementor):
+class IntIndexImp(IndexImplementer):
     """
     Implements a pandas Int64Index
 
@@ -151,7 +155,7 @@ class IntIndex(IndexImplementor):
         raise NotImplementedError()
 
 
-class StrIndex(IndexImplementor):
+class StrIndexImp(IndexImplementer):
     """
     Implements a pandas Index consisting of string objects.
 

@@ -1,4 +1,4 @@
-from ...extensions.symbol_aggs import apply_row, choose_col
+from ...extensions.symbol_aggs import FeedAggregator
 
 import pandas as pd
 
@@ -34,9 +34,7 @@ class TestSymbolAggregation(object):
 
         df = self.df
 
-        fun = apply_row['priority_fill']
-
-        df['final'] = df.apply(fun, axis=1)
+        df['final'] = FeedAggregator('priority_fill').aggregate(df)
 
         assert df['final'].iloc[1] == df['override_feed000'].iloc[1]
         assert df['final'].iloc[-1] == df['feed001'].iloc[-1]
@@ -47,9 +45,7 @@ class TestSymbolAggregation(object):
 
         df = self.df
 
-        fun = apply_row['mean_fill']
-
-        df['final'] = df.apply(fun, axis=1)
+        df['final'] = FeedAggregator('mean_fill').aggregate(df)
 
         assert df['final'].iloc[1] == df['override_feed000'].iloc[1]
         assert df['final'].iloc[-1] == df['feed001'].iloc[-1]
@@ -66,9 +62,7 @@ class TestSymbolAggregation(object):
 
         df = self.df
 
-        fun = apply_row['median_fill']
-
-        df['final'] = df.apply(fun, axis=1)
+        df['final'] = FeedAggregator('median_fill').aggregate(df)
 
         assert df['final'].iloc[1] == df['override_feed000'].iloc[1]
         assert df['final'].iloc[-1] == df['feed001'].iloc[-1]
@@ -86,9 +80,7 @@ class TestSymbolAggregation(object):
 
         df = self.df
 
-        fun = choose_col['most_populated']
-
-        df['final'] = fun(df)
+        df['final'] = FeedAggregator('most_populated').aggregate(df)
 
         assert df['final'].iloc[1] == df['override_feed000'].iloc[1]
         assert df['final'].iloc[-1] == df['feed001'].iloc[-1]
@@ -99,12 +91,12 @@ class TestSymbolAggregation(object):
 
         df = self.df
 
-        fun = choose_col['most_recent']
-
+        mr = FeedAggregator('most_recent')
+        
         df.iloc[-1] = pd.np.nan
         df.iloc[-3] = pd.np.nan
 
-        df['final'] = fun(df)
+        df['final'] = mr.aggregate(df)
 
         assert df['final'].iloc[1] == df['override_feed000'].iloc[1]
         assert df['final'].iloc[-4] == df['feed003'].iloc[-4]
