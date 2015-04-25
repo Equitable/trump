@@ -521,8 +521,10 @@ class Symbol(Base, ReprMixin):
 
         data.index.name = 'indx'
         data = data.reset_index()
-        session.execute(self.datatable.insert(),
-                        data.to_dict(orient='records'))
+        datarecords = data.to_dict(orient='records')
+        
+
+        session.execute(self.datatable.insert(), datarecords)
         session.commit()
 
         if checkvalidity:
@@ -1144,7 +1146,6 @@ class Feed(Base, ReprMixin):
 
         # munge accordingly
         for mgn in self.munging:
-            print mgn.mtype
             mmkeys = mgn.munging_map.keys()
             kwargs = {k: mgn.munging_map[k].value for k in mmkeys}
             for arg in kwargs:

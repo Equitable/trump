@@ -47,7 +47,6 @@ class TestTemplates(object):
 
     def test_econ_ft(self):
         ftemp = EconFT("xxx")
-        print ftemp.sourcing
         assert ftemp.sourcing == {'datacol': 'value',
                                   'indexcol': 'date',
                                   'keycol': 'name',
