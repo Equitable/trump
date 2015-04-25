@@ -1,7 +1,7 @@
 
 from ..templates import QuandlFT, QuandlSecureFT, \
                         GoogleFinanceFT, YahooFinanceFT, StLouisFEDRT, \
-                        EconFT
+                        EconFT, CSVFT
 
 class TestTemplates(object):
 
@@ -57,3 +57,11 @@ class TestTemplates(object):
                                   'dbinstype': 'KEYCOL'}
         assert ftemp.meta == {'sourcing_key': 'explicit',
                               'stype': 'DBAPI'}
+    
+    def test_csv_ft(self):
+        ftemp = CSVFT(r"C:\myfile.csv",'A',testarg='testval')
+        assert ftemp.sourcing == {'filepath_or_buffer': r"C:\myfile.csv",
+                                  'data_column': 'A',
+                                  'testarg': 'testval'}
+
+        assert ftemp.meta == {'stype': 'PyDataCSV'}

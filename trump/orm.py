@@ -1099,6 +1099,26 @@ class Feed(Base, ReprMixin):
                 self.data = pd.Series(dat, ind)
             elif stype == 'SQLAlchemy':
                 NotImplementedError("SQLAlchemy")
+            elif stype == 'PyDataCSV':
+                from pandas import read_csv
+
+                col = kwargs['data_column']
+                del kwargs['data_column']
+                
+                fpob = kwargs['filepath_or_buffer']
+                del kwargs['filepath_or_buffer']
+                
+                # trump doesn't have an elegant way of handling arguments
+                # with values other than strings...  until it does, any datatype
+                # other than string, will need to be manually handled:
+                
+                if 'index_col' in kwargs:
+                    kwargs['index_col'] = int(kwargs['index_col'])
+                    
+                df = read_csv(fpob, **kwargs)
+                
+                self.data = df[col]
+
             elif stype == 'PyDataDataReaderST':
                 import pandas.io.data as pydata
 

@@ -167,6 +167,14 @@ class PyDataDataReaderST(bSource):
         self.data_source = data_source
         self.data_column = column
 
+class PyDataCSVST(bSource):
+    """ implements pandas.read_csv source """
+    def __init__(self, filepath_or_buffer, data_column, **kwargs):
+        self.filepath_or_buffer = filepath_or_buffer
+        self.data_column = data_column
+        
+        for arg, val in kwargs.iteritems():
+            setattr(self, arg, val)
 
 # *****************************************************************************
 #
@@ -347,6 +355,21 @@ class YahooFinanceFT(bFeed):
         self.sourcing = source.as_dict
         self.set_stype(source)
 
+#******************************************************************************
+#
+#   File Readers
+#
+#******************************************************************************
+
+
+class CSVFT(bFeed):
+    """ Creates a feed from a CSV. """
+    def __init__(self, filepath_or_buffer, data_column, **kwargs):
+        super(CSVFT, self).__init__()
+        source = PyDataCSVST(filepath_or_buffer, data_column,
+                             **kwargs)
+        self.sourcing = source.as_dict
+        self.meta['stype'] = 'PyDataCSV'
 
 if __name__ == '__main__':
     pass

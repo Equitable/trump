@@ -50,6 +50,8 @@ Sources
 
 .. autoclass:: trump.templating.templates.PyDataDataReaderST
 
+.. autoclass:: trump.templating.templates.PyDataCSVST
+
 Feeds
 ~~~~~
 
@@ -66,3 +68,5 @@ Feeds
 .. autoclass:: trump.templating.templates.YahooFinanceFT
 
 .. autoclass:: trump.templating.templates.StLouisFEDRT
+
+.. autoclass:: trump.templating.templates.CSVFT
