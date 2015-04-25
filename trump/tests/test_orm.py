@@ -158,3 +158,25 @@ class TestORM(object):
         df = sym.df
         assert isinstance(df.index, pd.DatetimeIndex)
         assert df.iloc[2][0] == 3
+    
+    def test_datetime_float_override(self):
+        
+        sm = SymbolManager()
+
+        sym = sm.create("dtflor", overwrite=True)
+        
+        curdir = os.path.dirname(os.path.realpath(__file__))
+        testdata = os.path.join(curdir,'testdata','testdata.csv')
+
+        fdtemp = CSVFT(testdata, 'Amount', index_col=0)
+
+        sym.add_feed(fdtemp)
+        
+        sym.add_override(2012, 5, user='tester', comment='testcomment')
+
+        sym.cache()
+
+        df = sym.df
+        assert isinstance(df.index, pd.DatetimeIndex)
+
+        assert df.iloc[2][0] == 5        

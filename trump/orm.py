@@ -462,6 +462,9 @@ class Symbol(Base, ReprMixin):
 
         qry = objs.query(Override.ind,
                          func.max(Override.dt_log).label('max_dt_log'))
+        
+        qry = qry.filter_by(symname = self.name)
+        
         grb = qry.group_by(Override.ind).subquery()
 
         qry = objs.query(Override)
@@ -473,6 +476,9 @@ class Symbol(Base, ReprMixin):
 
         qry = objs.query(FailSafe.ind,
                          func.max(FailSafe.dt_log).label('max_dt_log'))
+                         
+        qry = qry.filter_by(symname = self.name)
+                         
         grb = qry.group_by(FailSafe.ind).subquery()
 
         qry = objs.query(FailSafe)
@@ -581,12 +587,25 @@ class Symbol(Base, ReprMixin):
         if not dt_log:
             dt_log = dt.datetime.now()
 
+        #qry = objs.query(Override.ornum).filter_by(symname = self.name)
+        qry = objs.query(func.max(Override.ornum).label('max_ornum'))
+        qry = qry.filter_by(symname = self.name)
+        
+        cur_ornum = qry.one()
+        
+        if cur_ornum[0] is None:
+            next_ornum = 0
+        else:
+            next_ornum = cur_ornum[0] + 1            
+
         tmp = Override(symname=self.name,
                        ind=ind,
                        val=val,
                        dt_log=dt_log,
                        user=user,
-                       comment=comment)
+                       comment=comment,
+                       ornum=next_ornum)
+                                             
         objs.add(tmp)
         objs.commit()
 
