@@ -9,6 +9,8 @@ import pytest
 
 import os
 
+import datetime as dt
+
 class TestORM(object):
 
     def test_symbol_creation(self):
@@ -158,3 +160,33 @@ class TestORM(object):
         df = sym.df
         assert isinstance(df.index, pd.DatetimeIndex)
         assert df.iloc[2][0] == 3
+    
+    def test_datetime_float_override_failsafe(self):
+        
+        sm = SymbolManager()
+
+        sym = sm.create("dtflor", overwrite=True)
+        
+        curdir = os.path.dirname(os.path.realpath(__file__))
+        testdata = os.path.join(curdir,'testdata','testdata.csv')
+
+        fdtemp = CSVFT(testdata, 'Amount', index_col=0)
+
+        sym.add_feed(fdtemp)
+        
+        sym.add_override(dt.date(2012, 12, 31), 5, user='tester',
+                         comment='testcomment')
+
+        sym.cache()
+
+        df = sym.df
+        assert isinstance(df.index, pd.DatetimeIndex)
+        assert df.iloc[2][0] == 5
+
+        sym.add_fail_safe(dt.date(2011, 12, 31), -1, user='tester',
+                        comment='testcomment2')
+
+        sym.cache()
+
+        df = sym.df
+        assert df.iloc[1][0] == -1        

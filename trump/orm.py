@@ -454,14 +454,22 @@ class Symbol(Base, ReprMixin):
             msg = msg.format(self.name)
             Handler(logic,msg).process()
 
+        indt = indexingtypes[self.index.indimp]
+        indt = indt(data, self.index.case, self.index.getkwargs())
+        data = indt.final_dataframe()
+
         data_len = len(data)
         data['override_feed000'] = [None] * data_len
         data['failsafe_feed999'] = [None] * data_len
+        
 
         objs = object_session(self)
 
         qry = objs.query(Override.ind,
                          func.max(Override.dt_log).label('max_dt_log'))
+        
+        qry = qry.filter_by(symname = self.name)
+        
         grb = qry.group_by(Override.ind).subquery()
 
         qry = objs.query(Override)
@@ -473,6 +481,9 @@ class Symbol(Base, ReprMixin):
 
         qry = objs.query(FailSafe.ind,
                          func.max(FailSafe.dt_log).label('max_dt_log'))
+                         
+        qry = qry.filter_by(symname = self.name)
+                         
         grb = qry.group_by(FailSafe.ind).subquery()
 
         qry = objs.query(FailSafe)
@@ -481,10 +492,10 @@ class Symbol(Base, ReprMixin):
 
         for row in ords:
             data.loc[row.ind, 'failsafe_feed999'] = row.val
+            
 
         try:
             data = data.fillna(value=pd.np.nan)
-
             data = data[sorted_feed_cols(data)]
             data['final'] = FeedAggregator(self.agg_method).aggregate(data)
         except:
@@ -515,15 +526,10 @@ class Symbol(Base, ReprMixin):
         #    delete(self.datatable).execute()
         self._refresh_datatable_schema()
 
-        indt = indexingtypes[self.index.indimp]
-        indt = indt(data, self.index.case, self.index.getkwargs())
-        data = indt.final_dataframe()
-
         data.index.name = 'indx'
         data = data.reset_index()
         datarecords = data.to_dict(orient='records')
         
-
         session.execute(self.datatable.insert(), datarecords)
         session.commit()
 
@@ -581,12 +587,24 @@ class Symbol(Base, ReprMixin):
         if not dt_log:
             dt_log = dt.datetime.now()
 
+        qry = objs.query(func.max(Override.ornum).label('max_ornum'))
+        qry = qry.filter_by(symname = self.name)
+        
+        cur_ornum = qry.one()
+        
+        if cur_ornum[0] is None:
+            next_ornum = 0
+        else:
+            next_ornum = cur_ornum[0] + 1            
+
         tmp = Override(symname=self.name,
                        ind=ind,
                        val=val,
                        dt_log=dt_log,
                        user=user,
-                       comment=comment)
+                       comment=comment,
+                       ornum=next_ornum)
+                                             
         objs.add(tmp)
         objs.commit()
 
@@ -602,13 +620,24 @@ class Symbol(Base, ReprMixin):
 
         if not dt_log:
             dt_log = dt.datetime.now()
-
+            
+        qry = objs.query(func.max(FailSafe.fsnum).label('max_fsnum'))
+        qry = qry.filter_by(symname = self.name)
+        
+        cur_fsnum = qry.one()
+        
+        if cur_fsnum[0] is None:
+            next_fsnum = 0
+        else:
+            next_fsnum = cur_fsnum[0] + 1        
+            
         tmp = FailSafe(symname=self.name,
                        ind=ind,
                        val=val,
                        dt_log=dt_log,
                        user=user,
-                       comment=comment)
+                       comment=comment,
+                       fsnum=next_fsnum)
         objs.add(tmp)
         objs.commit()
 
