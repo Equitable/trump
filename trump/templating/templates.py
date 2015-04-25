@@ -355,6 +355,21 @@ class YahooFinanceFT(bFeed):
         self.sourcing = source.as_dict
         self.set_stype(source)
 
+#******************************************************************************
+#
+#   File Readers
+#
+#******************************************************************************
+
+
+class CSVFT(bFeed):
+    """ Creates a feed from a CSV. """
+    def __init__(self, filepath_or_buffer, data_column, **kwargs):
+        super(CSVFT, self).__init__()
+        source = PyDataCSVST(filepath_or_buffer, data_column,
+                             **kwargs)
+        self.sourcing = source.as_dict
+        self.meta['stype'] = 'PyDataCSV'
 
 if __name__ == '__main__':
     pass
