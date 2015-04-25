@@ -620,13 +620,24 @@ class Symbol(Base, ReprMixin):
 
         if not dt_log:
             dt_log = dt.datetime.now()
-
+            
+        qry = objs.query(func.max(FailSafe.fsnum).label('max_fsnum'))
+        qry = qry.filter_by(symname = self.name)
+        
+        cur_fsnum = qry.one()
+        
+        if cur_fsnum[0] is None:
+            next_fsnum = 0
+        else:
+            next_fsnum = cur_fsnum[0] + 1        
+            
         tmp = FailSafe(symname=self.name,
                        ind=ind,
                        val=val,
                        dt_log=dt_log,
                        user=user,
-                       comment=comment)
+                       comment=comment,
+                       fsnum=next_fsnum)
         objs.add(tmp)
         objs.commit()
 
