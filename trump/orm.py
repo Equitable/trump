@@ -454,9 +454,14 @@ class Symbol(Base, ReprMixin):
             msg = msg.format(self.name)
             Handler(logic,msg).process()
 
+        indt = indexingtypes[self.index.indimp]
+        indt = indt(data, self.index.case, self.index.getkwargs())
+        data = indt.final_dataframe()
+
         data_len = len(data)
         data['override_feed000'] = [None] * data_len
         data['failsafe_feed999'] = [None] * data_len
+        
 
         objs = object_session(self)
 
@@ -487,10 +492,10 @@ class Symbol(Base, ReprMixin):
 
         for row in ords:
             data.loc[row.ind, 'failsafe_feed999'] = row.val
+            
 
         try:
             data = data.fillna(value=pd.np.nan)
-
             data = data[sorted_feed_cols(data)]
             data['final'] = FeedAggregator(self.agg_method).aggregate(data)
         except:
@@ -521,15 +526,10 @@ class Symbol(Base, ReprMixin):
         #    delete(self.datatable).execute()
         self._refresh_datatable_schema()
 
-        indt = indexingtypes[self.index.indimp]
-        indt = indt(data, self.index.case, self.index.getkwargs())
-        data = indt.final_dataframe()
-
         data.index.name = 'indx'
         data = data.reset_index()
         datarecords = data.to_dict(orient='records')
         
-
         session.execute(self.datatable.insert(), datarecords)
         session.commit()
 
@@ -587,7 +587,6 @@ class Symbol(Base, ReprMixin):
         if not dt_log:
             dt_log = dt.datetime.now()
 
-        #qry = objs.query(Override.ornum).filter_by(symname = self.name)
         qry = objs.query(func.max(Override.ornum).label('max_ornum'))
         qry = qry.filter_by(symname = self.name)
         
