@@ -4,9 +4,11 @@ import sys
 import pandas as pd
 
 pdDatetimeIndex = pd.tseries.index.DatetimeIndex
+pdInt64Index = pd.core.index.Int64Index
 
 from sqlalchemy import DateTime, Integer, String
 
+import datetime as dt
 
 class IndexImplementer(object):
 
@@ -109,6 +111,12 @@ class DatetimeIndexImp(IndexImplementer):
         if case == 'asis':
             if isinstance(self.data.index, pdDatetimeIndex):
                 pass
+            elif isinstance(self.data.index, pdInt64Index):
+                if all(len(str(i)) == 4 for i in self.data.index):
+                    #safe to assume we meant years...
+                    newind = [dt.date(y, 12, 31) for y in self.data.index]
+                    self.data.index = newind
+                    self.data.index = self.data.index.to_datetime()
             else:
                 print type(self.data.index)
                 self.default(**kwargs)
