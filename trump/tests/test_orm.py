@@ -1,9 +1,13 @@
 from ..orm import SymbolManager
 
 from ..templating.templates import GoogleFinanceFT, YahooFinanceFT,\
-    SimpleExampleMT
+    SimpleExampleMT, CSVFT
+
+import pandas as pd
 
 import pytest
+
+import os
 
 class TestORM(object):
 
@@ -135,3 +139,22 @@ class TestORM(object):
         assert 'Invalid symbol' in excinfo.value.message
 
         assert not sm.exists(sym)
+
+    def test_pydata_csv(self):
+
+        sm = SymbolManager()
+
+        sym = sm.create("new", overwrite=True)
+        
+        curdir = os.path.dirname(os.path.realpath(__file__))
+        testdata = os.path.join(curdir,'testdata','testdata.csv')
+
+        fdtemp = CSVFT(testdata, 'Amount', index_col=0)
+
+        sym.add_feed(fdtemp)
+
+        sym.cache()
+
+        df = sym.df
+        assert isinstance(df.index, pd.DatetimeIndex)
+        assert df.iloc[2][0] == 3
