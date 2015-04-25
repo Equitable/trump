@@ -167,6 +167,14 @@ class PyDataDataReaderST(bSource):
         self.data_source = data_source
         self.data_column = column
 
+class PyDataCSVST(bSource):
+    """ implements pandas.read_csv source """
+    def __init__(self, filepath_or_buffer, data_column, **kwargs):
+        self.filepath_or_buffer = filepath_or_buffer
+        self.data_column = data_column
+        
+        for arg, val in kwargs.iteritems():
+            setattr(self, arg, val)
 
 # *****************************************************************************
 #
