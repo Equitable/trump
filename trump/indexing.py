@@ -110,13 +110,14 @@ class DatetimeIndexImp(IndexImplementer):
             if isinstance(self.data.index, pdDatetimeIndex):
                 pass
             else:
-                self.default(kwargs)
+                print type(self.data.index)
+                self.default(**kwargs)
 
         elif case == 'asfreq':
             if isinstance(self.data.index, pdDatetimeIndex):
                 self.data = self.data.asfreq(**kwargs)
             else:
-                self.default(kwargs)
+                self.default(**kwargs)
         
 	elif case == 'guess':
             raise NotImplementedError()
@@ -127,7 +128,7 @@ class DatetimeIndexImp(IndexImplementer):
 	else:
             raise Exception("Indexing case '{}' unsupported".format(case))
 
-    def default(self, kwargs):
+    def default(self, **kwargs):
         start = pd.to_datetime(self.data.index[0])
         end = pd.to_datetime(self.data.index[-1])
         newind = pdDatetimeIndex(start=start, end=end, **kwargs)
