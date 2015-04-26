@@ -50,7 +50,8 @@ from sqlalchemy.exc import ProgrammingError, NoSuchTableError
 from sqlalchemy.sql import and_
 from sqlalchemy import create_engine
 
-from indexing import tosqla, indexingtypes
+from indexing import indexingtypes
+from datadef import datadefs
 
 from trump.tools import ReprMixin, ProxyDict, isinstanceofany, \
     BitFlag, BitFlagType, ReprObjType
@@ -88,10 +89,6 @@ metadata = MetaData(bind=engine)
 
 ADO = "all, delete-orphan"
 CC = {'onupdate': "CASCADE", 'ondelete': "CASCADE"}
-
-CHECKPOINTS = ('EXCEPTION', 'CHECK')
-# STATE = ('ENABLED', 'DISABLED', 'ERROR')
-
 
 class Index(Base, ReprMixin):
     __tablename__ = "_indicies"
@@ -349,6 +346,9 @@ class Symbol(Base, ReprMixin):
 
     index = relationship('Index', uselist=False, backref='_symbols',
                          cascade=ADO)
+    dtype = relationship('SymbolDataDef', uselist=False, backref='_symbols',
+                         cascade=ADO)
+
     handle = relationship("SymbolHandle", uselist=False, backref='_symbols',
                          cascade=ADO)
     tags = relationship("SymbolTag", cascade=ADO)
@@ -384,6 +384,8 @@ class Symbol(Base, ReprMixin):
         self.units = units
 
         self.index = Index(indexname, indeximp, sym=name)
+        self.dtype = SymbolDataDef("FloatDataDef", sym=name)
+        
         self.agg_method = agg_method
         self.datatable = None
         self.datatable_exists = False
@@ -436,9 +438,11 @@ class Symbol(Base, ReprMixin):
             raise Exception(err_msg)
 
         try:
+            datt = datadefs[self.dtype.datadef]
             for afeed in self.feeds:
                 afeed.cache()
-                data.append(afeed.data)
+                tmp = datt(afeed.data).converted
+                data.append(tmp)
                 cols.append(afeed.data.name)
         except:
             logic = self.handle.caching
@@ -453,7 +457,7 @@ class Symbol(Base, ReprMixin):
             msg = "There was a problem concatenating feeds for {}"
             msg = msg.format(self.name)
             Handler(logic,msg).process()
-
+       
         indt = indexingtypes[self.index.indimp]
         indt = indt(data, self.index.case, self.index.getkwargs())
         data = indt.final_dataframe()
@@ -743,6 +747,10 @@ class Symbol(Base, ReprMixin):
         data = self.data()
         adf = pd.DataFrame(data)
         adf.columns = [self.index.name, self.name]
+        
+        datt = datadefs[self.dtype.datadef]       
+        adf[self.name] = datt(adf[self.name]).converted
+        
         adf = adf.set_index(self.index.name)
 
         indt = indexingtypes[self.index.indimp]
@@ -812,12 +820,13 @@ class Symbol(Base, ReprMixin):
         feed_cols = ['feed{0:03d}'.format(i + 1) for i in range(self.n_feeds)]
         feed_cols = ['override_feed000'] + feed_cols + ['failsafe_feed999']
 
-        sqlatyp = tosqla[self.index.indimp]
+        ind_sqlatyp = indexingtypes[self.index.indimp].sqlatyp
+        dat_sqlatyp = datadefs[self.dtype.datadef].sqlatyp
 
         atbl = Table(self.name, metadata,
-                     Column('indx', sqlatyp, primary_key=True),
-                     Column('final', Float),
-                     *(Column(feed_col, Float) for feed_col in feed_cols),
+                     Column('indx', ind_sqlatyp, primary_key=True),
+                     Column('final', dat_sqlatyp),
+                     *(Column(fed_col, dat_sqlatyp) for fed_col in feed_cols),
                      extend_existing=True)
         return atbl
 
@@ -847,7 +856,20 @@ class SymbolTag(Base, ReprMixin):
         set_symbol_or_symname(self, sym)
         self.tag = tag
 
+class SymbolDataDef(Base, ReprMixin):
+    __tablename__ = "_symboldatadef"
 
+    symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
+                     primary_key=True)
+
+    datadef = Column("datadef", String, nullable=False)
+    """string representing a :py:class:`~trump.datadef.DataDefiner`."""
+    
+    def __init__(self, datadef, sym=None):
+
+        set_symbol_or_symname(self, sym)
+        self.datadef = datadef
+        
 class SymbolAlias(Base, ReprMixin):
     __tablename__ = '_symbol_aliases'
     symname = Column('symname', String, ForeignKey('_symbols.name', **CC),

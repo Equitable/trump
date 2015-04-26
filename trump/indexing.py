@@ -190,4 +190,3 @@ def _pred(aclass):
 classes = inspect.getmembers(sys.modules[__name__], _pred)
 
 indexingtypes = {cls[0]: cls[1] for cls in classes}
-tosqla = {cls[0]: cls[1].sqlatyp for cls in classes}
