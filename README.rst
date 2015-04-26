@@ -37,9 +37,7 @@ With a focus on business processes, Trump's long run goals enable data feeds to 
 Planning
 ========
 
-Trump is still in a planning stage.  Trump's initial priority is numeric and monotonic timeseries data,
-but written with the future in mind to eventually work with any sortable object as data, and any object as an index.
-Eliminating the monotonic assumption is a very low priority. 
+Trump is almost done the planning stage. 
 
 See `docs/planning.md <https://github.com/Equitable/trump/blob/master/docs/planning.md>`_ for the current state of the project.
 
@@ -122,7 +120,9 @@ See the latest `Installation instructions on ReadTheDocs.org <http://trump.readt
 Requirements
 ------------
 * Python 2.7; Support for Python 3.3 or 3.4 is do-able, if there is demand.
-* PostgreSQL 9.4 (untested on previous versions) or potentially any relational database supported by SQLAlchemy (preliminary testing with SQLite3 on linux, indicates a bug associated with object type)
+* A Relational Database Supported by SQLAlchemy should work, however the following is tested:
+  * PostgreSQL 9.4
+  * Persistent SQLite (ie, file-based).  Certain features of Trump, wouldn't make sense with an in-memory implementation)
 
 Dependencies
 ------------
@@ -152,4 +152,4 @@ BSD-3 clause.  See the actual `License <https://raw.githubusercontent.com/Equita
 Background
 ==========
 The prototype for ``Trump`` was built at Equitable Life of Canada in 2014 by Jeffrey McLarty, CFA 
-and Derek Vinke, CFA. 
+and Derek Vinke, CFA. Jeffrey McLarty currently leads the Open Source initiative.

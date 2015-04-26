@@ -33,9 +33,9 @@ Individual feeds are queried based on the Feed's 'stype', sourcing_key and souri
        - [X] DataReader
         - [X] Template
         - [X] Extension     
-      - [ ] CSV
-        - [ ] Template
-        - [ ] Extension
+      - [X] CSV
+        - [X] Template
+        - [X] Extension
       - [ ] Excel
         - [ ] Template
         - [ ] Extension
@@ -73,12 +73,13 @@ The Symbol's final column is calculated according to the symbol's aggregation me
     - [ ] dynamically typed parameters
   - [ ] API
 - [ ] Templates & Extensions
-  - [ ] Non-parameter methods & High-priority
+  - [X] Non-parameter methods & High-priority
     - [x] Row-based Priority Fill (PRIORITY_FILL)
-    - [ ] Feed-based First Available (...)
-    - [ ] Feed-based Most Recent (...)
+    - [X] Feed-based First Available (...)
+    - [X] Feed-based Most Recent (...)
   - [ ] Parameter based methods (Eg. Feed-based with data as of 1 B.day, Row-based within 5% of Previous)
   - [ ] No parameter & Low-priority (Eg. Feed-based with data as of 1 B.day, Row-based within 5% of Previous)
+- [X] Dynamically Typed Override & FailSafe index and data values.
 
 # 4.0 Symbol Munging
 
