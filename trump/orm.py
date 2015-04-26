@@ -65,7 +65,7 @@ from handling import Handler
 BitFlag.associate_with(BitFlagType)
 
 try:
-    ENGINE_STR = read_config(sect='readwrite',sett='engine')
+    ENGINE_STR = read_config(sect='readwrite', sett='engine')
 except:
     print ("Problem reading trump.cfg.  Continuing using an in-memory "
            "SQLlite database. Trump was not designed to work in-memory, "
@@ -812,6 +812,7 @@ class Symbol(Base, ReprMixin):
         self.datatable.drop(checkfirst=True)
         self.datatable.create()
         self.datatable_exists = True
+        session.commit()
 
     def _datatable_factory(self):
         """
