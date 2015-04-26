@@ -176,20 +176,67 @@ class TestORM(object):
         
         sym.add_override(dt.date(2012, 12, 31), 5, user='tester',
                          comment='testcomment')
-
         sym.cache()
-
         df = sym.df
         assert isinstance(df.index, pd.DatetimeIndex)
         assert df.iloc[2][0] == 5
 
         sym.add_fail_safe(dt.date(2011, 12, 31), -1, user='tester',
                         comment='testcomment2')
-
         sym.cache()
-
         df = sym.df
         assert df.iloc[1][0] == -1        
+
+        sym.add_override(dt.date(2012, 12, 31), 4, user='tester',
+                         comment='testcomment3')
+        sym.add_fail_safe(dt.date(2011, 12, 31), -2, user='tester',
+                        comment='testcomment4')
+        sym.cache()
+        df = sym.df
+        assert df.iloc[2][0] == 4
+        assert df.iloc[1][0] == -2    
+
+    def test_int_index_string_data_override_failsafe(self):
+        
+        sm = SymbolManager()
+
+        sym = sm.create("intstrdtflor", overwrite=True)
+        
+        curdir = os.path.dirname(os.path.realpath(__file__))
+        testdata = os.path.join(curdir,'testdata','teststrdata.csv')
+
+        fdtemp = CSVFT(testdata, 'Amount', index_col=0)
+
+        sym.add_feed(fdtemp)
+                                
+        sym.index.indimp = "IntIndexImp"
+        sym.dtype.datadef = "StrDataDef"
+        
+        sm.complete()
+        
+        sym.cache()
+        df = sym.df
+        
+        print df
+        
+#        assert isinstance(df.index, pd.DatetimeIndex)
+#        assert df.iloc[2][0] == 5
+#
+#        sym.add_fail_safe(dt.date(2011, 12, 31), -1, user='tester',
+#                        comment='testcomment2')
+#        sym.cache()
+#        df = sym.df
+#        assert df.iloc[1][0] == -1        
+#
+#        sym.add_override(dt.date(2012, 12, 31), 4, user='tester',
+#                         comment='testcomment3')
+#        sym.add_fail_safe(dt.date(2011, 12, 31), -2, user='tester',
+#                        comment='testcomment4')
+#        sym.cache()
+#        df = sym.df
+#        assert df.iloc[2][0] == 4
+#        assert df.iloc[1][0] == -2   
+        
     def test_symbol_describe(self):
         
         sm = SymbolManager()

@@ -40,6 +40,8 @@ class IndexImplementer(object):
         """
 		
         self.data = df_or_s
+        self.case = case
+        self.kwargs = kwargs
 
     def final_series(self):
         """
@@ -126,14 +128,11 @@ class DatetimeIndexImp(IndexImplementer):
                 self.data = self.data.asfreq(**kwargs)
             else:
                 self.default(**kwargs)
-        
-	elif case == 'guess':
+        elif case == 'guess':
             raise NotImplementedError()
-        
-	elif case == 'guess_post':
+        elif case == 'guess_post':
             raise NotImplementedError()
-        
-	else:
+        else:
             raise Exception("Indexing case '{}' unsupported".format(case))
 
     def default(self, **kwargs):
@@ -151,7 +150,7 @@ class PeriodIndexImp(IndexImplementer):
     """
     sqlatyp = DateTime
 
-    def __init__(self, df_or_s, case, kwargs):
+    def __init__(self, dfors, case, kwargs):
         raise NotImplementedError()
 
 
@@ -163,9 +162,15 @@ class IntIndexImp(IndexImplementer):
     """
     sqlatyp = Integer
 
-    def __init__(self, df_or_s, case, kwargs):
-        raise NotImplementedError()
-
+    def __init__(self, dfors, case, kwargs):
+        self.data = dfors
+        if case == 'asis':
+            if isinstance(self.data.index, pdInt64Index):
+                pass
+            else:
+                self.data = self.data.reset_index(drop=True)
+        else:
+            raise Exception("Indexing case '{}' unsupported".format(case))
 
 class StrIndexImp(IndexImplementer):
     """
@@ -175,7 +180,7 @@ class StrIndexImp(IndexImplementer):
     """
     sqlatyp = String
 
-    def __init__(self, df_or_s, case, kwargs):
+    def __init__(self, dfors, case, kwargs):
         raise NotImplementedError()
 
 

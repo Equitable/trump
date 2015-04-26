@@ -384,7 +384,7 @@ class Symbol(Base, ReprMixin):
         self.units = units
 
         self.index = Index(indexname, indeximp, sym=name)
-        self.dtype = SymbolDataDef("FloatDataDef", sym=name)
+        self.dtype = SymbolDataDef("SkipDataDef", sym=name)
         
         self.agg_method = agg_method
         self.datatable = None
@@ -445,6 +445,7 @@ class Symbol(Base, ReprMixin):
                 data.append(tmp)
                 cols.append(afeed.data.name)
         except:
+            raise
             logic = self.handle.caching
             msg = "There was a problem caching feeds for {}"
             msg = msg.format(self.name)

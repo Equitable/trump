@@ -28,14 +28,14 @@ class ConvertedDataDef(object):
     The defaults, are floats.
     """
     sqlatyp = Float
-    astyp = float
+    pythontyp = float
 
     def __init__(self, data):
         self.data = data
         
     @property
-    def converted(self):
-        return self.data.astype(self.astyp)
+    def converted(self):       
+        return self.data.astype(self.pythontyp)
 
 class IntDataDef(ConvertedDataDef):
     """Implements a basic integer data definition."""
@@ -47,7 +47,7 @@ class FloatDataDef(ConvertedDataDef):
     # redefined, just to avoid confusion.  Floats are used by 
     # default in ConvertedDataDef
     sqlatyp = Float 
-    astyp = float
+    pythontyp = float
       
 class StrDataDef(ConvertedDataDef):
     """Implements a basic string data definition."""
@@ -57,9 +57,9 @@ class StrDataDef(ConvertedDataDef):
     def __init__(self, data):
         self.data = data
         
-        raise Warning("""Using this DataDef, on a feed with NaN, will convert
-        the NaN to a string.  The Aggregation functions will treat this as a 
-        value.""")
+        #raise Warning("""Using this DataDef, on a feed with NaN, will convert
+        #the NaN to a string.  The Aggregation functions will treat this as a 
+        #value.""")
 
 class DateTimeDataDef(ConvertedDataDef):
     """Implements a basic string data definition."""
