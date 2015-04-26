@@ -569,10 +569,8 @@ class Symbol(Base, ReprMixin):
             lines.append("  feeds:")
 
             for fed in self.feeds:
-                lines.append("    {}. {} -> {}".format(fed.fnum,
-                                                       fed.ftype,
-                                                       fed.source_str()))
-                printed_cp = []
+                lines.append("    {}. {}".format(fed.fnum,
+                                                       fed.ftype))
         return "\n".join(lines)
 
     def add_override(self, ind, val, dt_log=None, user=None, comment=None):

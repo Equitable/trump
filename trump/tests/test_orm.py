@@ -190,3 +190,32 @@ class TestORM(object):
 
         df = sym.df
         assert df.iloc[1][0] == -1        
+    def test_symbol_describe(self):
+        
+        sm = SymbolManager()
+        
+        sym = sm.create("describer", overwrite=True)
+        
+        fdtemp = CSVFT("fakefile.csv", 'Amount', index_col=0)
+        sym.add_feed(fdtemp)
+
+        fdtemp = CSVFT("fakefile2.csv", 'Amount', index_col=0)
+        sym.add_feed(fdtemp)
+        
+        sym.add_tags(['atag', 'btag', 'ctag'])
+        
+        result = sym.describe
+        
+        exp_result = """Symbol = describer
+                          tagged = atag, btag, ctag
+                          aliased = describer
+                          feeds:
+                            0. CSVFT
+                            1. CSVFT"""
+        
+        def stripit(s):
+            return s.replace(" ", "").replace("\n","")
+        
+        assert stripit(result) == stripit(exp_result)
+        
+        
