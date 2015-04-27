@@ -392,10 +392,6 @@ class Symbol(Base, ReprMixin):
         # SQLAQ - Is this okay to do? It feels sneaky, dirty and wrong.
         session.add(self)
 
-    def _reset_datatable(self):
-        self.datatable.drop(checkfirst=True)
-        self.datatable_exists = False
-
     def update_handle(self, chkpnt_settings):
         """
         Update a symbol's handle checkpoint settings

@@ -11,6 +11,9 @@ import os
 
 import datetime as dt
 
+
+curdir = os.path.dirname(os.path.realpath(__file__))
+
 class TestORM(object):
 
     def test_symbol_creation(self):
@@ -148,7 +151,6 @@ class TestORM(object):
 
         sym = sm.create("new", overwrite=True)
         
-        curdir = os.path.dirname(os.path.realpath(__file__))
         testdata = os.path.join(curdir,'testdata','testdata.csv')
 
         fdtemp = CSVFT(testdata, 'Amount', index_col=0)
@@ -167,7 +169,6 @@ class TestORM(object):
 
         sym = sm.create("dtflor", overwrite=True)
         
-        curdir = os.path.dirname(os.path.realpath(__file__))
         testdata = os.path.join(curdir,'testdata','testdata.csv')
 
         fdtemp = CSVFT(testdata, 'Amount', index_col=0)
@@ -202,7 +203,6 @@ class TestORM(object):
 
         sym = sm.create("intstrdtflor", overwrite=True)
         
-        curdir = os.path.dirname(os.path.realpath(__file__))
         testdata = os.path.join(curdir,'testdata','teststrdata.csv')
 
         fdtemp = CSVFT(testdata, 'Amount', index_col=0)
@@ -243,7 +243,6 @@ class TestORM(object):
 
         sym = sm.create("onetwo", overwrite=True)
         
-        curdir = os.path.dirname(os.path.realpath(__file__))
         testdata = os.path.join(curdir,'testdata','teststrdata.csv')
 
         fdtemp = CSVFT(testdata, 'Amount', index_col=0)
@@ -263,7 +262,10 @@ class TestORM(object):
         sym.cache()
         df = sym.df
         assert df.onetwo['2015-12-31'] == 'f'
-               
+        
+        onetwo = sm.get("onetwo")
+        sm.delete("onetwo")
+        
     def test_symbol_describe(self):
         
         sm = SymbolManager()
@@ -291,5 +293,29 @@ class TestORM(object):
             return s.replace(" ", "").replace("\n","")
         
         assert stripit(result) == stripit(exp_result)
+
+    def test_update_handle(self):
+        
+        sm = SymbolManager()
+        
+        sym = sm.create("uht", overwrite=True)
+
+        testdata = os.path.join(curdir,'testdata','testdata.csv')
+        fdtemp = CSVFT(testdata, 'Amount', index_col=0)
+        sym.add_feed(fdtemp)
+        
+        assert not sym.handle.validity_check.warn
+        
+        assert not sym.feeds[0].handle.api_failure.warn
+               
+        sym.update_handle({'validity_check' : 2})
+
+        sym.feeds[0].update_handle({'api_failure' : 2})
+        
+        sym.cache()
+        
+        assert sym.handle.validity_check.warn
+        
+        assert sym.feeds[0].handle.api_failure.warn
         
         
