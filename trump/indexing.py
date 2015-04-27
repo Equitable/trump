@@ -89,21 +89,30 @@ class DatetimeIndexImp(IndexImplementer):
       any intelligence associated with the index, such as frequency.
       serve a Series with a DatetimeIndex, without frequency.
 
+      If the index consists of 4-digit integers, it will
+      be treated as the year, in a date which is of the form
+      YYYY-12-31.
+
     * **asfreq** - Apply 'asfreq' logic prior to cache, and
       apply the same logic when serving.
 
     * **date_range** - Create a new index, using pandas date_range(), at
       time of cache...  NotImplemented yet.
 
-    * **guess** - Attempt to guess the frequency at time of cache,
-      and time of serve. NotImplemented yet.
+    * **guess** - NotImplemented yet.
+      Attempt to guess the frequency at time of cache,
+      and time of serve.
 
-    * **guess_post** - Attempt to guess the frequency at time of serve,
-      but store the cache unsaved. NotImplemented yet.
+    * **guess_post** - NotImplemented yet.
+      Attempt to guess the frequency at time of serve,
+      but store the cache unsaved.
 
-    If a non-DatetimeIndex is passed, a rudimentary
+    In the event that case hasn't implemented the logic
+    to handle a specific datatype, a rudimentary
     attempt to convert it to a DatetimeIndex is applied
-    by inspecting the start and end, then using any saved kwargs.
+    by inspecting the start and end, with the kwargs. passed
+    pandas.DatetimeIndex constructor.
+
     """
     sqlatyp = DateTime
 
@@ -120,7 +129,6 @@ class DatetimeIndexImp(IndexImplementer):
                     self.data.index = newind
                     self.data.index = self.data.index.to_datetime()
             else:
-                print type(self.data.index)
                 self.default(**kwargs)
 
         elif case == 'asfreq':
@@ -156,10 +164,24 @@ class PeriodIndexImp(IndexImplementer):
 
 class IntIndexImp(IndexImplementer):
     """
-    Implements a pandas Int64Index
+    Implements a pandas Int64Index.
 
-    NotImplemented, yet.
+    Cases include:
+
+    * **asis** - attempts to pass the index through,
+      without applying any logic.  Use this, if the index
+      is already integers, or unique and integer-like.
+
+    * **force** - Not Implemented Yet...
+      Will force floats into integers, dropping rows
+      based on kwargs...
+
+    In the event that a case hasn't implemented the logic
+    to handle a specific data type, the index will be dropped via
+    the .reset_index() method.
+
     """
+
     sqlatyp = Integer
 
     def __init__(self, dfors, case, kwargs):
@@ -169,6 +191,8 @@ class IntIndexImp(IndexImplementer):
                 pass
             else:
                 self.data = self.data.reset_index(drop=True)
+        elif case == 'force':
+            raise NotImplementedError("force not implemented, yet.")
         else:
             raise Exception("Indexing case '{}' unsupported".format(case))
 

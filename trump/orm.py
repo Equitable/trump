@@ -192,8 +192,7 @@ class SymbolManager(object):
 
     """
     A SymbolManager handles the creation, getting and deletion of symbols.
-
-    Behind the scenes, it also maintain a global SQLAlchemy session.
+    It also maintains a global SQLAlchemy session.
     """
 
     def __init__(self, ses=None):
@@ -201,7 +200,7 @@ class SymbolManager(object):
         :param ses: session
             Will attempt to use the global SQLAlchemy session, unless
             specified otherwise.
-
+        :return: SymbolManager
         """
         self.ses = ses or session
 
@@ -613,7 +612,7 @@ class Symbol(Base, ReprMixin):
         Appends a single indexed-value, to a symbol object, to be
         used during the final steps of the aggregation of the datatable.
 
-        Failsafes, get applied with highest priority.
+        Fail safes, get applied with the lowest priority.
         """
         objs = object_session(self)
 

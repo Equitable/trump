@@ -30,9 +30,11 @@ Symbols
 -------
 
 .. autoclass:: trump.orm.Symbol
-   :members: cache, describe
+   :members: cache, describe, add_override, add_fail_safe, update_handle
 
 .. autoclass:: trump.orm.SymbolTag
+
+.. autoclass:: trump.orm.SymbolDataDef
 
 Indices
 ~~~~~~~
@@ -56,7 +58,7 @@ Index Types
 ^^^^^^^^^^^
 
 .. automodule:: trump.indexing
-   :members: IndexImplementor, DatetimeIndexImp, PeriodIndexImp, StrIndexImp, IntIndexImp
+   :members: IndexImplementer, DatetimeIndexImp, PeriodIndexImp, StrIndexImp, IntIndexImp
 
 Feeds
 -----
