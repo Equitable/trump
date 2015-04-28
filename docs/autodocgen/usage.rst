@@ -14,7 +14,6 @@ Adding a Symbol
 
    oil = sm.create(name = "oil_front_month",
                    description = "Crude Oil",
-                   freq = 'D',
                    units = '$ / barrel')
 
    oil.add_tags(['commodity','oil','futures'])

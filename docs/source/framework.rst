@@ -40,7 +40,6 @@ Below is for illustrative purposes of the short-term plan for Trump.
       def __init__(self):
          self.name = str
          self.description = str
-         self.freq = str         
          self.units = str
 
          self.handle = [int, int, int, int]  #where each int, is actually a BitFlag representing what to do upon common exceptions.

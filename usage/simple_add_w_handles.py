@@ -9,7 +9,6 @@ sm = SymbolManager()
 
 oil = sm.create(name = "oil_front_month",
                 description = "Crude Oil Futures, Continuous Contract #2 (CL2) (Front Month)",
-                freq = 'D',
                 units = '$ / barrel')
 
 oil.add_alias("OILA")

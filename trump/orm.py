@@ -781,10 +781,6 @@ class Symbol(Base, ReprMixin):
         """ change the description of the symbol """
         self.description = description
 
-    def set_freq(self, freq):
-        """ change the frequency of the index """
-        self.freq = freq
-
     def set_units(self, units):
         """ change the symbol's units """
         self.units = units
@@ -854,7 +850,7 @@ class SymbolTag(Base, ReprMixin):
         self.tag = tag
 
 class SymbolDataDef(Base, ReprMixin):
-    __tablename__ = "_symboldatadef"
+    __tablename__ = "_symbol_datadef"
 
     symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
                      primary_key=True)

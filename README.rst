@@ -56,7 +56,7 @@ Adding a Symbol
    sm = SymbolManager()
 
    TSLA = sm.create(name = "TSLA", description = "Tesla Closing Price USD",
-                   freq = 'B', units = '$ / share')
+                    units = '$ / share')
 
    TSLA.add_tags(["stocks","US"])
 

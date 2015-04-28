@@ -11,11 +11,11 @@ class TestSymbolAggregation(object):
     @classmethod
     def setup_class(self):
 
-        ors = make_fake_feed_data(1).shift(1,freq='D')
+        ors = make_fake_feed_data(1).shift(1, freq='D')
         s1 = make_fake_feed_data(10)
         s2 = make_fake_feed_data(5)
         s3 = make_fake_feed_data(7)
-        fls = make_fake_feed_data(1).shift(8,freq='D')
+        fls = make_fake_feed_data(1).shift(8, freq='D')
 
         s1.iloc[6] = pd.np.nan
         s1.iloc[8] = pd.np.nan

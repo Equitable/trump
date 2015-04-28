@@ -16,7 +16,7 @@ Adding the Symbol
    sm = SymbolManager()
 
    TSLA = sm.create(name = "TSLA", description = "Tesla Closing Price USD",
-                   freq = 'B', units = '$ / share')
+                   units = '$ / share')
 
    TSLA.add_tags(["stocks","US"])
 
@@ -104,7 +104,6 @@ Adding the Symbol
 
    oil = sm.create(name = "oil_front_month",
                    description = "Crude Oil",
-                   freq = 'D',
                    units = '$ / barrel')
 
    oil.add_tags(['commodity','oil','futures'])
