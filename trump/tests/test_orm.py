@@ -213,13 +213,6 @@ class TestORM(object):
         sym.dtype.datadef = "StrDataDef"
         
         sm.complete()
-        
-        #sym.cache()
-        #df = sym.df
-
-        #assert isinstance(df.index, pd.Int64Index)
-        #assert isinstance(df.intstrdtflor[2010], str)
-
 
         testdata = os.path.join(curdir,'testdata','teststrdata2.csv')
         fdtemp = CSVFT(testdata, 'Amount', index_col=0)
@@ -230,7 +223,6 @@ class TestORM(object):
  
         sym.cache()
         df = sym.df
-        print df
 
         assert isinstance(df.index, pd.Int64Index)
         assert isinstance(df.intstrdtflor[2010], str)
