@@ -1,7 +1,7 @@
 from ..orm import SymbolManager
 
 from ..templating.templates import GoogleFinanceFT, YahooFinanceFT,\
-    SimpleExampleMT, CSVFT
+    SimpleExampleMT, CSVFT, FFillIT
 
 import pandas as pd
 
@@ -309,5 +309,21 @@ class TestORM(object):
         assert sym.handle.validity_check.warn
         
         assert sym.feeds[0].handle.api_failure.warn
+
+    def test_index_templating(self):
         
+        sm = SymbolManager()
+        
+        sym = sm.create("indt", overwrite=True)
+        
+        weekly = FFillIT('W')
+        sym.set_indexing(weekly)
+
+        testdata = os.path.join(curdir,'testdata','testdailydata.csv')
+        fdtemp = CSVFT(testdata, 'Amount', parse_dates=0, index_col=0)
+        sym.add_feed(fdtemp)
+        
+        sym.cache()
+        
+        assert sym.df.index.freq == 'W' 
         

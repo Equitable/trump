@@ -117,6 +117,7 @@ class Index(Base, ReprMixin):
         self.setkwargs(**kwargs)
 
     def setkwargs(self, **kwargs):
+        self.kwargs = []
         if kwargs is not None:
             list_of_kwargs = []
             for kword, val in kwargs.iteritems():
@@ -390,6 +391,25 @@ class Symbol(Base, ReprMixin):
         self.datatable_exists = False
         # SQLAQ - Is this okay to do? It feels sneaky, dirty and wrong.
         session.add(self)
+    
+    def set_indexing(self, index_template):
+        """
+        Update a symbol's indexing.  
+
+        :param: index_template, bIndex or bIndex-like (ie, *IT)
+            an index template used to overwrite all 
+            details about the symbol's current index.
+
+        :return: None
+        
+        Changing the indexing implementer works only on indicies of the same
+        database type.  Otherwise, the symbol needs to be deleted first.
+        """
+        self.index.name = index_template.name
+        self.index.indimp = index_template.imp_name
+        self.index.case = index_template.case
+        self.index.setkwargs(**index_template.kwargs)
+        session.commit()
 
     def update_handle(self, chkpnt_settings):
         """
@@ -1156,7 +1176,11 @@ class Feed(Base, ReprMixin):
                 
                 if 'index_col' in kwargs:
                     kwargs['index_col'] = int(kwargs['index_col'])
-                    
+                if 'parse_dates' in kwargs:
+                    kwargs['parse_dates'] = int(kwargs['parse_dates'])
+                
+                print fpob
+                print kwargs
                 df = read_csv(fpob, **kwargs)
                 
                 self.data = df[col]
@@ -1198,6 +1222,8 @@ class Feed(Base, ReprMixin):
             Handler(logic,msg).process()
 
         try:
+            print self.data
+            print self.data.index
             if not (self.data.index.is_monotonic and self.data.index.is_unique):
                 raise Exception('Feed index is not uniquely monotonic')
         except:

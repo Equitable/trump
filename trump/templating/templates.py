@@ -25,7 +25,7 @@ which can then be used in the generalized constructors of Trump's SQLAlchemy
 based ORM system.
 """
 
-from trump.templating.bases import bTags, bMunging, bSource, bFeed
+from trump.templating.bases import bTags, bMunging, bSource, bFeed, bIndex
 
 from trump.options import read_settings
 
@@ -176,6 +176,25 @@ class PyDataCSVST(bSource):
         for arg, val in kwargs.iteritems():
             setattr(self, arg, val)
 
+#******************************************************************************
+#
+# Index Templates
+#
+# Index Templates are any object which implements sufficient information
+# to fully define an IndexImplementer via it's name, case and associated 
+# kwargs, vias three attributes called imp_name (string), case (string),
+# kwargs (dict).
+#
+#******************************************************************************
+
+class FFillIT(bIndex):
+    def __init__(self, freq='B'):
+        super(FFillIT, self).__init__()
+        self.name = 'FFillIT'
+        self.imp_name = 'DatetimeIndexImp'
+        self.case = 'asfreq'
+        self.kwargs = {'freq' : freq, 'method' : 'ffill'}
+        
 # *****************************************************************************
 #
 #  Feed Templates

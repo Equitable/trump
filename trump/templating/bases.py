@@ -73,6 +73,20 @@ class bSource(_DictConverter):
         pass
         #self.key = 'value'
 
+class bIndex(object):
+
+    """
+    Index Templates are any object which implements sufficient information
+    to fully define an IndexImplementer via it's name, case and associated 
+    kwargs, vias three attributes called imp_name (string), case (string),
+    kwargs (dict).
+    """
+
+    def __init__(self):
+        self.name = 'BaseIndex'
+        self.imp_name = 'DatetimeIndexImp'
+        self.case = 'asis'
+        self.kwargs = {}
 
 class bFeed(object):
 
