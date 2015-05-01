@@ -25,7 +25,8 @@ which can then be used in the generalized constructors of Trump's SQLAlchemy
 based ORM system.
 """
 
-from trump.templating.bases import bTags, bMunging, bSource, bFeed, bIndex
+from trump.templating.bases import bTags, bMunging, bSource, bFeed, bIndex, \
+                                   bValidity
 
 from trump.options import read_settings
 
@@ -194,6 +195,23 @@ class FFillIT(bIndex):
         self.imp_name = 'DatetimeIndexImp'
         self.case = 'asfreq'
         self.kwargs = {'freq' : freq, 'method' : 'ffill'}
+
+#******************************************************************************
+#
+# Validity Templates
+#
+# Validity Templates are any object which implements an attribute
+# named 'validator', and optionally some additional arguments as arga, argb,
+# argc, argd and arge.
+#
+#******************************************************************************
+
+class FeedMatchVT(bValidity):
+    def __init__(self, feed_left=1, feed_right=2):
+        super(FeedMatchVT, self).__init__()
+        self.validator = 'FeedMatch'
+        self.arga = feed_left
+        self.argb = feed_right
         
 # *****************************************************************************
 #

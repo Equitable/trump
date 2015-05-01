@@ -51,6 +51,7 @@ from sqlalchemy.sql import and_
 from sqlalchemy import create_engine
 
 from indexing import indexingtypes
+from validity import validitychecks
 from datadef import datadefs
 
 from trump.tools import ReprMixin, ProxyDict, isinstanceofany, \
@@ -411,6 +412,38 @@ class Symbol(Base, ReprMixin):
         self.index.setkwargs(**index_template.kwargs)
         session.commit()
 
+    def add_validator(self, val_template):
+        """
+        Creates and adds a SymbolValidity object to the Symbol.
+
+        :param: validity_template, bValidity or bValidity-like (ie, *VT)
+            a validity template.
+
+        :return: None
+        
+        """
+        validator = val_template.validator
+        
+        args = []
+        for arg in SymbolValidity.argnames:
+            if arg in val_template.__dict__.keys():
+                args.append(getattr(val_template, arg))
+
+        objs = object_session(self)
+        qry = objs.query(func.max(SymbolValidity.vid).label('max_vid'))
+        qry = qry.filter_by(symname = self.name)
+        
+        cur_vid = qry.one()[0]
+        
+        if cur_vid is None:
+            next_vid = 0
+        else:
+            next_vid = cur_vid + 1   
+            
+       
+        self.validity.append(SymbolValidity(self, next_vid, validator, *args))
+        session.commit()
+
     def update_handle(self, chkpnt_settings):
         """
         Update a symbol's handle checkpoint settings
@@ -560,19 +593,26 @@ class Symbol(Base, ReprMixin):
             except:
                 logic = self.handle.validity_check
                 msg = "There was a problem during the validity check for {}"
-                msg = msg.format(self.symname)
+                msg = msg.format(self.name)
                 Handler(logic,msg)  
 
     @property
     def isvalid(self):
-
-        # loop through the validity checks associated with this symbol
-
-        # if any are False, return False.
-
-        # if all are True, return True.
-
-        return True
+        
+        allchecks = []
+        for val in self.validity:
+            
+            ValCheck = validitychecks[val.validator]
+            anum = ValCheck.__init__.func_code.co_argcount
+            
+            args = []
+            for arg in SymbolValidity.argnames:
+                args.append(getattr(val, arg))
+                
+            valid = ValCheck(self.data(), *args[:anum])
+            allchecks.append(valid.result)
+        
+        return all(allchecks)
 
     @property
     def describe(self):
@@ -788,15 +828,6 @@ class Symbol(Base, ReprMixin):
         """ returns the number of feeds """
         return len(self.feeds)
 
-    def add_validity(self, checkpoint, logic, kwargs):
-        for key, value in kwargs.iteritems():
-            self.validity.append(SymbolValidity(checkpoint=checkpoint,
-                                                logic=logic,
-                                                key=key,
-                                                value=value,
-                                                symbol=self))
-        session.commit()
-
     def set_description(self, description):
         """ change the description of the symbol """
         self.description = description
@@ -905,17 +936,29 @@ class SymbolValidity(Base, ReprMixin):
     vid = Column('vid', Integer, primary_key=True, nullable=False)
 
     validator = Column('validator', String, nullable=False)
-    argint = Column('argint', Integer)
-    argstr = Column('argstr', String)
-
+    
+    argnames = ['arg' + a for a in list('abcde')]
+    
+    arga = Column('arga', ReprObjType)
+    argb = Column('argb', ReprObjType)
+    argc = Column('argc', ReprObjType)
+    argd = Column('argd', ReprObjType)
+    arge = Column('arge', ReprObjType)
+        
     symbol = relationship("Symbol")
 
-    def __init__(self, symbol, validator, argint=None, argstr=None):
-        self.symbol = symbol
+    def __init__(self, symbol, vid, validator, *args):
+        set_symbol_or_symname(self, symbol)
+
+        self.vid = vid
 
         self.validator = validator
-        self.argint = argint
-        self.argstr = argstr
+        
+        pads = [None] * (len(self.argnames) - len(args))
+        argvals = list(args) + pads
+        for i, arg in enumerate(self.argnames):
+            setattr(self, arg, argvals[i])
+            
 
 
 class SymbolHandle(Base, ReprMixin):

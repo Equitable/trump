@@ -88,6 +88,18 @@ class bIndex(object):
         self.case = 'asis'
         self.kwargs = {}
 
+class bValidity(object):
+
+    """
+    Validity Templates are any object which implements an attribute
+    named 'validator', and optionally some additional arguments as arga, argb,
+    argc, argd and arge.
+    """
+
+    def __init__(self):
+        self.validator = 'BaseValidity'
+
+
 class bFeed(object):
 
     """

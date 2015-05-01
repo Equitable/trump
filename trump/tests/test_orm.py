@@ -1,7 +1,7 @@
 from ..orm import SymbolManager
 
 from ..templating.templates import GoogleFinanceFT, YahooFinanceFT,\
-    SimpleExampleMT, CSVFT, FFillIT
+    SimpleExampleMT, CSVFT, FFillIT, FeedMatchVT
 
 import pandas as pd
 
@@ -326,4 +326,22 @@ class TestORM(object):
         sym.cache()
         
         assert sym.df.index.freq == 'W' 
+
+    def test_validity_feed_match(self):
+        
+        sm = SymbolManager()
+        
+        sym = sm.create("fmvt", overwrite=True)
+        
+        fm = FeedMatchVT(1,2)
+        sym.add_validator(fm)
+
+        testdata = os.path.join(curdir,'testdata','testdailydata.csv')
+        fdtemp = CSVFT(testdata, 'Amount', parse_dates=0, index_col=0)
+        sym.add_feed(fdtemp)
+        fdtemp = CSVFT(testdata, 'Amount', parse_dates=0, index_col=0)
+        sym.add_feed(fdtemp)
+        
+        sym.cache()
+
         
