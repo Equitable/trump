@@ -603,13 +603,14 @@ class Symbol(Base, ReprMixin):
         for val in self.validity:
             
             ValCheck = validitychecks[val.validator]
-            anum = ValCheck.__init__.func_code.co_argcount
+            
+            anum = ValCheck.__init__.func_code.co_argcount - 2
             
             args = []
             for arg in SymbolValidity.argnames:
                 args.append(getattr(val, arg))
-                
-            valid = ValCheck(self.data(), *args[:anum])
+            
+            valid = ValCheck(self.datatable_df, *args[:anum])
             allchecks.append(valid.result)
         
         return all(allchecks)
@@ -792,8 +793,9 @@ class Symbol(Base, ReprMixin):
         :return: all data from the datatable
         """
         dtbl = self.datatable
+        cols = (getattr(dtbl.c, col) for col in self.dt_all_cols)
         if isinstance(dtbl, Table):
-            return session.query(dtbl).all()
+            return session.query(*cols).all()
         else:
             raise Exception("Symbol has no datatable")
 
@@ -815,6 +817,27 @@ class Symbol(Base, ReprMixin):
 
         return adf
 
+    @property
+    def datatable_df(self):
+        """ returns the dataframe representation of the symbol's final data """
+        data = self.alldata()
+        adf = pd.DataFrame(data)
+        
+        adf.columns = self.dt_all_cols
+        
+        datt = datadefs[self.dtype.datadef]
+        
+        for col in adf.columns:
+            adf[col] = datt(adf[col]).converted
+        
+        adf = adf.set_index('indx')
+
+        indt = indexingtypes[self.index.indimp]
+        indt = indt(adf, self.index.case, self.index.getkwargs())
+        adf = indt.raw_data()
+
+        return adf
+        
     def del_feed(self):
         """ remove a feed """
         raise NotImplementedError
@@ -872,6 +895,9 @@ class Symbol(Base, ReprMixin):
                      Column('final', dat_sqlatyp),
                      *(Column(fed_col, dat_sqlatyp) for fed_col in feed_cols),
                      extend_existing=True)
+        
+        self.dt_feed_cols = feed_cols[:]
+        self.dt_all_cols = ['indx', 'final'] + feed_cols[:]
         return atbl
 
 

@@ -207,11 +207,12 @@ class FFillIT(bIndex):
 #******************************************************************************
 
 class FeedMatchVT(bValidity):
-    def __init__(self, feed_left=1, feed_right=2):
+    def __init__(self, feed_left=1, feed_right=2, lastx=10):
         super(FeedMatchVT, self).__init__()
         self.validator = 'FeedMatch'
         self.arga = feed_left
         self.argb = feed_right
+        self.argc = lastx
         
 # *****************************************************************************
 #

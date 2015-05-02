@@ -77,7 +77,17 @@ class IndexImplementer(object):
             return self.data.to_frame()
         else:
             return self.data
+            
+    def raw_data(self):
+        """
+        returns the raw dataframe or series, after
+        it's been cleaned up by the index implementer.
+        
+        Should only be used via validation
 
+        :return: pd.Dataframe
+        """
+        return self.data
 
 class DatetimeIndexImp(IndexImplementer):
     """

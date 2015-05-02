@@ -1,7 +1,7 @@
 import inspect
 import sys
 
-import pandas as pd
+from pandas.util.testing import assert_series_equal as series_equal
 
 class ValidityCheck(object):
     def __init__(self, data, *args):
@@ -13,13 +13,18 @@ class ValidityCheck(object):
         return True
 
 class FeedMatch(object):
-    def __init__(self, data, *args):
+    def __init__(self, data, left, right, lastn):
         self.data = data
-        self.args = args
+
+        feed_left = "feed%03d" % (left)
+        feed_right = "feed%03d" % (right)
+        
+        self.match = series_equal(data[feed_left][-1*lastn:],
+                                  data[feed_right][-1*lastn:])
         
     @property
     def result(self):
-        return True
+        return self.match
 
 def _pred(aclass):
     """
