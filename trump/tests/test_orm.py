@@ -343,5 +343,4 @@ class TestORM(object):
         sym.add_feed(fdtemp)
         
         sym.cache()
-
         

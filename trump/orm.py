@@ -469,9 +469,7 @@ class Symbol(Base, ReprMixin):
         # override with anything passed in
         for checkpoint in chkpnt_settings:
             if checkpoint in SymbolHandle.__table__.columns:
-                print "updating handle..."
                 settings = chkpnt_settings[checkpoint]
-                print settings
                 setattr(self.handle, checkpoint, settings)
         objs.commit()
 
@@ -1114,11 +1112,9 @@ class Feed(Base, ReprMixin):
 
         if munging:
             for i, meth in enumerate(munging.keys()):
-                print i, meth, munging[meth]
                 fmg = FeedMunge(order=i, mtype=munging[meth]['mtype'],
                                 method=meth, feed=self)
                 for arg, value in munging[meth]['kwargs'].iteritems():
-                    print arg, value
                     if not isinstance(value, (int, float)):
                         val = str(value)
                     else:
@@ -1153,9 +1149,7 @@ class Feed(Base, ReprMixin):
         # override with anything passed in
         for checkpoint in chkpnt_settings:
             if checkpoint in FeedHandle.__table__.columns:
-                print "updating handle..."
                 settings = chkpnt_settings[checkpoint]
-                print settings
                 setattr(self.handle, checkpoint, settings)
         objs.commit()
 
@@ -1210,9 +1204,6 @@ class Feed(Base, ReprMixin):
                 db = __import__(engine.driver)
                 con_kwargs = {k: v for k, v in kwargs.items() if k in dbargs}
 
-                print kwargs
-                print con_kwargs
-
                 con = db.connect(**con_kwargs)
                 cur = con.cursor()
 
@@ -1248,8 +1239,6 @@ class Feed(Base, ReprMixin):
                 if 'parse_dates' in kwargs:
                     kwargs['parse_dates'] = int(kwargs['parse_dates'])
                 
-                print fpob
-                print kwargs
                 df = read_csv(fpob, **kwargs)
                 
                 self.data = df[col]
@@ -1291,8 +1280,6 @@ class Feed(Base, ReprMixin):
             Handler(logic,msg).process()
 
         try:
-            print self.data
-            print self.data.index
             if not (self.data.index.is_monotonic and self.data.index.is_unique):
                 raise Exception('Feed index is not uniquely monotonic')
         except:
