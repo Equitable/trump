@@ -503,24 +503,13 @@ class Symbol(Base, ReprMixin):
                 cols.append(afeed.data.name)
         except:
             point = "caching"
-            logic = getattr(self.handle, point)
-            msg = "There was a problem caching feeds for {}"
-            msg = msg.format(self.name)
-            hdlrp = Handler(logic, point, msg).process()
-            if hdlrp:
-                smrp.add_handlepoint(hdlrp)
-
+            smrp = self._generic_exception(point, smrp)
+                
         try:
             data = pd.concat(data, axis=1)
         except:
             point = "concatenation"
-            logic = getattr(self.handle, point)
-            logic = self.handle.concatenation
-            msg = "There was a problem concatenating feeds for {}"
-            msg = msg.format(self.name)
-            hdlrp = Handler(logic, point, msg).process()
-            if hdlrp:
-                smrp.add_handlepoint(hdlrp)
+            smrp = self._generic_exception(point, smrp)
        
         indt = indexingtypes[self.index.indimp]
         indt = indt(data, self.index.case, self.index.getkwargs())
@@ -568,12 +557,7 @@ class Symbol(Base, ReprMixin):
             data['final'] = FeedAggregator(self.agg_method).aggregate(data)
         except:
             point = "aggregation"
-            logic = getattr(self.handle, point)
-            msg = "There was a problem aggregating feeds for {}"
-            msg = msg.format(self.name)
-            hdlrp = Handler(logic, point, msg).process()
-            if hdlrp:
-                fdrp.add_handlepoint(hdlrp)
+            smrp = self._generic_exception(point, smrp)
 
 
         # SQLAQ There are several states to deal with at this point
@@ -613,12 +597,7 @@ class Symbol(Base, ReprMixin):
                     raise Exception('{} is not valid'.format(self.name))
             except:
                 point = "validity_check"
-                logic = getattr(self.handle, point)
-                msg = "There was a problem during the validity check for {}"
-                msg = msg.format(self.name)
-                hdlrp = Handler(logic, point, msg).process()
-                if hdlrp:
-                    smrp.add_handlepoint(hdlrp)
+                smrp = self._generic_exception(point, smrp)
         
         return smrp
 
@@ -939,7 +918,14 @@ class Symbol(Base, ReprMixin):
         self.dt_feed_cols = feed_cols[:]
         self.dt_all_cols = ['indx', 'final'] + feed_cols[:]
         return atbl
-
+    def _generic_exception(self, point, reporter):
+        logic = getattr(self.handle, point)
+        msg = "Exception at the point of {} for {}"
+        msg = msg.format(point, self.name)
+        hdlrp = Handler(logic, point, msg).process()
+        if hdlrp:
+            reporter.add_handlepoint(hdlrp)
+        return reporter
 
 @event.listens_for(Symbol, 'load')
 def __receive_load(target, context):
@@ -1312,12 +1298,7 @@ class Feed(Base, ReprMixin):
                 raise Exception("Unknown Source Type : {}".format(stype))
         except:
             point = "api_failure"
-            logic = getattr(self.handle, point)
-            msg = "There was a problem caching feed #{} for {}"
-            msg = msg.format(self.fnum, self.symname)
-            hdlrp = Handler(logic, point, msg).process()
-            if hdlrp:
-                fdrp.add_handlepoint(hdlrp)
+            fdrp = self._generic_exception(point, fdrp)
             self.data = pd.Series()
 
         try:
@@ -1325,23 +1306,14 @@ class Feed(Base, ReprMixin):
                 raise Exception('Feed is empty')
         except:
             point = "empty_feed"
-            logic = getattr(self.handle, point)
-            msg = "The feed #{} for {} was empty".format(self.fnum, self.symname)
-            hdlrp = Handler(logic, point, msg).process()
-            if hdlrp:
-                fdrp.add_handlepoint(hdlrp)
+            fdrp = self._generic_exception(point, fdrp)
 
         try:
             if not (self.data.index.is_monotonic and self.data.index.is_unique):
                 raise Exception('Feed index is not uniquely monotonic')
         except:
             point = "monounique"
-            logic = getattr(self.handle, point)
-            msg = "The feed #{} for {} was not monotonic and unique."
-            msg = msg.format(self.fnum,self.symname)
-            hdlrp = Handler(logic, point, msg).process()
-            if hdlrp:
-                fdrp.add_handlepoint(hdlrp)
+            fdrp = self._generic_exception(point, fdrp)
 
         # munge accordingly
         for mgn in self.munging:
@@ -1389,7 +1361,15 @@ class Feed(Base, ReprMixin):
     @property
     def source(self):
         return " ".join([p.key + " : " + p.value for p in self.sourcing])
-
+    def _generic_exception(self, point, reporter):
+        logic = getattr(self.handle, point)
+        msg = "Exceptoin for feed #{} for {} at the {} point."
+        msg = msg.format(self.fnum, self.symname, point)
+        msg = msg.format(point, self.name)
+        hdlrp = Handler(logic, point, msg).process()
+        if hdlrp:
+            reporter.add_handlepoint(hdlrp)
+        return reporter
 
 class FeedTag(Base, ReprMixin):
     __tablename__ = '_feed_tags'
