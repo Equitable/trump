@@ -503,7 +503,7 @@ class Symbol(Base, ReprMixin):
             logic = self.handle.concatenation
             msg = "There was a problem concatenating feeds for {}"
             msg = msg.format(self.name)
-            Handler(logic,msg).process()
+            Handler(logic, msg).process()
        
         indt = indexingtypes[self.index.indimp]
         indt = indt(data, self.index.case, self.index.getkwargs())
