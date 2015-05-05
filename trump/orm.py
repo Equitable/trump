@@ -63,6 +63,9 @@ from trump.options import read_config, read_settings
 
 from handling import Handler
 
+from reporting.objects import TrumpReport, FeedReport, SymbolReport, \
+    ReportPoint
+
 BitFlag.associate_with(BitFlagType)
 
 try:
@@ -478,32 +481,46 @@ class Symbol(Base, ReprMixin):
 
         data = []
         cols = ['final', 'override_feed000', 'failsafe_feed999']
+        
+        smrp = SymbolReport(self.name)
 
         if len(self.feeds) == 0:
             err_msg = "Symbol has no Feeds. Can't cache a feed-less Symbol."
             raise Exception(err_msg)
 
+        smrp
         try:
             datt = datadefs[self.dtype.datadef]
+            
+            rp = ReportPoint('datadef', 'class', datt)
+            smrp.add_reportpoint(rp)
+            
             for afeed in self.feeds:
-                afeed.cache()
+                fdrp = afeed.cache()
+                smrp.add_feedreport(fdrp)
                 tmp = datt(afeed.data).converted
                 data.append(tmp)
                 cols.append(afeed.data.name)
         except:
-            raise
-            logic = self.handle.caching
+            point = "caching"
+            logic = getattr(self.handle, point)
             msg = "There was a problem caching feeds for {}"
             msg = msg.format(self.name)
-            Handler(logic, msg).process()
+            hdlrp = Handler(logic, point, msg).process()
+            if hdlrp:
+                smrp.add_handlepoint(hdlrp)
 
         try:
             data = pd.concat(data, axis=1)
         except:
+            point = "concatenation"
+            logic = getattr(self.handle, point)
             logic = self.handle.concatenation
             msg = "There was a problem concatenating feeds for {}"
             msg = msg.format(self.name)
-            Handler(logic, msg).process()
+            hdlrp = Handler(logic, point, msg).process()
+            if hdlrp:
+                smrp.add_handlepoint(hdlrp)
        
         indt = indexingtypes[self.index.indimp]
         indt = indt(data, self.index.case, self.index.getkwargs())
@@ -550,10 +567,13 @@ class Symbol(Base, ReprMixin):
             data = data[sorted_feed_cols(data)]
             data['final'] = FeedAggregator(self.agg_method).aggregate(data)
         except:
-            logic = self.handle.aggregation
+            point = "aggregation"
+            logic = getattr(self.handle, point)
             msg = "There was a problem aggregating feeds for {}"
             msg = msg.format(self.name)
-            Handler(logic,msg)
+            hdlrp = Handler(logic, point, msg).process()
+            if hdlrp:
+                fdrp.add_handlepoint(hdlrp)
 
 
         # SQLAQ There are several states to deal with at this point
@@ -586,18 +606,29 @@ class Symbol(Base, ReprMixin):
 
         if checkvalidity:
             try:
-                if not self.isvalid:
+                isvalid, reports = self.check_validity(report=True)
+                for rep in reports:
+                    smrp.add_reportpoint(rep)
+                if not isvalid:
                     raise Exception('{} is not valid'.format(self.name))
             except:
-                logic = self.handle.validity_check
+                point = "validity_check"
+                logic = getattr(self.handle, point)
                 msg = "There was a problem during the validity check for {}"
                 msg = msg.format(self.name)
-                Handler(logic,msg)  
-
-    @property
-    def isvalid(self):
+                hdlrp = Handler(logic, point, msg).process()
+                if hdlrp:
+                    smrp.add_handlepoint(hdlrp)
         
+        return smrp
+
+    def check_validity(self, report=True):
+        
+        if report:
+            reportpoints = []
+            
         allchecks = []
+        
         for val in self.validity:
             
             ValCheck = validitychecks[val.validator]
@@ -609,9 +640,20 @@ class Symbol(Base, ReprMixin):
                 args.append(getattr(val, arg))
             
             valid = ValCheck(self.datatable_df, *args[:anum])
-            allchecks.append(valid.result)
+            res = valid.result
+            allchecks.append(res)
+            
+            rp = ReportPoint('validation', val.validator, res, str(args[:anum]))
+            reportpoints.append(rp)
         
-        return all(allchecks)
+        if report:
+            return all(allchecks), reportpoints
+        else:
+            return all(allchecks)
+        
+    @property
+    def isvalid(self):
+        return self.check_validity(report=False)
 
     @property
     def describe(self):
@@ -1154,6 +1196,8 @@ class Feed(Base, ReprMixin):
         objs.commit()
 
     def cache(self):
+        
+        fdrp = FeedReport(self.fnum)
 
         # Pull in the database defined sourcing arguments
         # for now, this is a dictionary of the forms {str : str,}
@@ -1171,6 +1215,9 @@ class Feed(Base, ReprMixin):
             for key in sourcing_overrides:
                 kwargs[key] = sourcing_overrides[key]
 
+        rp = ReportPoint('readmeta', 'sourcing', stype, str(kwargs))
+        fdrp.add_reportpoint(rp)
+        
         try:
             # Depending on the feed type, use the kwargs appropriately to
             # populate a dataframe, self.data.
@@ -1264,29 +1311,37 @@ class Feed(Base, ReprMixin):
             else:
                 raise Exception("Unknown Source Type : {}".format(stype))
         except:
-            logic = self.handle.api_failure
+            point = "api_failure"
+            logic = getattr(self.handle, point)
             msg = "There was a problem caching feed #{} for {}"
-            msg = msg.format(self.fnum,self.symname)
-            Handler(logic,msg).process()
-
+            msg = msg.format(self.fnum, self.symname)
+            hdlrp = Handler(logic, point, msg).process()
+            if hdlrp:
+                fdrp.add_handlepoint(hdlrp)
             self.data = pd.Series()
 
         try:
             if len(self.data) == 0 or self.data.empty:
                 raise Exception('Feed is empty')
         except:
-            logic = self.handle.empty_feed
-            msg = "The feed #{} for {} was empty".format(self.fnum,self.symname)
-            Handler(logic,msg).process()
+            point = "empty_feed"
+            logic = getattr(self.handle, point)
+            msg = "The feed #{} for {} was empty".format(self.fnum, self.symname)
+            hdlrp = Handler(logic, point, msg).process()
+            if hdlrp:
+                fdrp.add_handlepoint(hdlrp)
 
         try:
             if not (self.data.index.is_monotonic and self.data.index.is_unique):
                 raise Exception('Feed index is not uniquely monotonic')
         except:
-            logic = self.handle.monounique
+            point = "monounique"
+            logic = getattr(self.handle, point)
             msg = "The feed #{} for {} was not monotonic and unique."
             msg = msg.format(self.fnum,self.symname)
-            Handler(logic,msg).process()
+            hdlrp = Handler(logic, point, msg).process()
+            if hdlrp:
+                fdrp.add_handlepoint(hdlrp)
 
         # munge accordingly
         for mgn in self.munging:
@@ -1313,6 +1368,11 @@ class Feed(Base, ReprMixin):
 
         # make sure it's named properly...
         self.data.name = "feed" + str(self.fnum + 1).zfill(3)
+
+        rp = ReportPoint('finish', 'cache', True, self.data.tail(3))
+        fdrp.add_reportpoint(rp)
+        
+        return fdrp
 
 #            for a in mgn.methodargs:
 #                args[a.arg] = a.value
