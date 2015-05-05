@@ -36,7 +36,15 @@ class TestReportingObjects(object):
                     fr.add_handlepoint(hp)
                 
                 sr.add_feedreport(fr)            
-    
+
+            try:
+                a = int("problem")
+            except:
+                typ, val, tback = sys.exc_info()
+                tbextract = trcbm.extract_tb(tback)                
+                hp = HandlePointReport("4th problem", tbextract)
+                sr.add_handlepoint(hp)
+                    
             rp = ReportPoint("symbol done", "validwhat", True, pd.DataFrame([1,2,3,4]))
             sr.add_reportpoint(rp)
             
