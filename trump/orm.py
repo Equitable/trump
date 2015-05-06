@@ -467,6 +467,7 @@ class Symbol(Base, ReprMixin):
                 data.append(tmp)
                 cols.append(afeed.data.name)
         except:
+            raise
             point = "caching"
             smrp = self._generic_exception(point, smrp)
                 
@@ -1049,7 +1050,7 @@ class Feed(Base, ReprMixin):
     munging = relationship("FeedMunge", lazy="dynamic", cascade=ADO)
 
     symbol = relationship("Symbol")
-
+        
     def __init__(self, symbol, ftype, sourcing,
                  munging=None, meta=None, fnum=None):
         self.ftype = ftype
@@ -1070,26 +1071,6 @@ class Feed(Base, ReprMixin):
         else:
             self.fnum = fnum
 
-        def setinmeta(typ, infobj):
-            """ moves information from infobj to meta """
-            val = None
-            if meta is not None and typ in meta:
-                val = meta[typ]
-                del meta[typ]
-            # otherwise fall back to the value used in the sourcing dictionary.
-            elif infobj is not None and typ in infobj:
-                val = infobj[typ]
-                del infobj[typ]
-
-            if val:
-                tmp = FeedMeta(attr=typ, value=val, feed=self)
-                self._symsess.add(tmp)
-                self.meta_map[typ] = tmp
-                self._symsess.commit()
-
-        setinmeta('stype', sourcing)
-        setinmeta('sourcing_key', sourcing)
-
         if meta:
             for key in meta:
                 tmp = FeedMeta(attr=key, value=meta[key], feed=self)
@@ -1098,11 +1079,15 @@ class Feed(Base, ReprMixin):
                 self._symsess.commit()
 
         if sourcing:
+            sk = None
+            if 'sourcing_key' in meta:
+                sk = meta['sourcing_key']
+            fsrc = FeedSource(meta['stype'], sk, self)
             for key in sourcing:
-                tmp = FeedSource(param=key, value=sourcing[key], feed=self)
-                self._symsess.add(tmp)
-                self.sourcing_map[key] = tmp
-                self._symsess.commit()
+                if key not in ('stype', 'sourcing_key'):
+                    fsrckw = FeedSourceKwarg(key, sourcing[key], fsrc)
+                    fsrc.sourcekwargs.append(fsrckw)
+            self.sourcing.append(fsrc)
 
         if munging:
             for i, meth in enumerate(munging.keys()):
@@ -1151,18 +1136,16 @@ class Feed(Base, ReprMixin):
         
         fdrp = FeedReport(self.fnum)
 
-        # Pull in the database defined sourcing arguments
-        # for now, this is a dictionary of the forms {str : str,}
-        kwargs = self.sourcing_map()
-
-        # Check the source type
-        meta = self.meta_map()
-        stype = meta['stype']
+        src = self.sourcing.one()
+        srckeys = src.sourcing_map.keys()
+        kwargs = {k: src.sourcing_map[k].val for k in srckeys}
+               
+        sourcing_key = src.sourcing_key
+        stype = src.stype
 
         # If there is a sourcing key defined, use it to override any database
         # defined parameters
-        if 'sourcing_key' in meta:
-            sourcing_key = meta['sourcing_key']
+        if sourcing_key:
             sourcing_overrides = read_settings()[stype][sourcing_key]
             for key in sourcing_overrides:
                 kwargs[key] = sourcing_overrides[key]
@@ -1228,15 +1211,6 @@ class Feed(Base, ReprMixin):
                 
                 fpob = kwargs['filepath_or_buffer']
                 del kwargs['filepath_or_buffer']
-                
-                # trump doesn't have an elegant way of handling arguments
-                # with values other than strings...  until it does, any datatype
-                # other than string, will need to be manually handled:
-                
-                if 'index_col' in kwargs:
-                    kwargs['index_col'] = int(kwargs['index_col'])
-                if 'parse_dates' in kwargs:
-                    kwargs['parse_dates'] = int(kwargs['parse_dates'])
                 
                 df = read_csv(fpob, **kwargs)
                 
@@ -1312,10 +1286,6 @@ class Feed(Base, ReprMixin):
 #            self.data = munging_methods[mgn.method](self.data,**args)
 
     @property
-    def sourcing_map(self):
-        return ProxyDict(self, 'sourcing', FeedSource, 'param')
-
-    @property
     def meta_map(self):
         return ProxyDict(self, 'meta', FeedMeta, 'attr')
 
@@ -1345,29 +1315,63 @@ class FeedTag(Base, ReprMixin):
                                 [Feed.symname, Feed.fnum],
                                 **CC)
     __table_args__ = (fkey, {})
-
-
+        
 class FeedSource(Base, ReprMixin):
     __tablename__ = "_feed_sourcing"
 
     symname = Column('symname', String, primary_key=True)
+    
     fnum = Column('fnum', Integer, primary_key=True)
-    param = Column('param', String, primary_key=True)
 
+    stype = Column('stype', String)
+    sourcing_key = Column('sourcing_key', String)
+    
     feed = relationship("Feed")
-
-    value = Column('value', String)
+    sourcekwargs = relationship("FeedSourceKwarg", lazy="dynamic", cascade=ADO)
 
     fkey = ForeignKeyConstraint([symname, fnum],
                                 [Feed.symname, Feed.fnum],
                                 **CC)
+
     __table_args__ = (fkey, {})
 
-    def __init__(self, feed, param, value):
+    def __init__(self, stype, sourcing_key, feed):
+        self.stype = stype
+        self.sourcing_key = sourcing_key
         self.feed = feed
-        self.param = param
-        self.value = value
+    @property
+    def sourcing_map(self):
+        return ProxyDict(self, 'sourcekwargs', FeedSourceKwarg, 'kword')
 
+class FeedSourceKwarg(Base, ReprMixin, DuckTypeMixin):
+    __tablename__ = "_feed_sourcing_kwargs"
+
+    symname = Column('symname', String, primary_key=True)
+                     
+    fnum = Column('fnum', Integer, primary_key=True)
+
+    kword = Column('kword', String, primary_key=True)
+    
+    _colswitch = Column('colswitch', Integer)
+
+    nonecol = Column('nonecol', Boolean)
+    boolcol = Column('boolcol', Boolean)
+    strcol = Column('strcol', String)
+    intcol = Column('intcol', Integer)
+    floatcol = Column('floatcol', Float)
+    reprcol = Column('reprcol', ReprObjType)
+    
+    feedsource = relationship("FeedSource")
+
+    fkey = ForeignKeyConstraint([symname, fnum],
+                                [FeedSource.symname,
+                                 FeedSource.fnum])
+    __table_args__ = (fkey, {})
+
+    def __init__(self, kword, val, feedsource):
+        self.kword = kword
+        self.setval(val)
+        self.feedsource = feedsource
 
 class FeedMeta(Base, ReprMixin):
     __tablename__ = "_feed_meta"
