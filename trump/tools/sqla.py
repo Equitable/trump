@@ -36,7 +36,57 @@ class ReprMixin(object):
         classy = type(self).__name__
         return classy + args
 
+class DuckTypeMixin(object):
+    def setval(self, val):
+        self.set_all_to_none()
 
+        if val is None:
+            colsw = 0
+            self.nonecol = True    
+        elif isinstance(val, bool):
+            colsw = 1
+            self.boolcol = val
+        elif isinstance(val, (str, unicode)):
+            colsw = 2
+            self.strcol = val
+        elif isinstance(val, int):
+            colsw = 3
+            self.intcol = val
+        elif isinstance(val, float):
+            colsw = 4
+            self.floatcol = val
+        else:
+            colsw = 5
+            self.reprcol = val
+        
+        self._colswitch = colsw
+    @property
+    def val(self):
+
+        colsw = self._colswitch
+        
+        if colsw == 0:
+            return None
+        elif colsw == 1:
+            return self.boolcol
+        elif colsw == 2:
+            return self.strcol
+        elif colsw == 3:
+            return self.intcol
+        elif colsw == 4:
+            return self.floatcol
+        elif colsw == 5:
+            return self.reprcol
+        raise Exception("Unknown column switch {}".format(colsw))
+
+    def set_all_to_none(self):
+        self.nonecol = False
+        self.boolcol = None
+        self.strcol = None
+        self.intcol = None
+        self.floatcol = None
+        self.reprcol = None
+        
 class ProxyDict(object):
 
     """ implements a SQLA object methods required for dict-like usage"""

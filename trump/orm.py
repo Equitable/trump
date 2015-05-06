@@ -55,7 +55,7 @@ from validity import validitychecks
 from datadef import datadefs
 
 from trump.tools import ReprMixin, ProxyDict, isinstanceofany, \
-    BitFlag, BitFlagType, ReprObjType
+    BitFlag, BitFlagType, ReprObjType, DuckTypeMixin
 
 from trump.extensions.symbol_aggs import FeedAggregator, sorted_feed_cols
 from trump.templating import bFeed, pab, pnab
@@ -137,7 +137,7 @@ class Index(Base, ReprMixin):
         return kwargs
 
 
-class IndexKwarg(Base, ReprMixin):
+class IndexKwarg(Base, ReprMixin, DuckTypeMixin):
     __tablename__ = "_index_kwargs"
 
     symname = Column('symname', String, ForeignKey('_indicies.symname', **CC),
@@ -145,54 +145,19 @@ class IndexKwarg(Base, ReprMixin):
 
     kword = Column('kword', String, primary_key=True)
 
+    _colswitch = Column('colswitch', Integer)
+
     nonecol = Column('nonecol', Boolean)
     boolcol = Column('boolcol', Boolean)
     strcol = Column('strcol', String)
     intcol = Column('intcol', Integer)
     floatcol = Column('floatcol', Float)
+    reprcol = Column('reprcol', ReprObjType)
 
-    def __init__(self, kword, val=None):
+    def __init__(self, kword, val):
         self.kword = kword
-
         self.setval(val)
-
-    def setval(self, val):
-        self.set_all_to_none()
-
-        if val is None:
-            self.nonecol = True
-        if isinstance(val, bool):
-            self.boolcol = val
-        if isinstance(val, (str, unicode)):
-            self.strcol = val
-        if isinstance(val, int):
-            self.intcol = val
-        if isinstance(val, float):
-            self.floatcol = val
-
-    @property
-    def val(self):
-
-        if self.nonecol:
-            return None
-        if self.boolcol in (True, False):
-            return self.boolcol
-        if self.strcol is not None:
-            return self.strcol
-        if self.intcol is not None:
-            return self.intcol
-        if self.floatcol is not None:
-            return self.floatcol
-        return None
-
-    def set_all_to_none(self):
-        self.nonecol = False
-        self.boolcol = None
-        self.strcol = None
-        self.intcol = None
-        self.floatcol = None
-
-
+        
 class SymbolManager(object):
 
     """
@@ -512,7 +477,8 @@ class Symbol(Base, ReprMixin):
             smrp = self._generic_exception(point, smrp)
        
         indt = indexingtypes[self.index.indimp]
-        indt = indt(data, self.index.case, self.index.getkwargs())
+        indkwargs = self.index.getkwargs()
+        indt = indt(data, self.index.case, indkwargs)
         data = indt.final_dataframe()
 
         data_len = len(data)
@@ -1453,7 +1419,7 @@ class FeedMunge(Base, ReprMixin):
         return ProxyDict(self, 'mungeargs', FeedMungeKwarg, 'kword')
 
 
-class FeedMungeKwarg(Base, ReprMixin):
+class FeedMungeKwarg(Base, ReprMixin, DuckTypeMixin):
     __tablename__ = "_feed_munging_kwargs"
 
     symname = Column('symname', String, primary_key=True)
@@ -1482,62 +1448,9 @@ class FeedMungeKwarg(Base, ReprMixin):
 
     def __init__(self, kword, val, feedmunge):
         self.kword = kword
-        
-        self._colswitch = 0
-
         self.setval(val)
-        
         self.feedmunge = feedmunge
 
-    def setval(self, val):
-        self.set_all_to_none()
-
-        if val is None:
-            colsw = 0
-            self.nonecol = True    
-        elif isinstance(val, bool):
-            colsw = 1
-            self.boolcol = val
-        elif isinstance(val, (str, unicode)):
-            colsw = 2
-            self.strcol = val
-        elif isinstance(val, int):
-            colsw = 3
-            self.intcol = val
-        elif isinstance(val, float):
-            colsw = 4
-            self.floatcol = val
-        else:
-            colsw = 5
-            self.reprcol = val
-        
-        self._colswitch = colsw
-    @property
-    def val(self):
-
-        colsw = self._colswitch
-        
-        if colsw == 0:
-            return None
-        elif colsw == 1:
-            return self.boolcol
-        elif colsw == 2:
-            return self.strcol
-        elif colsw == 3:
-            return self.intcol
-        elif colsw == 4:
-            return self.floatcol
-        elif colsw == 5:
-            return self.reprcol
-        raise Exception("Unknown column switch {}".format(colsw))
-
-    def set_all_to_none(self):
-        self.nonecol = False
-        self.boolcol = None
-        self.strcol = None
-        self.intcol = None
-        self.floatcol = None
-        self.reprcol = None
 
 class FeedHandle(Base, ReprMixin):
     """
