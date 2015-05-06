@@ -1490,8 +1490,6 @@ class FeedMungeKwarg(Base, ReprMixin):
         self.feedmunge = feedmunge
 
     def setval(self, val):
-        #objs = object_session(self)
-        
         self.set_all_to_none()
 
         if val is None:
@@ -1514,7 +1512,6 @@ class FeedMungeKwarg(Base, ReprMixin):
             self.reprcol = val
         
         self._colswitch = colsw
-        #objs.commit()
     @property
     def val(self):
 
@@ -1532,8 +1529,7 @@ class FeedMungeKwarg(Base, ReprMixin):
             return self.floatcol
         elif colsw == 5:
             return self.reprcol
-            
-        return None
+        raise Exception("Unknown column switch {}".format(colsw))
 
     def set_all_to_none(self):
         self.nonecol = False
@@ -1541,30 +1537,7 @@ class FeedMungeKwarg(Base, ReprMixin):
         self.strcol = None
         self.intcol = None
         self.floatcol = None
-        self.floatcol = None
-        
-#class FeedMungeArg(Base, ReprMixin):
-#    __tablename__ = "_feed_munging_args"
-#
-#    symname = Column('symname', String, primary_key=True)
-#    fnum = Column('fnum', Integer, primary_key=True)
-#    order = Column('order', Integer, primary_key=True)
-#    arg = Column('arg', String, primary_key=True)
-#    value = Column('value', String)
-#
-#    feedmunge = relationship("FeedMunge")
-#
-#    fkey = ForeignKeyConstraint([symname, fnum, order],
-#                                [FeedMunge.symname,
-#                                 FeedMunge.fnum,
-#                                 FeedMunge.order])
-#    __table_args__ = (fkey, {})
-#
-#    def __init__(self, arg, value, feedmunge):
-#        self.arg = arg
-#        self.value = value
-#        self.feedmunge = feedmunge
-
+        self.reprcol = None
 
 class FeedHandle(Base, ReprMixin):
     """
