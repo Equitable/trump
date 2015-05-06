@@ -41,7 +41,7 @@ class TestORM(object):
         mgtemp = SimpleExampleMT(5,5)
 
         sym.add_feed(fdtemp,munging=mgtemp)
-
+        
         sym.cache()
 
         df = sym.df
@@ -254,7 +254,6 @@ class TestORM(object):
         sym.cache()
         df = sym.df
         assert df.onetwo['2015-12-31'] == 'f'
-        
         onetwo = sm.get("onetwo")
         sm.delete("onetwo")
         
