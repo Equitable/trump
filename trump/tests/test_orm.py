@@ -364,5 +364,19 @@ class TestORM(object):
         actkwargs = symn.index.getkwargs()
         
         assert tkwargs == actkwargs
+
+    def test_view_creation(self):
         
+        sm = SymbolManager()
+        
+        for s in ['va', 'vb', 'vc']:
+            sym = sm.create(s, overwrite=True)
+            sym.add_tags('testtagz')
+            testdata = os.path.join(curdir,'testdata','testdailydata.csv')
+            fdtemp = CSVFT(testdata, 'Amount', parse_dates=0, index_col=0)
+            sym.add_feed(fdtemp)
+            sm.complete()
+            sym.cache()
+
+        sm.build_view_from_tag('testtagz')
        

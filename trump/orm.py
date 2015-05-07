@@ -302,6 +302,28 @@ class SymbolManager(object):
             syms = qry.filter(SymbolTag.tag == tag).all()
         syms = [tagged.symbol for tagged in syms]
         return syms
+    
+    def build_view_from_tag(self, tag):
+        """
+        Build a view of group of Symbols based on their tag.
+        
+        Appending '%' will use SQL's "LIKE" functionality.
+        """
+        
+        syms = self.search_tag(tag)
+        
+        names = [sym.name for sym in syms]
+        
+        subs = ["SELECT indx, '{}' AS symbol, final FROM {}".format(s, s) for s in names]
+        
+        qry = " UNION ALL ".join(subs)
+        
+        qry = "CREATE VIEW {} AS {};".format(tag, qry)
+
+        self.ses.execute("DROP VIEW {};".format(tag))
+        self.ses.commit()        
+        self.ses.execute(qry)
+        self.ses.commit()
 
 
 class Symbol(Base, ReprMixin):
