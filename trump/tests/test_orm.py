@@ -342,4 +342,27 @@ class TestORM(object):
         sym.add_feed(fdtemp)
         
         sym.cache()
+
+    def test_index_kwargs(self):
         
+        sm = SymbolManager()
+        
+        sym = sm.create("tinkw", overwrite=True)
+
+        testdata = os.path.join(curdir,'testdata','testdailydata.csv')
+        fdtemp = CSVFT(testdata, 'Amount', parse_dates=0, index_col=0)
+        sym.add_feed(fdtemp)
+
+        tkwargs = {'A' : None, 'B' : 10, 'C' : 10.0, 'D' : 'test',
+                   'E' : False, 'F' : dt.datetime(2010,10,10)}
+        sym.index.setkwargs(**tkwargs)
+        
+        sm.complete()
+        
+        symn = sm.get('tinkw')
+        
+        actkwargs = symn.index.getkwargs()
+        
+        assert tkwargs == actkwargs
+        
+       
