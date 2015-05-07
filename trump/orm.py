@@ -320,7 +320,7 @@ class SymbolManager(object):
         
         qry = "CREATE VIEW {} AS {};".format(tag, qry)
 
-        self.ses.execute("DROP VIEW {};".format(tag))
+        self.ses.execute("DROP VIEW IF EXISTS {};".format(tag))
         self.ses.commit()        
         self.ses.execute(qry)
         self.ses.commit()
