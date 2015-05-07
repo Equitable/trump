@@ -39,10 +39,9 @@ class ReprMixin(object):
 class DuckTypeMixin(object):
     def setval(self, val):
         self.set_all_to_none()
-
+        
         if val is None:
             colsw = 0
-            self.nonecol = True    
         elif isinstance(val, bool):
             colsw = 1
             self.boolcol = val
@@ -80,7 +79,6 @@ class DuckTypeMixin(object):
         raise Exception("Unknown column switch {}".format(colsw))
 
     def set_all_to_none(self):
-        self.nonecol = False
         self.boolcol = None
         self.strcol = None
         self.intcol = None

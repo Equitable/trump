@@ -147,7 +147,6 @@ class IndexKwarg(Base, ReprMixin, DuckTypeMixin):
 
     _colswitch = Column('colswitch', Integer)
 
-    nonecol = Column('nonecol', Boolean)
     boolcol = Column('boolcol', Boolean)
     strcol = Column('strcol', String)
     intcol = Column('intcol', Integer)
@@ -1354,7 +1353,6 @@ class FeedSourceKwarg(Base, ReprMixin, DuckTypeMixin):
     
     _colswitch = Column('colswitch', Integer)
 
-    nonecol = Column('nonecol', Boolean)
     boolcol = Column('boolcol', Boolean)
     strcol = Column('strcol', String)
     intcol = Column('intcol', Integer)
@@ -1435,7 +1433,6 @@ class FeedMungeKwarg(Base, ReprMixin, DuckTypeMixin):
     
     _colswitch = Column('colswitch', Integer)
 
-    nonecol = Column('nonecol', Boolean)
     boolcol = Column('boolcol', Boolean)
     strcol = Column('strcol', String)
     intcol = Column('intcol', Integer)
@@ -1515,7 +1512,6 @@ class Override(Base, ReprMixin):
     An Override represents a single datapoint with an associated
     index value, applied to a Symbol's datatable after sourcing all the
     data, and will be applied after any aggregation logic
-
     """
     __tablename__ = '_overrides'
 
