@@ -115,7 +115,7 @@ Using a Symbol
 Installation
 ============
 
-See the latest `Installation instructions on ReadTheDocs.org <http://trump.readthedocs.org/en/latest/installation.html>`_
+See the latest `Installation instructions on ReadTheDocs.org <http://trump.readthedocs.org/en/latest/install.html>`_
 
 Requirements
 ------------
