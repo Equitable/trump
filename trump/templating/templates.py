@@ -367,10 +367,10 @@ class GoogleFinanceFT(bFeed):
 #
 #******************************************************************************
 
-class StLouisFEDRT(bFeed):
+class StLouisFEDFT(bFeed):
     """ PyData reader feed, generalized for St Louis FED. """
     def __init__(self, name, column=None, start='1995-01-01', end='now'):
-        super(StLouisFEDRT, self).__init__()
+        super(StLouisFEDFT, self).__init__()
         acol = column or name
         source = PyDataDataReaderST('fred', name, acol,
                                     start=start, end=end)

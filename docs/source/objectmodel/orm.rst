@@ -10,15 +10,15 @@ Supporting objects store details persistently about error handling, sourcing, mu
 the data provided from the various :py:class:`~trump.orm.Feed` objects,
 in a single datatable or serve up a fresh pandas.Series at anytime. A symbol's it's :py:class:`~trump.orm.Index`, can further enhance the intelligence that Trump can serve via pandas.
    
-.. figure:: sqla-symbol.png
+.. figure:: symbol-orm.png
 
    The symbol portion of the ORM, excludes the symbol's datatable.
 
-.. figure:: sqla-feed.png
+.. figure:: feed-orm.png
 
    The feed portion of the ORM.
 
-.. figure:: sqla-feed.png
+.. figure:: orfs-orm.png
 
    The override and fail safe portion of the ORM, are unlinked to any other object, by design.
 

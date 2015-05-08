@@ -1,6 +1,6 @@
 
 from ..templates import QuandlFT, QuandlSecureFT, \
-                        GoogleFinanceFT, YahooFinanceFT, StLouisFEDRT, \
+                        GoogleFinanceFT, YahooFinanceFT, StLouisFEDFT, \
                         EconFT, CSVFT
 
 class TestTemplates(object):
@@ -37,7 +37,7 @@ class TestTemplates(object):
         assert ftemp.meta == {'stype' : 'PyDataDataReaderST'}
 
     def test_st_louis_fred_ft(self):
-        ftemp = StLouisFEDRT("xxx")
+        ftemp = StLouisFEDFT("xxx")
         assert ftemp.sourcing == {'name': 'xxx',
                                   'start': '1995-01-01',
                                   'end': 'now',

@@ -67,6 +67,6 @@ Feeds
 
 .. autoclass:: trump.templating.templates.YahooFinanceFT
 
-.. autoclass:: trump.templating.templates.StLouisFEDRT
+.. autoclass:: trump.templating.templates.StLouisFEDFT
 
 .. autoclass:: trump.templating.templates.CSVFT
