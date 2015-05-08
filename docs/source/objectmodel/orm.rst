@@ -2,23 +2,32 @@ Object-relational Model
 =======================
 
 Trump's persistent object model, made possible by it's object-relational model (ORM), all starts with
-a :py:class:`~trump.orm.Symbol`, and an associated list of :py:class:`~trump.orm.Feed` objects. A symbol's it's :py:class:`~trump.orm.Index`, 
-can further enhance the intelligence that Trump can serve via pandas. Supporting objects, store details persistently about error handling,
-sourcing, munging, and validation, so that a :py:class:`~trump.orm.Symbol` can :py:meth:`~trump.orm.Symbol.cache`
+a :py:class:`~trump.orm.Symbol`, and an associated list of :py:class:`~trump.orm.Feed` objects. 
+
+An fragmented illustration of the ORM is presented in the three figures below. 
+
+Supporting objects store details persistently about error handling, sourcing, munging, and validation, so that a :py:class:`~trump.orm.Symbol` can :py:meth:`~trump.orm.Symbol.cache`
 the data provided from the various :py:class:`~trump.orm.Feed` objects,
-in a single table or serve up a fresh pandas.Series at anytime.
-
-A map of all the classes involved in the ORM is presented below.
+in a single datatable or serve up a fresh pandas.Series at anytime. A symbol's it's :py:class:`~trump.orm.Index`, can further enhance the intelligence that Trump can serve via pandas.
    
-.. figure:: sqla-orm.png
+.. figure:: sqla-symbol.png
 
-   The persistent Trump ORM, excluding each symbol's datatable. 
+   The symbol portion of the ORM, excludes the symbol's datatable.
+
+.. figure:: sqla-feed.png
+
+   The feed portion of the ORM.
+
+.. figure:: sqla-feed.png
+
+   The override and fail safe portion of the ORM, are unlinked to any other object, by design.
 
 .. note::
 
    Trump's template system consists of objects, which are external to the ORM.
    Templates are used to expedite construction of ORM objects.  Nothing about any template,
-   persists.
+   persists in the database.  Only instatiated ORM objects would do so.  Templates, 
+   should be thought of as boilerplate, or macros, to reduce Feed creation time.
    
 Symbol Manager
 --------------
