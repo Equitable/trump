@@ -42,7 +42,7 @@ def read(*p):
     with open(os.path.join(*p), 'r') as fi:
         return fi.read()
 
-v = '0.0.1'
+v = '0.0.2'
 
 setup(
   name = 'Trump',

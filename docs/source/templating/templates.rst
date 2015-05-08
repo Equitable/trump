@@ -14,6 +14,10 @@ Bases
 
 .. autoclass:: trump.templating.bases.bFeed
 
+.. autoclass:: trump.templating.bases.bValidity
+
+.. autoclass:: trump.templating.bases.bIndex
+
 Templates
 ---------
 
@@ -70,3 +74,13 @@ Feeds
 .. autoclass:: trump.templating.templates.StLouisFEDFT
 
 .. autoclass:: trump.templating.templates.CSVFT
+
+Indicies
+~~~~~~~~
+
+.. autoclass:: trump.templating.templates.FFillIT
+
+Validity
+~~~~~~~
+
+.. autoclass:: trump.templating.templates.FeedMatchVT

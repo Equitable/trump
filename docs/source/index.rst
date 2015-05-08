@@ -1,20 +1,19 @@
 Introduction
-============
+---------------------
 
-Persistent Objectification of Indexed Data
-------------------------------------------
-
-Trump is a framework for objectifying data, with the goal of centralizing the responsibility of 
-managing feeds, munging, calculating and validating data, upstream of any application or user requirement.
+Trump is a framework for objectifying data, with the goal of centralizing the management
+of data feeds to enable quicker deployment of analytics, applications, 
+and reporting.  Munging data, common calculations, validation of data, can all be handled by Trump, upstream of 
+any application or user requirement.
 
 Inside the Trump framework, a symbol refers to one or more data feeds, each with their own instructions
-saved for retrieving data.  Once it's retrieved by Trump, depending on the attributes of the symbol,
+saved for retrieving data from a specific source.  Once it's retrieved by Trump, depending on the attributes of the symbol,
 it gets munged, aggregated, checked, and cached.  Downstream users are free to query the existing cache,
 force a re-cache, or check any property of the data prior to using it.
  
 System Admins can systematically detect problems in advance, via common integrity checks of the data,
 then optionally schedule the re-cache by tag or symbol name.  Users and admins have the ability to manually
-override problems if they exist, with a specific feed, in a way that is centralized, audited, and backed-up.
+override problems if they exist, with a specific feed, in a way that is centralized, auditable, and backed-up effeciently.
 
 With a focus on business processes, Trump's long run goals enable data feeds to be:
 
@@ -44,7 +43,6 @@ Object Model
    framework   
    objectmodel/orm
    aggregation
-   planning
 
 Template Classes
 ----------------

@@ -33,7 +33,7 @@ Symbol Manager
 --------------
 
 .. autoclass:: trump.orm.SymbolManager
-   :members: create, delete, get, complete, finish
+   :members: create, delete, get, complete, finish, search_tag, build_view_from_tag
 
 Symbols
 -------
@@ -69,6 +69,13 @@ Index Types
 .. automodule:: trump.indexing
    :members: IndexImplementer, DatetimeIndexImp, PeriodIndexImp, StrIndexImp, IntIndexImp
 
+
+Validity Checking
+~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: trump.orm.SymbolValidity
+   :members:
+
 Feeds
 -----
 
@@ -76,12 +83,16 @@ Feeds
 
 .. autoclass:: trump.orm.FeedMeta
 
+.. autoclass:: trump.orm.FeedSource
+
+.. autoclass:: trump.orm.FeedSourceKwarg
+
 Feed Munging
 ~~~~~~~~~~~~
 
 .. autoclass:: trump.orm.FeedMunge
 
-.. autoclass:: trump.orm.FeedMungeArg
+.. autoclass:: trump.orm.FeedMungeKwarg
 
 Centralized Data Editing
 ------------------------
@@ -137,7 +148,6 @@ The Feed's possible exception-inducing handle-points include:
 For example, if a feed source is prone to problems, set the api_failure to print the trace by setting the BitFlag object's 'stdout' flag to True, and the other flags to False.
 If there's a problem, Trump will attempt to continue, and hope that there is another feed with good data available.  However, if a source should be reliably available,
 you may want to set the BitFlag object's 'raise' flag to True.
-
 
 BitFlags
 ~~~~~~~~

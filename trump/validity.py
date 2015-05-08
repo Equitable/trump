@@ -1,7 +1,10 @@
 import inspect
 import sys
 
-from pandas.util.testing import assert_series_equal as series_equal
+import pandas as pd
+
+#imported like this, cause otherwise the docs won't build.
+series_equal = pd.util.testing.assert_series_equal
 
 class ValidityCheck(object):
     def __init__(self, data, *args):
