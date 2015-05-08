@@ -292,3 +292,4 @@ autoclass_content = 'both'
 autodoc_member_order = 'bycode'
 autodoc_mock_imports = 'pandas'
 autodoc_default_flags = 'show-inheritance'
+add_module_names = False

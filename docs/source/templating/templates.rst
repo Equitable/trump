@@ -6,17 +6,17 @@ Bases
 
 .. automodule:: trump.templating.bases
       
-.. autoclass:: trump.templating.bases.bTags
+.. autoclass:: trump.templating.bTags
    
-.. autoclass:: trump.templating.bases.bMunging
+.. autoclass:: trump.templating.bMunging
 
-.. autoclass:: trump.templating.bases.bSource
+.. autoclass:: trump.templating.bSource
 
-.. autoclass:: trump.templating.bases.bFeed
+.. autoclass:: trump.templating.bFeed
 
-.. autoclass:: trump.templating.bases.bValidity
+.. autoclass:: trump.templating.bValidity
 
-.. autoclass:: trump.templating.bases.bIndex
+.. autoclass:: trump.templating.bIndex
 
 Templates
 ---------
@@ -24,63 +24,63 @@ Templates
 Tags
 ~~~~
 
-.. autoclass:: trump.templating.templates.AssetTT
+.. autoclass:: trump.templating.AssetTT
 
-.. autoclass:: trump.templating.templates.GenericTT
+.. autoclass:: trump.templating.GenericTT
 
-.. autoclass:: trump.templating.templates.SimpleTT
+.. autoclass:: trump.templating.SimpleTT
 
-.. autoclass:: trump.templating.templates.SimpleTT
+.. autoclass:: trump.templating.SimpleTT
 
 Munging
 ~~~~~~~
 
-.. autoclass:: trump.templating.templates.AbsMT
+.. autoclass:: trump.templating.AbsMT
 
-.. autoclass:: trump.templating.templates.RollingMeanMT
+.. autoclass:: trump.templating.RollingMeanMT
 
-.. autoclass:: trump.templating.templates.FFillRollingMeanMT
+.. autoclass:: trump.templating.FFillRollingMeanMT
 
-.. autoclass:: trump.templating.templates.RollingMeanFFillMT
+.. autoclass:: trump.templating.RollingMeanFFillMT
 
-.. autoclass:: trump.templating.templates.SimpleExampleMT
+.. autoclass:: trump.templating.SimpleExampleMT
 
-.. autoclass:: trump.templating.templates.MultiExampleMT
+.. autoclass:: trump.templating.MultiExampleMT
 
 Sources
 ~~~~~~~
 
-.. autoclass:: trump.templating.templates.DBapiST
+.. autoclass:: trump.templating.DBapiST
 
-.. autoclass:: trump.templating.templates.PyDataDataReaderST
+.. autoclass:: trump.templating.PyDataDataReaderST
 
-.. autoclass:: trump.templating.templates.PyDataCSVST
+.. autoclass:: trump.templating.PyDataCSVST
 
 Feeds
 ~~~~~
 
-.. autoclass:: trump.templating.templates.DBapiFT
+.. autoclass:: trump.templating.DBapiFT
 
-.. autoclass:: trump.templating.templates.SQLFT
+.. autoclass:: trump.templating.SQLFT
 
-.. autoclass:: trump.templating.templates.QuandlFT
+.. autoclass:: trump.templating.QuandlFT
 
-.. autoclass:: trump.templating.templates.QuandlSecureFT
+.. autoclass:: trump.templating.QuandlSecureFT
 
-.. autoclass:: trump.templating.templates.GoogleFinanceFT
+.. autoclass:: trump.templating.GoogleFinanceFT
 
-.. autoclass:: trump.templating.templates.YahooFinanceFT
+.. autoclass:: trump.templating.YahooFinanceFT
 
-.. autoclass:: trump.templating.templates.StLouisFEDFT
+.. autoclass:: trump.templating.StLouisFEDFT
 
-.. autoclass:: trump.templating.templates.CSVFT
+.. autoclass:: trump.templating.CSVFT
 
 Indicies
 ~~~~~~~~
 
-.. autoclass:: trump.templating.templates.FFillIT
+.. autoclass:: trump.templating.FFillIT
 
 Validity
 ~~~~~~~
 
-.. autoclass:: trump.templating.templates.FeedMatchVT
+.. autoclass:: trump.templating.FeedMatchVT

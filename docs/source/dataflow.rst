@@ -8,19 +8,19 @@ Trump centralizes the flow of information using two concepts:
 Objectification
 ---------------
 
-The objectification happens via an addition-like setup entailing the instantiation of one or more symbols.  
-The objectification enables downstream applications to work with Sybols names in order to force the caching, and be served reliable data.
+The objectification happens via an addition-like process entailing the instantiation of one or more symbols.  
+The objectification enables downstream applications to work with symbol names in order to force the caching, and be served reliable data.
 
 There are two approaches to perform the objectification instantiation of Symbols
 
 1. First Principles (from ORM)
-2. Template Based (from Python Classes + ORM)
+2. Template Based (from Special Python Classes + ORM)
  
 First Principles
 ^^^^^^^^^^^^^^^^
 
 The first principles approach to using Trump is basically direct access to the SQLAlchemy-based object-relational model.
-It's time consuming to develop, but necessary to understand in order to design intelligent templates.
+It's time consuming to develop with, but necessary to understand in order to design new intelligent templates.
 
 Using Trump's ORM, the process is something akin to:
 
@@ -34,6 +34,7 @@ For Every Symbol:
 	6. For each Feed, update :py:class:`~trump.orm.FeedMeta`, :py:class:`~trump.orm.FeedSource` details
 	7. Optionally, adjust each feed's :py:class:`~trump.orm.FeedMunge` instructions
 	8. Optionally, adjust each feed's :py:class:`~trump.orm.FeedHandle` handlepoints
+	9. Optionally, adjust each Symbol's :py:class:`~trump.orm.SymbolValidity` instructions
 
 Template Based
 ^^^^^^^^^^^^^^
@@ -42,13 +43,14 @@ By setting up, and using Trump template classes, the two steps below replace ste
 
 For Every Kind of Symbol:
 
-	1. Create custom templates for common sources of proprietary.
+	1. Create custom templates for common sources of proprietary data.
 
 For Every Symbol:
 
-	2. Instantiate a new :py:class:`~trump.orm.Symbol` using a template containing Tag, Feed, Source and Handle settings.
+	2. Instantiate a new :py:class:`~trump.orm.Symbol` using a template containing Tag, Feed, Source, Handle, Validity settings.
+	3. Tweak any details uncovered by the chosen templates for the symbol, or any of it's feeds.
 
-In practice, it's inevitable that compatible templates will be used where possible, and 	
+In practice, it's inevitable that templates will be used where possible, and do the heavy lifting of instantiation, but tweaks to each symbol would be made post-instantiation.	
 
 Caching
 -------
