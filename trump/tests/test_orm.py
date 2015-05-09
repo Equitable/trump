@@ -1,4 +1,4 @@
-from ..orm import SymbolManager
+from ..orm import SetupTrump, SymbolManager
 
 from ..templating.templates import GoogleFinanceFT, YahooFinanceFT,\
     SimpleExampleMT, CSVFT, FFillIT, FeedMatchVT
@@ -15,6 +15,9 @@ import datetime as dt
 curdir = os.path.dirname(os.path.realpath(__file__))
 
 class TestORM(object):
+    
+    def setup_method(self, test_method):
+        SetupTrump()
 
     def test_symbol_creation(self):
 

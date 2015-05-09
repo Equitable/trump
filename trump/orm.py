@@ -76,26 +76,16 @@ except:
            "because, What's the point of non-persistent persistent objects?")
     ENGINE_STR = "sqlite://"
 
-engine = create_engine(ENGINE_STR, echo=False)
-
-print "Using engine: {}".format(ENGINE_STR)
-
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
 
 Base = declarative_base()
-Base.metadata.bind = engine
 
-DBSession = sessionmaker(bind=engine)
-session = DBSession()
-
-metadata = MetaData(bind=engine)
+#metadata = MetaData(bind=engine)
 
 ADO = "all, delete-orphan"
 CC = {'onupdate': "CASCADE", 'ondelete': "CASCADE"}
 
-
-        
 class SymbolManager(object):
 
     """
@@ -103,14 +93,22 @@ class SymbolManager(object):
     It also maintains a global SQLAlchemy session.
     """
 
-    def __init__(self, ses=None):
+    def __init__(self, engine_string=None):
         """
         :param ses: session
             Will attempt to use the global SQLAlchemy session, unless
             specified otherwise.
         :return: SymbolManager
         """
-        self.ses = ses or session
+        engine_str = engine_string or ENGINE_STR
+        
+        engine = create_engine(engine_str, echo=False)
+        Base.metadata.bind = engine
+        DBSession = sessionmaker(bind=engine)
+        
+        print "Using engine: {}".format(ENGINE_STR)
+
+        self.ses = DBSession()
 
     def finish(self):
         """
@@ -159,6 +157,8 @@ class SymbolManager(object):
                 raise Exception(msg)
 
         sym = Symbol(name, description, units, agg_method)
+        
+        self.ses.add(sym)
 
         print "Creating {}".format(sym.name)
         sym.add_alias(name)
@@ -376,6 +376,7 @@ class Symbol(Base, ReprMixin):
             a string representing an index implementer (one of the classes in indexing.py)
 
         """
+        
         self.name = name
         self.description = description
         self.units = units
@@ -386,8 +387,6 @@ class Symbol(Base, ReprMixin):
         self.agg_method = agg_method
         self.datatable = None
         self.datatable_exists = False
-        # SQLAQ - Is this okay to do? It feels sneaky, dirty and wrong.
-        session.add(self)
     
     def set_indexing(self, index_template):
         """
@@ -402,11 +401,12 @@ class Symbol(Base, ReprMixin):
         Changing the indexing implementer works only on indicies of the same
         database type.  Otherwise, the symbol needs to be deleted first.
         """
+        objs = object_session(self)
         self.index.name = index_template.name
         self.index.indimp = index_template.imp_name
         self.index.case = index_template.case
         self.index.setkwargs(**index_template.kwargs)
-        session.commit()
+        objs.commit()
 
     def add_validator(self, val_template):
         """
@@ -438,7 +438,7 @@ class Symbol(Base, ReprMixin):
             
        
         self.validity.append(SymbolValidity(self, next_vid, validator, *args))
-        session.commit()
+        objs.commit()
 
     def update_handle(self, chkpnt_settings):
         """
@@ -580,8 +580,9 @@ class Symbol(Base, ReprMixin):
         data = data.reset_index()
         datarecords = data.to_dict(orient='records')
         
-        session.execute(self.datatable.insert(), datarecords)
-        session.commit()
+        objs = object_session(self)
+        objs.execute(self.datatable.insert(), datarecords)
+        objs.commit()
 
         if checkvalidity:
             try:
@@ -711,30 +712,37 @@ class Symbol(Base, ReprMixin):
         else:
             raise Exception("Invalid Feed {}".format(repr(obj)))
         self.feeds.append(fed)
-        session.add(fed)
+        
+        objs = object_session(self)
+        objs.add(fed)
 
         # SQLAQ - With Postgres, I don't need this commit here.
         # with SQLite, I do. On SQLite, if I don't have it, I get a really
         # strange situation where self.feeds can have two identical Feeds
         # matching, after only ever calling add_feed ONCE, on a brand new
         # SQLite file.
-        session.commit()
+        objs.commit()
 
     def add_alias(self, obj):
+        
+        objs = object_session(self)
+        
         if isinstance(obj, list):
             raise NotImplementedError
         elif isinstanceofany(obj, (str, unicode)):
             a = SymbolAlias(self, obj)
             self.aliases.append(a)
-            session.add(a)
+            objs.add(a)
 
     def data(self):
         """
         :return: rows from the datatable
         """
         dtbl = self.datatable
+
+        objs = object_session(self)
         if isinstance(dtbl, Table):
-            return session.query(dtbl.c.indx, dtbl.c.final).all()
+            return objs.query(dtbl.c.indx, dtbl.c.final).all()
         else:
             raise Exception("Symbol has no datatable")
 
@@ -744,8 +752,10 @@ class Symbol(Base, ReprMixin):
         """
         dtbl = self.datatable
         cols = (getattr(dtbl.c, col) for col in self.dt_all_cols)
+        
+        objs = object_session(self)
         if isinstance(dtbl, Table):
-            return session.query(*cols).all()
+            return objs.query(*cols).all()
         else:
             raise Exception("Symbol has no datatable")
 
@@ -815,7 +825,7 @@ class Symbol(Base, ReprMixin):
         database that stores all the cached data
         """
         try:
-            self.datatable = Table(self.name, metadata, autoload=True)
+            self.datatable = Table(self.name, Base.metadata, autoload=True)
         except NoSuchTableError:
             print "Creating datatable, cause it doesn't exist"
             self.datatable = self._datatable_factory()
@@ -823,11 +833,12 @@ class Symbol(Base, ReprMixin):
         self.datatable_exists = True
 
     def _refresh_datatable_schema(self):
+        objs = object_session(self)
         self.datatable = self._datatable_factory()
         self.datatable.drop(checkfirst=True)
         self.datatable.create()
         self.datatable_exists = True
-        session.commit()
+        objs.commit()
 
     def _datatable_factory(self):
         """
@@ -840,7 +851,7 @@ class Symbol(Base, ReprMixin):
         ind_sqlatyp = indexingtypes[self.index.indimp].sqlatyp
         dat_sqlatyp = datadefs[self.dtype.datadef].sqlatyp
 
-        atbl = Table(self.name, metadata,
+        atbl = Table(self.name, Base.metadata,
                      Column('indx', ind_sqlatyp, primary_key=True),
                      Column('final', dat_sqlatyp),
                      *(Column(fed_col, dat_sqlatyp) for fed_col in feed_cols),
@@ -1084,10 +1095,10 @@ class Feed(Base, ReprMixin):
         self.symbol = symbol
         self.data = None
 
-        self._symsess = object_session(symbol)
+        self.ses = object_session(symbol)
 
         if fnum is None:
-            qry = session.query(Feed.fnum)
+            qry = self.ses.query(Feed.fnum)
             existing_fnums = qry.filter(Feed.symname == symbol.name).all()
             existing_fnums = [n[0] for n in existing_fnums]
             if len(existing_fnums) == 0:
@@ -1100,9 +1111,9 @@ class Feed(Base, ReprMixin):
         if meta:
             for key in meta:
                 tmp = FeedMeta(attr=key, value=meta[key], feed=self)
-                self._symsess.add(tmp)
+                self.ses.add(tmp)
                 self.meta_map[key] = tmp
-                self._symsess.commit()
+                self.ses.commit()
 
         if sourcing:
             sk = None
@@ -1114,6 +1125,8 @@ class Feed(Base, ReprMixin):
                     fsrckw = FeedSourceKwarg(key, sourcing[key], fsrc)
                     fsrc.sourcekwargs.append(fsrckw)
             self.sourcing.append(fsrc)
+        
+        self.ses.commit()
 
         if munging:
             for i, meth in enumerate(munging.keys()):
@@ -1126,8 +1139,12 @@ class Feed(Base, ReprMixin):
                         val = value
                     fmg.mungeargs.append(FeedMungeKwarg(arg, val, feedmunge=fmg))
                 self.munging.append(fmg)
+        
+        self.ses.commit()
 
         self.handle = FeedHandle(feed=self)
+        
+        self.ses.commit()
 
     def update_handle(self, chkpnt_settings):
         """
@@ -1209,7 +1226,7 @@ class Feed(Base, ReprMixin):
                 raise NotImplementedError("pyscopg2")
             elif stype == 'DBAPI':
                 dbargs = ['dsn', 'user', 'password', 'host', 'database', 'port']
-                db = __import__(engine.driver)
+                db = __import__(self.engine.driver)
                 con_kwargs = {k: v for k, v in kwargs.items() if k in dbargs}
 
                 con = db.connect(**con_kwargs)
@@ -1613,13 +1630,21 @@ class FailSafe(Base, ReprMixin):
 
     def __init__(self, *args, **kwargs):
         super(FailSafe, self).__init__(*args, **kwargs)
-try:
-    Base.metadata.create_all(engine)
-    print "Trump is ready."
-except ProgrammingError as pgerr:
-    print pgerr.statement
-    print pgerr.message
-    raise
+
+def SetupTrump(engine_string=None):
+    
+    engine_str = engine_string or ENGINE_STR
+    
+    try:
+        engine = create_engine(engine_str)
+        #Base.metadata.bind = engine
+        Base.metadata.create_all(engine)
+        print "Trump is installed @ " + engine_str
+    except ProgrammingError as pgerr:
+        print pgerr.statement
+        print pgerr.message
+        raise
+    return True
 
 if __name__ == '__main__':
 
