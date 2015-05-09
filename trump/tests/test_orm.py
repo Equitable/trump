@@ -20,6 +20,10 @@ class TestORM(object):
         self.eng = SetupTrump("sqlite://")
         self.sm = SymbolManager(self.eng)
 
+    def test_setuptrump(self):
+        SymbolManager("sqlite://")
+        SymbolManager()
+        
     def test_symbol_creation(self):
 
         sm = self.sm
