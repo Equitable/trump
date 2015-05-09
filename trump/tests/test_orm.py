@@ -17,11 +17,12 @@ curdir = os.path.dirname(os.path.realpath(__file__))
 class TestORM(object):
     
     def setup_method(self, test_method):
-        SetupTrump()
+        self.eng = SetupTrump("sqlite://")
+        self.sm = SymbolManager(self.eng)
 
     def test_symbol_creation(self):
 
-        sm = SymbolManager()
+        sm = self.sm
 
         sym = sm.create("TSLA", overwrite=True)
 
@@ -35,7 +36,7 @@ class TestORM(object):
 
     def test_symbol_munging_mod(self):
 
-        sm = SymbolManager()
+        sm = self.sm
 
         sym = sm.create("TSLA", overwrite=True)
 
@@ -52,7 +53,7 @@ class TestORM(object):
 
     def test_symbol_frequency_mod(self):
 
-        sm = SymbolManager()
+        sm = self.sm
 
         sym = sm.create("TSLA", overwrite=True)
 
@@ -73,7 +74,7 @@ class TestORM(object):
 
     def test_two_symbols(self):
 
-        sm = SymbolManager()
+        sm = self.sm
 
         sym = sm.create("MSFT", overwrite=True)
 
@@ -99,7 +100,7 @@ class TestORM(object):
 
     def test_tags_and_search(self):
 
-        sm = SymbolManager()
+        sm = self.sm
 
         sym = sm.create("MSFT", overwrite=True)
 
@@ -127,7 +128,7 @@ class TestORM(object):
 
     def test_existence_deletion(self):
 
-        sm = SymbolManager()
+        sm = self.sm
 
         sym = sm.create("new", overwrite=True)
 
@@ -150,7 +151,7 @@ class TestORM(object):
 
     def test_pydata_csv(self):
 
-        sm = SymbolManager()
+        sm = self.sm
 
         sym = sm.create("new", overwrite=True)
         
@@ -168,7 +169,7 @@ class TestORM(object):
     
     def test_datetime_float_override_failsafe(self):
         
-        sm = SymbolManager()
+        sm = self.sm
 
         sym = sm.create("dtflor", overwrite=True)
         
@@ -202,7 +203,7 @@ class TestORM(object):
 
     def test_int_index_string_data_override_failsafe(self):
         
-        sm = SymbolManager()
+        sm = self.sm
 
         sym = sm.create("intstrdtflor", overwrite=True)
         
@@ -234,7 +235,7 @@ class TestORM(object):
 
     def test_add_feed_post_cache(self):
         
-        sm = SymbolManager()
+        sm = self.sm
 
         sym = sm.create("onetwo", overwrite=True)
         
@@ -262,7 +263,7 @@ class TestORM(object):
         
     def test_symbol_describe(self):
         
-        sm = SymbolManager()
+        sm = self.sm
         
         sym = sm.create("describer", overwrite=True)
         
@@ -290,7 +291,7 @@ class TestORM(object):
 
     def test_update_handle(self):
         
-        sm = SymbolManager()
+        sm = self.sm
         
         sym = sm.create("uht", overwrite=True)
 
@@ -314,7 +315,7 @@ class TestORM(object):
 
     def test_index_templating(self):
         
-        sm = SymbolManager()
+        sm = self.sm
         
         sym = sm.create("indt", overwrite=True)
         
@@ -331,7 +332,7 @@ class TestORM(object):
 
     def test_validity_feed_match(self):
         
-        sm = SymbolManager()
+        sm = self.sm
         
         sym = sm.create("fmvt", overwrite=True)
         
@@ -348,7 +349,7 @@ class TestORM(object):
 
     def test_index_kwargs(self):
         
-        sm = SymbolManager()
+        sm = self.sm
         
         sym = sm.create("tinkw", overwrite=True)
 
@@ -370,7 +371,7 @@ class TestORM(object):
 
     def test_view_creation(self):
         
-        sm = SymbolManager()
+        sm = self.sm
         
         for s in ['va', 'vb', 'vc']:
             sym = sm.create(s, overwrite=True)

@@ -93,16 +93,20 @@ class SymbolManager(object):
     It also maintains a global SQLAlchemy session.
     """
 
-    def __init__(self, engine_string=None):
+    def __init__(self, engine_or_eng_str=None):
         """
         :param ses: session
             Will attempt to use the global SQLAlchemy session, unless
             specified otherwise.
         :return: SymbolManager
         """
-        engine_str = engine_string or ENGINE_STR
+        if engine_or_eng_str is None:
+            engine = create_engine(ENGINE_STR, echo=False)
+        elif isinstance(engine_or_eng_str, (str, unicode)):
+            engine = create_engine(engine_or_eng_str, echo=False)
+        else:
+            engine = engine_or_eng_str
         
-        engine = create_engine(engine_str, echo=False)
         Base.metadata.bind = engine
         DBSession = sessionmaker(bind=engine)
         
@@ -1640,6 +1644,7 @@ def SetupTrump(engine_string=None):
         #Base.metadata.bind = engine
         Base.metadata.create_all(engine)
         print "Trump is installed @ " + engine_str
+        return engine
     except ProgrammingError as pgerr:
         print pgerr.statement
         print pgerr.message

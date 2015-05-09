@@ -28,8 +28,13 @@ See the documentation section "Configuring Data Sources" for guidance.
 
 Step 4. Run SetupTrump()
 ------------------------
-Running ``from trump import SetupTrump`` will create all the tables required in whatever database
-was provided in Step 2.
+Running the code block below, will create all the tables required in the database
+provided in Step 2.
+
+.. code-block:: python
+	
+	from trump import SetupTrump
+	SetupTrump()
 
 If it all worked, you will see "Trump is installed @..."
 
