@@ -175,22 +175,22 @@ class TestORM(object):
 
         sym.add_feed(fdtemp)
         
-        sym.add_override(dt.date(2012, 12, 31), 5, user='tester',
+        sm.add_override(sym, dt.date(2012, 12, 31), 5, user='tester',
                          comment='testcomment')
         sym.cache()
         df = sym.df
         assert isinstance(df.index, pd.DatetimeIndex)
         assert df.iloc[2][0] == 5
 
-        sym.add_fail_safe(dt.date(2011, 12, 31), -1, user='tester',
+        sm.add_fail_safe(sym, dt.date(2011, 12, 31), -1, user='tester',
                         comment='testcomment2')
         sym.cache()
         df = sym.df
         assert df.iloc[1][0] == -1        
 
-        sym.add_override(dt.date(2012, 12, 31), 4, user='tester',
+        sm.add_override(sym, dt.date(2012, 12, 31), 4, user='tester',
                          comment='testcomment3')
-        sym.add_fail_safe(dt.date(2011, 12, 31), -2, user='tester',
+        sm.add_fail_safe(sym, dt.date(2011, 12, 31), -2, user='tester',
                         comment='testcomment4')
         sym.cache()
         df = sym.df
@@ -218,7 +218,7 @@ class TestORM(object):
         fdtemp = CSVFT(testdata, 'Amount', index_col=0)
         sym.add_feed(fdtemp)
 
-        sym.add_override(2015, 'z', user='tester',
+        sm.add_override(sym, 2015, 'z', user='tester',
                          comment='testcomment6')
  
         sym.cache()

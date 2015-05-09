@@ -324,7 +324,75 @@ class SymbolManager(object):
         self.ses.commit()        
         self.ses.execute(qry)
         self.ses.commit()
+    def add_override(self, symbol, ind, val, dt_log=None, user=None, comment=None):
+        """
+        Appends a single indexed-value pair, to a symbol object, to be
+        used during the final steps of the aggregation of the datatable.
 
+        Overrides, get applied with highest priority.
+        """
+
+        if not isinstance(symbol, (str, unicode)):
+            symbol = symbol.name
+
+        if not dt_log:
+            dt_log = dt.datetime.now()
+
+        qry = self.ses.query(func.max(Override.ornum).label('max_ornum'))
+            
+        qry = qry.filter_by(symname = symbol)
+        
+        cur_ornum = qry.one()
+        
+        if cur_ornum[0] is None:
+            next_ornum = 0
+        else:
+            next_ornum = cur_ornum[0] + 1            
+
+        tmp = Override(symname=symbol,
+                       ind=ind,
+                       val=val,
+                       dt_log=dt_log,
+                       user=user,
+                       comment=comment,
+                       ornum=next_ornum)
+                                             
+        self.ses.add(tmp)
+        self.ses.commit()
+
+    def add_fail_safe(self, symbol, ind, val,
+                      dt_log=None, user=None, comment=None):
+        """
+        Appends a single indexed-value, to a symbol object, to be
+        used during the final steps of the aggregation of the datatable.
+
+        Fail safes, get applied with the lowest priority.
+        """
+        if not isinstance(symbol, (str, unicode)):
+            symbol = symbol.name
+
+        if not dt_log:
+            dt_log = dt.datetime.now()
+            
+        qry = self.ses.query(func.max(FailSafe.fsnum).label('max_fsnum'))
+        qry = qry.filter_by(symname = symbol)
+        
+        cur_fsnum = qry.one()
+        
+        if cur_fsnum[0] is None:
+            next_fsnum = 0
+        else:
+            next_fsnum = cur_fsnum[0] + 1        
+            
+        tmp = FailSafe(symname=symbol,
+                       ind=ind,
+                       val=val,
+                       dt_log=dt_log,
+                       user=user,
+                       comment=comment,
+                       fsnum=next_fsnum)
+        self.ses.add(tmp)
+        self.ses.commit()
 
 class Symbol(Base, ReprMixin):
     __tablename__ = '_symbols'
@@ -641,71 +709,7 @@ class Symbol(Base, ReprMixin):
                                                        fed.ftype))
         return "\n".join(lines)
 
-    def add_override(self, ind, val, dt_log=None, user=None, comment=None):
-        """
-        Appends a single indexed-value pair, to a symbol object, to be
-        used during the final steps of the aggregation of the datatable.
 
-        Overrides, get applied with highest priority.
-        """
-        objs = object_session(self)
-
-        if not dt_log:
-            dt_log = dt.datetime.now()
-
-        qry = objs.query(func.max(Override.ornum).label('max_ornum'))
-        qry = qry.filter_by(symname = self.name)
-        
-        cur_ornum = qry.one()
-        
-        if cur_ornum[0] is None:
-            next_ornum = 0
-        else:
-            next_ornum = cur_ornum[0] + 1            
-
-        tmp = Override(symname=self.name,
-                       ind=ind,
-                       val=val,
-                       dt_log=dt_log,
-                       user=user,
-                       comment=comment,
-                       ornum=next_ornum)
-                                             
-        objs.add(tmp)
-        objs.commit()
-
-    def add_fail_safe(self, ind, val,
-                      dt_log=None, user=None, comment=None):
-        """
-        Appends a single indexed-value, to a symbol object, to be
-        used during the final steps of the aggregation of the datatable.
-
-        Fail safes, get applied with the lowest priority.
-        """
-        objs = object_session(self)
-
-        if not dt_log:
-            dt_log = dt.datetime.now()
-            
-        qry = objs.query(func.max(FailSafe.fsnum).label('max_fsnum'))
-        qry = qry.filter_by(symname = self.name)
-        
-        cur_fsnum = qry.one()
-        
-        if cur_fsnum[0] is None:
-            next_fsnum = 0
-        else:
-            next_fsnum = cur_fsnum[0] + 1        
-            
-        tmp = FailSafe(symname=self.name,
-                       ind=ind,
-                       val=val,
-                       dt_log=dt_log,
-                       user=user,
-                       comment=comment,
-                       fsnum=next_fsnum)
-        objs.add(tmp)
-        objs.commit()
 
     def del_tags(self, tags):
         """ remove a tag or tags from a symbol """
