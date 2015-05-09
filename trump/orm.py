@@ -1226,7 +1226,7 @@ class Feed(Base, ReprMixin):
                 raise NotImplementedError("pyscopg2")
             elif stype == 'DBAPI':
                 dbargs = ['dsn', 'user', 'password', 'host', 'database', 'port']
-                db = __import__(self.engine.driver)
+                db = __import__(self.ses.bind.driver)
                 con_kwargs = {k: v for k, v in kwargs.items() if k in dbargs}
 
                 con = db.connect(**con_kwargs)
