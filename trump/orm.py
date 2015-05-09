@@ -94,68 +94,7 @@ metadata = MetaData(bind=engine)
 ADO = "all, delete-orphan"
 CC = {'onupdate': "CASCADE", 'ondelete': "CASCADE"}
 
-class Index(Base, ReprMixin):
-    __tablename__ = "_indicies"
 
-    symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
-                     primary_key=True)
-
-    name = Column("name", String, nullable=False)
-    """string to name the index, only used when serving."""
-
-    indimp = Column("indimp", String, nullable=False)
-    """string representing a :py:class:`~trump.indexing.IndexImplementer`."""
-
-    case = Column("case", String)
-    """string used in a :class:`~.indexing.IndexImplementer` switch statement."""
-
-    kwargs = relationship("IndexKwarg", lazy="dynamic", cascade=ADO)
-
-    def __init__(self, name, indimp, case=None, kwargs={}, sym=None):
-
-        set_symbol_or_symname(self, sym)
-
-        self.name = name
-        self.indimp = indimp
-        self.case = case or "asis"
-        self.setkwargs(**kwargs)
-
-    def setkwargs(self, **kwargs):
-        self.kwargs = []
-        if kwargs is not None:
-            list_of_kwargs = []
-            for kword, val in kwargs.iteritems():
-                list_of_kwargs.append(IndexKwarg(kword, val))
-            self.kwargs = list_of_kwargs
-        else:
-            self.kwargs = []
-
-    def getkwargs(self):
-        kwargs = {}
-        for indkw in self.kwargs:
-            kwargs[indkw.kword] = indkw.val
-        return kwargs
-
-
-class IndexKwarg(Base, ReprMixin, DuckTypeMixin):
-    __tablename__ = "_index_kwargs"
-
-    symname = Column('symname', String, ForeignKey('_indicies.symname', **CC),
-                     primary_key=True)
-
-    kword = Column('kword', String, primary_key=True)
-
-    _colswitch = Column('colswitch', Integer)
-
-    boolcol = Column('boolcol', Boolean)
-    strcol = Column('strcol', String)
-    intcol = Column('intcol', Integer)
-    floatcol = Column('floatcol', Float)
-    reprcol = Column('reprcol', ReprObjType)
-
-    def __init__(self, kword, val):
-        self.kword = kword
-        self.setval(val)
         
 class SymbolManager(object):
 
@@ -1050,6 +989,68 @@ class SymbolHandle(Base, ReprMixin):
                 settings = chkpnt_settings[checkpoint]
                 setattr(self, checkpoint, settings)
 
+class Index(Base, ReprMixin):
+    __tablename__ = "_indicies"
+
+    symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
+                     primary_key=True)
+
+    name = Column("name", String, nullable=False)
+    """string to name the index, only used when serving."""
+
+    indimp = Column("indimp", String, nullable=False)
+    """string representing a :py:class:`~trump.indexing.IndexImplementer`."""
+
+    case = Column("case", String)
+    """string used in a :class:`~.indexing.IndexImplementer` switch statement."""
+
+    kwargs = relationship("IndexKwarg", lazy="dynamic", cascade=ADO)
+
+    def __init__(self, name, indimp, case=None, kwargs={}, sym=None):
+
+        set_symbol_or_symname(self, sym)
+
+        self.name = name
+        self.indimp = indimp
+        self.case = case or "asis"
+        self.setkwargs(**kwargs)
+
+    def setkwargs(self, **kwargs):
+        self.kwargs = []
+        if kwargs is not None:
+            list_of_kwargs = []
+            for kword, val in kwargs.iteritems():
+                list_of_kwargs.append(IndexKwarg(kword, val))
+            self.kwargs = list_of_kwargs
+        else:
+            self.kwargs = []
+
+    def getkwargs(self):
+        kwargs = {}
+        for indkw in self.kwargs:
+            kwargs[indkw.kword] = indkw.val
+        return kwargs
+
+
+class IndexKwarg(Base, ReprMixin, DuckTypeMixin):
+    __tablename__ = "_index_kwargs"
+
+    symname = Column('symname', String, ForeignKey('_indicies.symname', **CC),
+                     primary_key=True)
+
+    kword = Column('kword', String, primary_key=True)
+
+    _colswitch = Column('colswitch', Integer)
+
+    boolcol = Column('boolcol', Boolean)
+    strcol = Column('strcol', String)
+    intcol = Column('intcol', Integer)
+    floatcol = Column('floatcol', Float)
+    reprcol = Column('reprcol', ReprObjType)
+
+    def __init__(self, kword, val):
+        self.kword = kword
+        self.setval(val)
 
 class Feed(Base, ReprMixin):
 
