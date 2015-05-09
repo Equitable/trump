@@ -1,32 +1,15 @@
 
-Aggregation
------------
-
-A Symbol's feeds are queried with each cache, then aggregated in 
-a per-Symbol defined method.  The process relies on the pandas
-Dataframe representation of the Symbol's datable.
-
-The Datatables
-**************
-
-With every Symbol cache, a Dataframe is created, and stored in the database
-in a table matching the symbol's name.  This table, is referred to as the datatable.
-The Dataframe has a column for every feed, plus two for override and failsafe.
-The datatable, has the same columns, plus one for the index, and the final data.
-The final data column, is calculated by the specified aggregation function, definedat
-at, or updated after, Symbol instantiation
-
 Aggregation Methods
-*******************
+-------------------
 
 Trump currently has two types of aggregation methods:
 
-1. Row-apply
-2. Column-choose
+1. Apply-Row
+2. Choose-Column
 
-As the names infer, the row-apply methods have one thing in common,
+As the names infer, the apply-row methods have one thing in common,
 they build the final data values by looking at each row of the datatable, one at a time.
-The column-choose methods, compare the data available in each column, then return an entire series.
+The choose-column methods, compare the data available in each column, then return an entire series.
 Row-apply methods all take a pandas Series, and return a value.  Column-choose methods
 all take a pandas Dataframe, and return a series. 
 

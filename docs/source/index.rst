@@ -1,5 +1,8 @@
+Trump
+=====
+
 Introduction
----------------------
+------------
 
 Trump is a framework for objectifying data, with the goal of centralizing the management
 of data feeds to enable quicker deployment of analytics, applications, 
@@ -32,7 +35,6 @@ Getting Started
    
    install
    usage
-   dataflow
    
 Object Model
 ------------
@@ -40,8 +42,8 @@ Object Model
 .. toctree::
    :maxdepth: 4
 
-   framework   
    objectmodel/orm
+   dataflow
    aggregation
 
 Template Classes

@@ -2,8 +2,8 @@ Data Flow
 =========
 Trump centralizes the flow of information using two concepts:
 
-1. Objectification
-2. Caching
+1. Objectification - the process of persistently storing information about data.
+2. Caching - the process of fetching data, saving it systematically, and serving it intelligently.
 
 Objectification
 ---------------
@@ -55,8 +55,52 @@ In practice, it's inevitable that templates will be used where possible, and do 
 Caching
 -------
 
-The cache process, is more than just caching, but that's the main purpose.  When executed, data from each Feed is queried, and munged according to predefined instructions,
-on a per-feed basis.  Then, it's concatenated into a pandas Dataframe. A :py:class:`~trump.indexing.IndexImplementor` corrects the index.
-An aggregation method converts the Dataframe into a single Series. Single values are overrode, and blanks get populated, based on any previously
-defined :py:class:`~trump.orm.Override` and :py:class:`~trump.orm.FailSafe` associated with the symbol being cached.
-This entire result is then stored in the symbol's datatable, where it can be quickly checked for validity and served to applications.
+The cache process, is more than just caching, but that's the main purpose.  The cache process,
+essentially builds a fresh datatable.  In order to cache a symbol, Trump performs the following
+steps:
+
+   For each Feed...
+   
+   1. Fetches a fresh copy of each Feed, based on the :py:class:`~trump.orm.FeedSource` parameters.
+   2. Munges each Feed, based on the :py:class:`~trump.orm.FeedMunge` parameters.
+   3. Converts the datatype using a :py:class:`~trump.orm.SymbolDataDef`
+   
+   Then...
+   
+   4. Concatenates the data from each feed, into a dataframe.
+   5. Converts the index datatype using the Symbol's :py:class:`~trump.orm.Index` parameters.
+   6. Two columns are appended to the dataframe, one for overrides, one for failsafes.  Any which exist, are fetched.
+   7. An aggregation method is used to build a final series out of the data from the feeds and any overrides/failsafes.
+   8. The dataframe is stored in the database, in it's own table, called a datatable.  
+   9. Optionally, any validity checks, which are set up in :py:class:`~trump.orm.SymbolValidity`, are performed.
+
+When executed, data from each Feed is queried, and munged according to predefined instructions,
+on a per-feed basis.  The feeds are joined together, each forming columns of a pandas Dataframe. 
+A :py:class:`~trump.indexing.IndexImplementor` corrects the index.  An aggregation method converts the Dataframe into a single, final, Series.
+Depending on the aggregation method, any single values are overrode, and blanks get populated, based on any previously
+defined :py:class:`~trump.orm.Override` and :py:class:`~trump.orm.FailSafe` objects associated with the symbol being cached.
+
+The Datatable & Aggregation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Steps #6, #7 & #8 above are easiest to understand, with a graphical look at the final product: a cached Symbol's datatable.
+
+An example of a datatable, is in the figure below.  This, is a simple table, common to anybody with SQL knowledge.
+
+.. figure:: datatable.png
+
+   Example of a symbol's datatable, with two feeds of data, both with problems.
+
+The example datatable, seen above, is one symbol with two feeds, both of which had problems.  One of the 
+feeds stopped completely on the 11th, the other had a missing datapoint.  Plus, a previous problem,
+looks like it was manually overrode on the 6th, but then later, the feed started working again.  
+The overrides and failsafes were applied appropriately on the 6th, and the 12th, while the 
+failsafe on the 10th, was ignored after the feed #2 started working again.
+
+It's easy to imagine the simple Dataframe after step #5 of the cache process.  It would have a single
+index, then a column for every Feed.  #6, appends the two columns mentioned, along with any individual datapoints. 
+Then an aggregation method creates the 'final' column.  Details about the specific aggregation method are defined at, or updated after, 
+Symbol instantiation.  Up to and including the aggregation, all operations are simply changing the dataframe of feeds, overrides, and failsafes.
+
+After the final is calculated, the dataframe is stored until the next cache, as a table - the datatable, illustrated in the figure above.  
+It can then be quickly checked for validity and served to applications.
