@@ -1,0 +1,1 @@
+from trump.orm import SetupTrump
