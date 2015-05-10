@@ -601,29 +601,38 @@ class Symbol(Base, ReprMixin):
         
         return smrp
 
-    def check_validity(self, report=True):
+    def check_validity(self, checks=None, report=True):
         
         if report:
             reportpoints = []
             
         allchecks = []
         
+        checks_specified=False
+        
+        if isinstance(checks, (str, unicode)):
+            checks = [checks]
+            checks_specified = True
+        elif isinstance(checks, (list, tuple)):
+            checks_specified = True
+            
         for val in self.validity:
             
-            ValCheck = validitychecks[val.validator]
-            
-            anum = ValCheck.__init__.func_code.co_argcount - 2
-            
-            args = []
-            for arg in SymbolValidity.argnames:
-                args.append(getattr(val, arg))
-            
-            valid = ValCheck(self.datatable_df, *args[:anum])
-            res = valid.result
-            allchecks.append(res)
-            
-            rp = ReportPoint('validation', val.validator, res, str(args[:anum]))
-            reportpoints.append(rp)
+            if (val.validator in checks) or (not checks_specified):
+                ValCheck = validitychecks[val.validator]
+                
+                anum = ValCheck.__init__.func_code.co_argcount - 2
+                
+                args = []
+                for arg in SymbolValidity.argnames:
+                    args.append(getattr(val, arg))
+                
+                valid = ValCheck(self.datatable_df, *args[:anum])
+                res = valid.result
+                allchecks.append(res)
+                
+                rp = ReportPoint('validation', val.validator, res, str(args[:anum]))
+                reportpoints.append(rp)
         
         if report:
             return all(allchecks), reportpoints
