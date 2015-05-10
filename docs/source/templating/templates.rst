@@ -83,4 +83,6 @@ Indicies
 Validity
 ~~~~~~~
 
-.. autoclass:: trump.templating.FeedMatchVT
+.. autoclass:: trump.templating.FeedsMatchVT
+
+.. autoclass:: trump.templating.DateExistsVT

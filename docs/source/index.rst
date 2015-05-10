@@ -32,6 +32,7 @@ Getting Started
 
 .. toctree::
    :maxdepth: 2
+   :glob:
    
    install
    usage
@@ -53,9 +54,3 @@ Template Classes
    :maxdepth: 4
    
    templating/templates
-   
-Index
------
-
-* :ref:`genindex`
-* :ref:`search`
