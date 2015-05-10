@@ -1,7 +1,7 @@
 from ..orm import SetupTrump, SymbolManager
 
 from ..templating.templates import GoogleFinanceFT, YahooFinanceFT,\
-    SimpleExampleMT, CSVFT, FFillIT, FeedMatchVT, DateExistsVT
+    SimpleExampleMT, CSVFT, FFillIT, FeedsMatchVT, DateExistsVT
 
 import pandas as pd
 
@@ -340,7 +340,7 @@ class TestORM(object):
         
         sym = sm.create("fmvt", overwrite=True)
         
-        fm = FeedMatchVT(1,2)
+        fm = FeedsMatchVT(1,2)
         sym.add_validator(fm)
 
         testdata = os.path.join(curdir,'testdata','testdailydata.csv')

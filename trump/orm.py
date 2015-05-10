@@ -615,6 +615,8 @@ class Symbol(Base, ReprMixin):
             checks_specified = True
         elif isinstance(checks, (list, tuple)):
             checks_specified = True
+        else:
+            checks = []
             
         for val in self.validity:
             

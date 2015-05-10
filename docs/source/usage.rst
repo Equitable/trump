@@ -92,7 +92,7 @@ Adding the Symbol
 
    from trump.orm import SymbolManager
    from trump.templating import QuandlFT, GoogleFinanceFT, 
-                                DateExistsVT, FeedMatchVT
+                                DateExistsVT, FeedsMatchVT
 
    sm = SymbolManager()
 
@@ -147,7 +147,7 @@ Using the Symbol
    # settings stored persistently in the object
    
    # Eg 1
-   if TSLA.check_validity('FeedMatch'):
+   if TSLA.check_validity('FeedsMatch'):
       #do stuff with clean data
 
    # Eg 2
