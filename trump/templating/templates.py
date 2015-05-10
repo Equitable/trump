@@ -213,7 +213,13 @@ class FeedMatchVT(bValidity):
         self.arga = feed_left
         self.argb = feed_right
         self.argc = lastx
-        
+
+class DateExistsVT(bValidity):
+    def __init__(self, date='today'):
+        super(DateExistsVT, self).__init__()
+        self.validator = 'DateExists'
+        self.arga = date
+
 # *****************************************************************************
 #
 #  Feed Templates

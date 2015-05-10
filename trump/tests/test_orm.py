@@ -1,7 +1,7 @@
 from ..orm import SetupTrump, SymbolManager
 
 from ..templating.templates import GoogleFinanceFT, YahooFinanceFT,\
-    SimpleExampleMT, CSVFT, FFillIT, FeedMatchVT
+    SimpleExampleMT, CSVFT, FFillIT, FeedMatchVT, DateExistsVT
 
 import pandas as pd
 
@@ -17,7 +17,7 @@ curdir = os.path.dirname(os.path.realpath(__file__))
 class TestORM(object):
     
     def setup_method(self, test_method):
-        self.eng = SetupTrump("sqlite://")
+        self.eng = SetupTrump()
         self.sm = SymbolManager(self.eng)
 
     def test_setuptrump(self):
@@ -351,6 +351,22 @@ class TestORM(object):
         
         sym.cache()
 
+    def test_validity_date_exists(self):
+        
+        sm = self.sm
+        
+        sym = sm.create("devt", overwrite=True)
+        
+        fm = DateExistsVT(dt.date(2015,03,15))
+        sym.add_validator(fm)
+
+        testdata = os.path.join(curdir,'testdata','testdailydata.csv')
+        fdtemp = CSVFT(testdata, 'Amount', parse_dates=0, index_col=0)
+        sym.add_feed(fdtemp)
+        fdtemp = CSVFT(testdata, 'Amount', parse_dates=0, index_col=0)
+        sym.add_feed(fdtemp)
+        
+        sym.cache()
     def test_index_kwargs(self):
         
         sm = self.sm

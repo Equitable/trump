@@ -1,6 +1,6 @@
 import inspect
 import sys
-
+import datetime as dt
 import pandas as pd
 
 #imported like this, cause otherwise the docs won't build.
@@ -29,6 +29,26 @@ class FeedMatch(object):
     def result(self):
         return self.match
 
+class DateExists(object):
+    def __init__(self, data, date='today'):
+        self.data = data
+
+        if isinstance(date, (str, unicode)):
+            if date == 'today':
+                cur_date = dt.date.today()
+            elif date == 'yesterday':
+                cur_date = dt.date.today() - dt.timedelta(days=1)
+            else:
+                raise Exception("{} is not convertible to a date".format(date))
+        else:
+            cur_date = date
+        
+        self.today_exists = cur_date in self.data.index
+        
+    @property
+    def result(self):
+        return self.today_exists
+        
 def _pred(aclass):
     """
     :param aclass
