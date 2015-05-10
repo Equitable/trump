@@ -363,8 +363,6 @@ class TestORM(object):
         testdata = os.path.join(curdir,'testdata','testdailydata.csv')
         fdtemp = CSVFT(testdata, 'Amount', parse_dates=0, index_col=0)
         sym.add_feed(fdtemp)
-        fdtemp = CSVFT(testdata, 'Amount', parse_dates=0, index_col=0)
-        sym.add_feed(fdtemp)
         
         sym.cache()
     def test_index_kwargs(self):

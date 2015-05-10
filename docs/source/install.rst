@@ -1,8 +1,8 @@
 Installation
 ============
 
-Step 1. Install Package:
-------------------------
+Step 1. Install Package
+-----------------------
 ``pip install trump``
 
 or
