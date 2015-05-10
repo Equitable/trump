@@ -93,6 +93,12 @@ class RollingMeanMT(bMunging, mixin_pnab):
         super(RollingMeanMT, self).__init__()
         self.bld_rolling_mean(**kwargs)
 
+class PctChangeMT(bMunging, mixin_pab):
+    """ Example munging template, which implements pct_change."""
+    def __init__(self, **kwargs):
+        super(PctChangeMT, self).__init__()
+        self.bld_pct_change(**kwargs)
+        
 class FFillRollingMeanMT(bMunging, mixin_pab, mixin_pnab):
     """ Example munging template, which implements a ffill using the generic
         pandas attribute based munging, and then a rolling mean."""

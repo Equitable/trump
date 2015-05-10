@@ -1,7 +1,7 @@
 from ..orm import SetupTrump, SymbolManager
 
 from ..templating.templates import GoogleFinanceFT, YahooFinanceFT,\
-    SimpleExampleMT, CSVFT, FFillIT, FeedsMatchVT, DateExistsVT
+    SimpleExampleMT, CSVFT, FFillIT, FeedsMatchVT, DateExistsVT, PctChangeMT
 
 import pandas as pd
 
@@ -54,6 +54,26 @@ class TestORM(object):
 
         df = sym.df
         assert round(df.ix['2015-03-20'][0], 4) == round(0.031638, 4)
+
+    def test_symbol_pct_change_munge(self):
+
+        sm = self.sm
+
+        sym = sm.create("GOOG", overwrite=True)
+
+        fdtemp = GoogleFinanceFT("GOOG")
+
+        mgtemp = PctChangeMT()
+
+        sym.add_feed(fdtemp, munging=mgtemp)
+        
+        sym.cache()
+
+        df = sym.df
+
+        assert round(df.ix['2015-05-08'][0], 4) == round(0.014170, 4)
+        
+        print df.tail(5)
 
     def test_symbol_frequency_mod(self):
 

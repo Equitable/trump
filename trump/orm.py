@@ -396,7 +396,7 @@ class Symbol(Base, ReprMixin):
         """
         Update a symbol's indexing.  
 
-        :param: index_template, bIndex or bIndex-like (ie, *IT)
+        :param: index_template, bIndex or bIndex-like
             an index template used to overwrite all 
             details about the symbol's current index.
 
@@ -416,11 +416,10 @@ class Symbol(Base, ReprMixin):
         """
         Creates and adds a SymbolValidity object to the Symbol.
 
-        :param: validity_template, bValidity or bValidity-like (ie, *VT)
+        :param: validity_template, bValidity or bValidity-like
             a validity template.
 
         :return: None
-        
         """
         validator = val_template.validator
         

@@ -33,13 +33,13 @@ Symbol Manager
 --------------
 
 .. autoclass:: trump.orm.SymbolManager
-   :members: create, delete, get, complete, finish, search_tag, build_view_from_tag
+   :members: create, delete, get, complete, finish, search_tag, build_view_from_tag, add_override, add_fail_safe
 
 Symbols
 -------
 
 .. autoclass:: trump.orm.Symbol
-   :members: cache, describe, add_override, add_fail_safe, update_handle
+   :members: cache, describe, update_handle, add_feed, add_tags, add_validator, set_indexing, check_validity, isvalid
 
 .. autoclass:: trump.orm.SymbolTag
 

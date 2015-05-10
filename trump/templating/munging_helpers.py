@@ -19,20 +19,20 @@ class mixin_pab(object):
     Eg. DataFrame.pct_change(...)"""
 
     def bld_abs(self):
-        """implement's pandas .abs()"""
+        """implements pandas .abs()"""
         self.abs = {'mtype': pab, 'kwargs': {}}
 
     def bld_pct_change(self, **kwargs):
-        """implement's pandas .pct_change()"""
+        """implements pandas .pct_change()"""
         self.pct_change = {'mtype': pab, 'kwargs': kwargs}
 
     def bld_add(self, **kwargs):
-        """implement's pandas .add()"""
+        """implements pandas .add()"""
         self.add = {'mtype': pab, 'kwargs': kwargs}
 
     def _bld_pab_generic(self, funcname, **kwargs):
         """
-        implement's a generic version of an attribute based pandas function
+        implements a generic version of an attribute based pandas function
         """
         margs = {'mtype': pab, 'kwargs': kwargs}
         self.__setattr__(funcname, margs)
