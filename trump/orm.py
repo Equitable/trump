@@ -79,7 +79,9 @@ except:
 rbd = read_config(sect='options', sett='raise_by_default')
 if rbd.upper() == 'TRUE':
     rbd = BitFlag(1)
-    
+else:
+    rbd = None
+
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
 
