@@ -377,7 +377,7 @@ class TestORM(object):
         
         sym = sm.create("devt", overwrite=True)
         
-        fm = DateExistsVT(dt.date(2015,03,15))
+        fm = DateExistsVT(dt.date(2010,02,15))
         sym.add_validator(fm)
 
         testdata = os.path.join(curdir,'testdata','testdailydata.csv')

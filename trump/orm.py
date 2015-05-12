@@ -621,7 +621,7 @@ class Symbol(Base, ReprMixin):
             
             if (val.validator in checks) or (not checks_specified):
                 ValCheck = validitychecks[val.validator]
-                
+
                 anum = ValCheck.__init__.func_code.co_argcount - 2
                 
                 args = []

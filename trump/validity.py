@@ -15,16 +15,22 @@ class ValidityCheck(object):
     def result(self):
         return True
 
-class FeedMatch(object):
+class FeedsMatch(object):
     def __init__(self, data, left, right, lastn):
         self.data = data
-
+        
         feed_left = "feed%03d" % (left)
         feed_right = "feed%03d" % (right)
         
-        self.match = series_equal(data[feed_left][-1*lastn:],
-                                  data[feed_right][-1*lastn:])
+        self.match = False
         
+        try:
+            series_equal(data[feed_left][-1*lastn:],
+                         data[feed_right][-1*lastn:])
+            self.match = True
+        except:
+            pass
+ 
     @property
     def result(self):
         return self.match
@@ -32,7 +38,7 @@ class FeedMatch(object):
 class DateExists(object):
     def __init__(self, data, date='today'):
         self.data = data
-
+        
         if isinstance(date, (str, unicode)):
             if date == 'today':
                 cur_date = dt.date.today()
