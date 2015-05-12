@@ -7,27 +7,27 @@
 ;  examples: http://docs.sqlalchemy.org/en/rel_0_9/core/engines.html
 ;  list of dialects: http://docs.sqlalchemy.org/en/rel_0_9/dialects/index.html
 
-;  PostgreSQL (9.4 tested, but should work on 9.x) (works with Trump 0.0.1)
+;  PostgreSQL (9.4 tested, but should work on 9.x)
 ;engine: postgresql+psycopg2://username:password@localhost/trump
 ;engine: postgresql://username:password@localhost/trump
 
-;  SQLite (in-memory) (buggy with Trump 0.0.1)
+;  SQLite (in-memory)
 engine: sqlite://
 
-;  SQLite (in-file, Linux) (buggy with Trump 0.0.1)
+;  SQLite (in-file, Linux)
 ;engine: sqlite:////absolute/path/to/foo.db
 ;engine: sqlite:///home/jnmclarty/Desktop/trump.db
 
-;  SQLite (in-file, Windows) (buggy with Trump 0.0.1)
+;  SQLite (in-file, Windows)
 ;engine: sqlite:///C:\trump.db
 
 ; MySQL, Microsoft SQL, Oracle, are all supported by SQLAlchemy, might work.
 
-; Not Used in Trump 0.0.1:
+; Not Used in Trump 0.0.2:
 [read]
 engine: {dialect}://{user}:{password}@{host}:{port}/{name}
 
-; Not Used in Trump 0.0.1:
+; Not Used in Trump 0.0.2:
 [options]
 raise_by_default: true
 debug: false
