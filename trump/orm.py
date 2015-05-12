@@ -76,6 +76,10 @@ except:
            "because, What's the point of non-persistent persistent objects?")
     ENGINE_STR = "sqlite://"
 
+rbd = read_config(sect='options', sett='raise_by_default')
+if rbd.upper() == 'TRUE':
+    rbd = BitFlag(1)
+    
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
 
@@ -1003,10 +1007,10 @@ class SymbolHandle(Base, ReprMixin):
         """
         set_symbol_or_symname(self, sym)
 
-        self.caching = BitFlag(0)
-        self.concatenation = BitFlag(['raise'])
-        self.aggregation = BitFlag(['stdout'])
-        self.validity_check = BitFlag(['report'])
+        self.caching = rbd or BitFlag(0)
+        self.concatenation = rbd or BitFlag(['raise'])
+        self.aggregation = rbd or BitFlag(['stdout'])
+        self.validity_check = rbd or BitFlag(['report'])
 
         # override with anything passed in settings
         for checkpoint in chkpnt_settings:
@@ -1551,12 +1555,12 @@ class FeedHandle(Base, ReprMixin):
         """
         self.feed = feed
 
-        self.api_failure = BitFlag(['raise'])
-        self.empty_feed = BitFlag(['stdout', 'report'])
-        self.index_type_problem = BitFlag(['stdout', 'report'])
-        self.index_property_problem = BitFlag(['stdout'])
-        self.data_type_problem = BitFlag(['stdout', 'report'])
-        self.monounique = BitFlag(['raise'])
+        self.api_failure = rbd or BitFlag(['raise'])
+        self.empty_feed = rbd or BitFlag(['stdout', 'report'])
+        self.index_type_problem = rbd or BitFlag(['stdout', 'report'])
+        self.index_property_problem = rbd or BitFlag(['stdout'])
+        self.data_type_problem = rbd or BitFlag(['stdout', 'report'])
+        self.monounique = rbd or BitFlag(['raise'])
 
         # override with anything passed in settings
         for checkpoint in chkpnt_settings:

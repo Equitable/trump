@@ -97,6 +97,9 @@ read_settings = _read_options(["templating", "settings"])
 if __name__ == '__main__':
     config = read_config()
     print config
+    
+    raise_by_default = read_config(sect='options', sett='raise_by_default')
+    print raise_by_default
 
     eng_str = read_config(sect='readwrite', sett='engine')
     print eng_str

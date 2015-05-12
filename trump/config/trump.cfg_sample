@@ -29,4 +29,5 @@ engine: {dialect}://{user}:{password}@{host}:{port}/{name}
 
 ; Not Used in Trump 0.0.1:
 [options]
+raise_by_default: true
 debug: false
