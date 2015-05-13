@@ -37,9 +37,7 @@ With a focus on business processes, Trump's long run goals enable data feeds to 
 Planning
 ========
 
-Trump is almost done the planning stage. 
-
-See `docs/planning.md <https://github.com/Equitable/trump/blob/master/docs/planning.md>`_ for the current state of the project.
+See `docs/planning.md <https://github.com/Equitable/trump/blob/master/docs/planning.md>`_ for the direction of the project.
 
 Basic Usage
 ===========
@@ -55,8 +53,8 @@ Adding a Symbol
 
    sm = SymbolManager()
 
-   TSLA = sm.create(name = "TSLA", description = "Tesla Closing Price USD",
-                    units = '$ / share')
+   TSLA = sm.create(name = "TSLA", 
+                    description = "Tesla Closing Price USD")
 
    TSLA.add_tags(["stocks","US"])
 
@@ -68,11 +66,13 @@ Adding a Symbol
    TSLA.add_feed(QuandlFT("GOOG/NASDAQ_TSLA",fieldname='Close'))
    TSLA.add_feed(YahooFinanceFT("TSLA"))
 
-   #Optional munging, validity checks, tags, and aggregation settings are planned...
+   #Optional munging, validity checks and aggregation settings would be
+   #implemented here...
    
-   #All three are cached...
+   #All three feeds are cached...
    TSLA.cache()
 
+   #But only a clean version of the data is served up...
    print TSLA.df.tail()
 
                  TSLA

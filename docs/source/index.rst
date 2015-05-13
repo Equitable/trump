@@ -16,7 +16,7 @@ force a re-cache, or check any property of the data prior to using it.
  
 System Admins can systematically detect problems in advance, via common integrity checks of the data,
 then optionally schedule the re-cache by tag or symbol name.  Users and admins have the ability to manually
-override problems if they exist, with a specific feed, in a way that is centralized, auditable, and backed-up effeciently.
+override problems if they exist, with a specific feed, in a way that is centralized, auditable, and backed-up efficiently.
 
 With a focus on business processes, Trump's long run goals enable data feeds to be:
 
