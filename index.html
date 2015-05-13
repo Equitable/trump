@@ -19,19 +19,13 @@
     </section>
 
     <section class="main-content">
-      <p>Trump is a framework for objectifying data, with the goal of centralizing the responsibility of 
-managing feeds, munging, calculating and checking data, upstream of any application or user requirement.</p>
+      <p>Trump is a framework for objectifying data, with the goal of centralizing the management of data feeds to enable quicker deployment of analytics, applications, and reporting. Munging data, common calculations, validation of data, can all be handled by Trump, upstream of any application or user requirement.</p>
 
-<p>Inside the Trump framework, a symbol refers to one or more data feeds, each with their own instructions
-saved for retrieving data.  Once it's retrieved by Trump, depending on the attributes of the symbol,
-it gets munged, aggregated, checked, and cached.  Downstream users are free to query the existing cache,
-force a re-cache, or check any property of the data prior to using it.</p>
+<p>Inside the Trump framework, a symbol refers to one or more data feeds, each with their own instructions saved for retrieving data from a specific source. Once it’s retrieved by Trump, depending on the attributes of the symbol, it gets munged, aggregated, checked, and cached. Downstream users are free to query the existing cache, force a re-cache, or check any property of the data prior to using it.</p>
 
-<p>System Admins can systematically detect problems in advance, via common integrity checks of the data,
-then optionally schedule the re-cache by tag or symbol name.  Users and admins have the ability to manually
-override problems if they exist, with a specific feed, in a way that is centralized, audited, and backed-up.</p>
+<p>System Admins can systematically detect problems in advance, via common integrity checks of the data, then optionally schedule the re-cache by tag or symbol name. Users and admins have the ability to manually override problems if they exist, with a specific feed, in a way that is centralized, auditable, and backed-up efficiently.</p>
 
-<p>With a focus on business processes, Trump's long run goals enable data feeds to be:</p>
+<p>With a focus on business processes, Trump’s long run goals enable data feeds to be:</p>
 
 <ul>
 <li>
@@ -49,11 +43,6 @@ override problems if they exist, with a specific feed, in a way that is centrali
 </ul>
 
 <h2>
-<a id="current-state" class="anchor" href="#current-state" aria-hidden="true"><span class="octicon octicon-link"></span></a>Current State</h2>
-
-<p>Trump is currently in the planning stage.  Input is welcome, and the API is subject to change.  This page will be updated with a changelog as soon as the planning stage ends.</p>
-
-<h2>
 <a id="basic-usage" class="anchor" href="#basic-usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Basic Usage</h2>
 
 <p>This example dramatically understates the utility of Trump's long term feature set.</p>
@@ -62,26 +51,41 @@ override problems if they exist, with a specific feed, in a way that is centrali
 <a id="adding-a-symbol" class="anchor" href="#adding-a-symbol" aria-hidden="true"><span class="octicon octicon-link"></span></a>Adding a Symbol</h4>
 
 <div class="highlight highlight-python"><pre><span class="pl-k">from</span> trump.orm <span class="pl-k">import</span> SymbolManager
-<span class="pl-k">from</span> trump.templating <span class="pl-k">import</span> fQuandl, fSQL
+<span class="pl-k">from</span> trump.templating <span class="pl-k">import</span> QuandlFT, GoogleFinanceFT, YahooFinanceFT
 
 sm <span class="pl-k">=</span> SymbolManager()
 
-oil <span class="pl-k">=</span> sm.create(<span class="pl-smi">name</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>oil_front_month<span class="pl-pds">"</span></span>,
-                <span class="pl-smi">description</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>Crude Oil<span class="pl-pds">"</span></span>,
-                <span class="pl-smi">freq</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>D<span class="pl-pds">'</span></span>,
-                <span class="pl-smi">units</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>$ / barrel<span class="pl-pds">'</span></span>)
+TSLA <span class="pl-k">=</span> sm.create(<span class="pl-smi">name</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>TSLA<span class="pl-pds">"</span></span>,
+                 <span class="pl-smi">description</span> <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>Tesla Closing Price USD<span class="pl-pds">"</span></span>)
 
-oil.addTags([<span class="pl-s"><span class="pl-pds">'</span>commodity<span class="pl-pds">'</span></span>,<span class="pl-s"><span class="pl-pds">'</span>oil<span class="pl-pds">'</span></span>,<span class="pl-s"><span class="pl-pds">'</span>futures<span class="pl-pds">'</span></span>])
+TSLA.add_tags([<span class="pl-s"><span class="pl-pds">"</span>stocks<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>US<span class="pl-pds">"</span></span>])
 
-f1 <span class="pl-k">=</span> fQuandl(<span class="pl-s"><span class="pl-k">r</span><span class="pl-pds">"</span>CHRIS/CME_CL2<span class="pl-pds">"</span></span>,<span class="pl-smi">fieldname</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>Settle<span class="pl-pds">'</span></span>)
-f2 <span class="pl-k">=</span> fSQL(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-k">SELECT</span> <span class="pl-k">date</span>,data <span class="pl-k">FROM</span> test_oil_data;<span class="pl-pds">"</span></span>)
+<span class="pl-c">#Try Google First</span>
+<span class="pl-c">#If Google's feed has a problem, try Quandl's backup</span>
+<span class="pl-c">#If all else fails, use Yahoo's data...</span>
 
-oil.addFeed(f1)
-oil.addFeed(f2)
+TSLA.add_feed(GoogleFinanceFT(<span class="pl-s"><span class="pl-pds">"</span>TSLA<span class="pl-pds">"</span></span>))
+TSLA.add_feed(QuandlFT(<span class="pl-s"><span class="pl-pds">"</span>GOOG/NASDAQ_TSLA<span class="pl-pds">"</span></span>,<span class="pl-smi">fieldname</span><span class="pl-k">=</span><span class="pl-s"><span class="pl-pds">'</span>Close<span class="pl-pds">'</span></span>))
+TSLA.add_feed(YahooFinanceFT(<span class="pl-s"><span class="pl-pds">"</span>TSLA<span class="pl-pds">"</span></span>))
 
-oil.cache()
+<span class="pl-c">#Optional munging, validity checks and aggregation settings would be</span>
+<span class="pl-c">#implemented here...</span>
 
-<span class="pl-k">print</span> oil.df.tail()</pre></div>
+<span class="pl-c">#All three feeds are cached...</span>
+TSLA.cache()
+
+<span class="pl-c">#But only a clean version of the data is served up...</span>
+<span class="pl-k">print</span> TSLA.df.tail()
+
+              TSLA
+dateindex
+<span class="pl-c1">2015</span><span class="pl-k">-</span><span class="pl-c1">03</span><span class="pl-k">-</span><span class="pl-c1">20</span>  <span class="pl-c1">198.08</span>
+<span class="pl-c1">2015</span><span class="pl-k">-</span><span class="pl-c1">03</span><span class="pl-k">-</span><span class="pl-c1">23</span>  <span class="pl-c1">199.63</span>
+<span class="pl-c1">2015</span><span class="pl-k">-</span><span class="pl-c1">03</span><span class="pl-k">-</span><span class="pl-c1">24</span>  <span class="pl-c1">201.72</span>
+<span class="pl-c1">2015</span><span class="pl-k">-</span><span class="pl-c1">03</span><span class="pl-k">-</span><span class="pl-c1">25</span>  <span class="pl-c1">194.30</span>
+<span class="pl-c1">2015</span><span class="pl-k">-</span><span class="pl-c1">03</span><span class="pl-k">-</span><span class="pl-c1">26</span>  <span class="pl-c1">190.40</span>
+
+sm.finish()</pre></div>
 
 <h4>
 <a id="using-a-symbol" class="anchor" href="#using-a-symbol" aria-hidden="true"><span class="octicon octicon-link"></span></a>Using a Symbol</h4>
@@ -90,12 +94,22 @@ oil.cache()
 
 sm <span class="pl-k">=</span> SymbolManager()
 
-oil <span class="pl-k">=</span> sm.get(<span class="pl-s"><span class="pl-pds">"</span>oil_front_month<span class="pl-pds">"</span></span>)
+TSLA <span class="pl-k">=</span> sm.get(<span class="pl-s"><span class="pl-pds">"</span>TSLA<span class="pl-pds">"</span></span>)
 
 <span class="pl-c">#optional</span>
-oil.cache()
+TSLA.cache()
 
-<span class="pl-k">print</span> oil.df.tail()</pre></div>
+<span class="pl-k">print</span> TSLA.df.tail()
+
+              TSLA
+dateindex
+<span class="pl-c1">2015</span><span class="pl-k">-</span><span class="pl-c1">03</span><span class="pl-k">-</span><span class="pl-c1">20</span>  <span class="pl-c1">198.08</span>
+<span class="pl-c1">2015</span><span class="pl-k">-</span><span class="pl-c1">03</span><span class="pl-k">-</span><span class="pl-c1">23</span>  <span class="pl-c1">199.63</span>
+<span class="pl-c1">2015</span><span class="pl-k">-</span><span class="pl-c1">03</span><span class="pl-k">-</span><span class="pl-c1">24</span>  <span class="pl-c1">201.72</span>
+<span class="pl-c1">2015</span><span class="pl-k">-</span><span class="pl-c1">03</span><span class="pl-k">-</span><span class="pl-c1">25</span>  <span class="pl-c1">194.30</span>
+<span class="pl-c1">2015</span><span class="pl-k">-</span><span class="pl-c1">03</span><span class="pl-k">-</span><span class="pl-c1">26</span>  <span class="pl-c1">190.40</span>
+
+sm.finish()</pre></div>
 
 <h2>
 <a id="more-information" class="anchor" href="#more-information" aria-hidden="true"><span class="octicon octicon-link"></span></a>More Information</h2>
@@ -103,6 +117,8 @@ oil.cache()
 <p>Checkout the <a href="https://github.com/Equitable/trump/blob/master/README.rst">main repo's README</a> for up to date information surrounding planning, installation, and more.</p>
 
       <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/Equitable/trump">Trump</a> is maintained by <a href="https://github.com/Equitable">Equitable</a>.</span>
+
         <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
       </footer>
 
