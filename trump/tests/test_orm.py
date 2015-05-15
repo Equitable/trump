@@ -421,4 +421,17 @@ class TestORM(object):
             sym.cache()
 
         sm.build_view_from_tag('testtagz')
-       
+    def test_fx_converting(self):
+
+        sm = self.sm
+
+        fxdata = os.path.join(curdir,'testdata','fxdata.csv')
+        
+        for pair in ['EURUSD', 'GBPUSD', 'USDCAD']:
+            sym = sm.create(pair, overwrite=True)
+            fdtemp = CSVFT(fxdata, pair, index_col=0)
+            sym.add_feed(fdtemp)
+            sym.set_units("{}/{}".format(pair[:3], pair[3:]))
+            sym.add_tags('forex')
+            sym.cache()
+  
