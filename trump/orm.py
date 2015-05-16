@@ -1357,9 +1357,8 @@ class Feed(Base, ReprMixin):
         return " ".join([p.key + " : " + p.value for p in self.sourcing])
     def _generic_exception(self, point, reporter):
         logic = getattr(self.handle, point)
-        msg = "Exceptoin for feed #{} for {} at the {} point."
+        msg = "Exception for feed #{} for {} at the {} point."
         msg = msg.format(self.fnum, self.symname, point)
-        msg = msg.format(point, self.name)
         hdlrp = Handler(logic, point, msg).process()
         if hdlrp:
             reporter.add_handlepoint(hdlrp)

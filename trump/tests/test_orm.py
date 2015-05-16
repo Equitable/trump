@@ -431,6 +431,8 @@ class TestORM(object):
             sym = sm.create(pair, overwrite=True)
             fdtemp = CSVFT(fxdata, pair, index_col=0)
             sym.add_feed(fdtemp)
+            business_day = FFillIT('B')
+            sym.set_indexing(business_day)
             sym.set_units("{}/{}".format(pair[:3], pair[3:]))
             sym.add_tags('forex')
             sym.cache()
