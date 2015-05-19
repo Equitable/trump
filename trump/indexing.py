@@ -127,6 +127,8 @@ class DatetimeIndexImp(IndexImplementer):
     sqlatyp = DateTime
 
     def __init__(self, dfors, case, kwargs):
+        
+        
         self.data = dfors
 	
         if case == 'asis':
@@ -143,6 +145,10 @@ class DatetimeIndexImp(IndexImplementer):
 
         elif case == 'asfreq':
             if isinstance(self.data.index, pdDatetimeIndex):
+                self.data = self.data.asfreq(**kwargs)
+            elif isinstance(self.data.index[0], (str, unicode)):
+                newind = pd.DatetimeIndex(self.data.index)
+                self.data.index = newind
                 self.data = self.data.asfreq(**kwargs)
             else:
                 self.default(**kwargs)
