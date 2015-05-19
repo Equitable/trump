@@ -60,6 +60,7 @@ from trump.tools import ReprMixin, ProxyDict, isinstanceofany, \
 from trump.extensions.symbol_aggs import FeedAggregator, sorted_feed_cols
 from trump.templating import bFeed, pab, pnab
 from trump.options import read_config, read_settings
+from trump.converting import FXConverter
 
 from handling import Handler
 
@@ -119,7 +120,7 @@ class SymbolManager(object):
         print "Using engine: {}".format(ENGINE_STR)
 
         self.ses = DBSession()
-
+        
     def finish(self):
         """
         Closes the session with the database.
@@ -343,6 +344,49 @@ class SymbolManager(object):
         self.ses.add(tmp)
         self.ses.commit()
 
+class ConversionManager(SymbolManager):
+    """
+    A ConversionManager handles the converting previously instantiated
+    symbols, .
+    """
+    def __init__(self, engine_or_eng_str=None):
+        """
+        :param ses: session
+            Will attempt to use the global SQLAlchemy session, unless
+            specified otherwise.
+        :return: SymbolManager
+        """
+        super(ConversionManager, self).__init__(engine_or_eng_str)
+        self.converters = {}
+    def get_converted(self, symbol, tag, system='FX', units='CAD'):
+        """
+        Gets a Symbol's Dataframe, after converting the units 
+        appropriate converter.
+        """
+        sym = self.get(symbol)
+        
+        addsystem = True
+        addtag = True
+        
+        if system in self.converters:
+            addsystem = False
+            if tag in self.converters[system]:
+                addtag = False
+                conv = self.converters[system][tag]
+        
+        if addsystem:
+            self.converters[system] = {}
+        
+        if addtag:
+            if system == 'FX':
+                conversion_syms = self.search_tag(tag)
+                conv = FXConverter()
+                conv.use_trump_data(conversion_syms)
+                self.converters[system][tag] = conv
+
+        return conv.convert(sym.df, sym.units, units)
+        
+
 class Symbol(Base, ReprMixin):
     __tablename__ = '_symbols'
 
@@ -504,7 +548,6 @@ class Symbol(Base, ReprMixin):
                 data.append(tmp)
                 cols.append(afeed.data.name)
         except:
-            raise
             point = "caching"
             smrp = self._generic_exception(point, smrp)
                 
@@ -513,9 +556,9 @@ class Symbol(Base, ReprMixin):
         except:
             point = "concatenation"
             smrp = self._generic_exception(point, smrp)
-       
+        
         indt = indexingtypes[self.index.indimp]
-        indkwargs = self.index.getkwargs()
+        indkwargs = self.index.getkwargs()        
         indt = indt(data, self.index.case, indkwargs)
         data = indt.final_dataframe()
 
@@ -554,7 +597,6 @@ class Symbol(Base, ReprMixin):
         for row in ords:
             data.loc[row.ind, 'failsafe_feed999'] = row.val
             
-
         try:
             data = data.fillna(value=pd.np.nan)
             data = data[sorted_feed_cols(data)]
@@ -783,6 +825,7 @@ class Symbol(Base, ReprMixin):
     def df(self):
         """ returns the dataframe representation of the symbol's final data """
         data = self.data()
+
         adf = pd.DataFrame(data)
         adf.columns = [self.index.name, self.name]
         
@@ -794,7 +837,7 @@ class Symbol(Base, ReprMixin):
         indt = indexingtypes[self.index.indimp]
         indt = indt(adf, self.index.case, self.index.getkwargs())
         adf = indt.final_series()
-
+       
         return adf
 
     @property

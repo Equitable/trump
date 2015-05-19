@@ -1,4 +1,4 @@
-from ..orm import SetupTrump, SymbolManager
+from ..orm import SetupTrump, SymbolManager, ConversionManager
 
 from ..templating.templates import GoogleFinanceFT, YahooFinanceFT,\
     SimpleExampleMT, CSVFT, FFillIT, FeedsMatchVT, DateExistsVT, PctChangeMT
@@ -426,14 +426,22 @@ class TestORM(object):
         sm = self.sm
 
         fxdata = os.path.join(curdir,'testdata','fxdata.csv')
-        
         for pair in ['EURUSD', 'GBPUSD', 'USDCAD']:
             sym = sm.create(pair, overwrite=True)
             fdtemp = CSVFT(fxdata, pair, index_col=0)
             sym.add_feed(fdtemp)
             business_day = FFillIT('B')
             sym.set_indexing(business_day)
-            sym.set_units("{}/{}".format(pair[:3], pair[3:]))
+            sym.set_units("{}".format(pair[3:]))
             sym.add_tags('forex')
             sym.cache()
+        
+        
+
+        cm = ConversionManager(self.eng)
+        
+        
+        df = cm.get_converted('GBPUSD', 'forex')
+        
+        print df
   
