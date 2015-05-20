@@ -96,15 +96,18 @@ CC = {'onupdate': "CASCADE", 'ondelete': "CASCADE"}
 class SymbolManager(object):
 
     """
-    A SymbolManager handles the creation, getting and deletion of symbols.
-    It also maintains a global SQLAlchemy session.
+    The SymbolManager maintains the SQLAlchemy database session, and 
+    provides access to object creation, deletion, searching, and 
+    overrides/failsafes.
     """
 
     def __init__(self, engine_or_eng_str=None):
         """
-        :param ses: session
-            Will attempt to use the global SQLAlchemy session, unless
-            specified otherwise.
+        :param engine_or_eng_str: str or None
+            Pass a SQLAlchemy engine, or a string.  Without one,
+            it will use the defaul provided in trump/options/trump.cfg
+            If it fails to get a value there, an in-memory SQLlite
+            session would be created.
         :return: SymbolManager
         """
         if engine_or_eng_str is None:
@@ -219,10 +222,10 @@ class SymbolManager(object):
     def get(self, symbol):
         """
         Gets a Symbol based on name, which is expected to exist. Errors if it
-        doesn't exist.
+        doesn't exist.  Use .try_to_get(), if the symbol may or may not
+        exist.
 
         :param symbol: str
-
         """
         syms = self.try_to_get(symbol)
         if syms is None:
@@ -231,6 +234,13 @@ class SymbolManager(object):
             return syms
 
     def try_to_get(self, symbol):
+        """
+        Gets a Symbol based on name, which may or may not exist.  Returns
+        None, or the Symbol.  Use .get(), if the symbol should exist,
+        and an exception is needed if it doesn't.
+
+        :param symbol: str
+        """
         syms = self.ses.query(Symbol).filter(Symbol.name == symbol).all()
         if len(syms) == 0:
             return None
@@ -346,22 +356,37 @@ class SymbolManager(object):
 
 class ConversionManager(SymbolManager):
     """
-    A ConversionManager handles the converting previously instantiated
-    symbols, .
+    A ConversionManager handles the conversion of previously instantiated
+    symbols, based on the object's units and the conversion manager
+    setup.
     """
     def __init__(self, engine_or_eng_str=None):
         """
-        :param ses: session
-            Will attempt to use the global SQLAlchemy session, unless
-            specified otherwise.
-        :return: SymbolManager
+        :param engine_or_eng_str: str or None
+            Pass a SQLAlchemy engine, or a string.  Without one,
+            it will use the defaul provided in trump/options/trump.cfg
+            If it fails to get a value there, an in-memory SQLlite
+            session would be created.
         """
         super(ConversionManager, self).__init__(engine_or_eng_str)
         self.converters = {}
-    def get_converted(self, symbol, tag, system='FX', units='CAD'):
+    def get_converted(self, symbol,  units='CAD', system='FX', tag=None):
         """
         Gets a Symbol's Dataframe, after converting the units 
         appropriate converter.
+
+        :param symbol: str
+            String representing a symbol
+        :param units: str, default to CAD
+            Specify the units to convert the symbol to.
+        :param system: str, default to FX
+            Uses the FX conversion system logic by default.
+            Currently, no other systems are implemented.  Eg. metric-only,
+            imperial-metric, etc.
+        :param tag: str, defaults to None
+            Tag for the set of feeds to use for conversion.  Only necessary,
+            if the conversion system relies on it.  For FX, it's needed, to 
+            specify the set of feeds to use.
         """
         sym = self.get(symbol)
         

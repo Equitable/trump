@@ -35,6 +35,12 @@ Symbol Manager
 .. autoclass:: trump.orm.SymbolManager
    :members: create, delete, get, complete, finish, search_tag, build_view_from_tag, add_override, add_fail_safe
 
+Conversion Manager
+------------------
+
+.. autoclass:: trump.orm.ConversionManager
+   :members: get_converted
+
 Symbols
 -------
 
