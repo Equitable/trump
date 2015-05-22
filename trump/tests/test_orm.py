@@ -436,12 +436,9 @@ class TestORM(object):
             sym.add_tags('forex')
             sym.cache()
         
+        cm = ConversionManager(self.eng, 'FX', 'forex')
         
-
-        cm = ConversionManager(self.eng)
-        
-        
-        df = cm.get_converted('GBPUSD', 'forex')
+        df = cm.get_converted('GBPUSD', 'CAD')
         
         print df
   

@@ -358,56 +358,79 @@ class ConversionManager(SymbolManager):
     """
     A ConversionManager handles the conversion of previously instantiated
     symbols, based on the object's units and the conversion manager
-    setup.
+    setup.  The conversion is performed adhoc, in python
+    only usage.  That is, nothing about the conversion persists
+    in the Trump framework.  Only the final series is converted.
     """
-    def __init__(self, engine_or_eng_str=None):
+    def __init__(self, engine_or_eng_str=None, system='FX', tag=None):
         """
         :param engine_or_eng_str: str or None
             Pass a SQLAlchemy engine, or a string.  Without one,
             it will use the defaul provided in trump/options/trump.cfg
             If it fails to get a value there, an in-memory SQLlite
             session would be created.
+        :param system: str, default to FX
+            Uses the FX conversion system logic by default.
+            Currently, no other systems are implemented.  Eg. metric-only,
+            imperial-metric, etc.
+            
+            Other systems can be added after instantiation of the
+            ConversionManager, but the one specified at instantiation
+            will be used as default.
+            
+        :param tag: str, defaults to None
+            Tag for the set of feeds to use for conversion.  Only necessary,
+            if the conversion system relies on it.  For FX, it's needed, to 
+            specify the set of feeds to use.       
+
+            Other tags can be added after instantiation of the
+            ConversionManager, but the one specified at instantiation
+            will be used as default.
+
         """
         super(ConversionManager, self).__init__(engine_or_eng_str)
+        
+        self.default_system = system
+        self.default_tag = tag
+        
         self.converters = {}
-    def get_converted(self, symbol,  units='CAD', system='FX', tag=None):
+        self.add_converter(system, tag)
+
+    def add_converter(self, system, tag):
+        if system not in self.converters:
+            self.converters[system] = {}
+            
+        if tag not in self.converters[system]:
+            if system == 'FX':
+                if tag is None:
+                    raise Exception("Must specify a tag for FX Conversion")
+                conversion_syms = self.search_tag(tag)
+                conv = FXConverter()
+                conv.use_trump_data(conversion_syms)
+                self.converters[system][tag] = conv
+                
+    def get_converted(self, symbol, units='CAD', system=None, tag=None):
         """
-        Gets a Symbol's Dataframe, after converting the units 
+        Gets a Symbol's Dataframe, after converting the units
         appropriate converter.
 
         :param symbol: str
             String representing a symbol
         :param units: str, default to CAD
-            Specify the units to convert the symbol to.
-        :param system: str, default to FX
-            Uses the FX conversion system logic by default.
-            Currently, no other systems are implemented.  Eg. metric-only,
-            imperial-metric, etc.
-        :param tag: str, defaults to None
-            Tag for the set of feeds to use for conversion.  Only necessary,
-            if the conversion system relies on it.  For FX, it's needed, to 
-            specify the set of feeds to use.
+            Specify the units to convert the symbol to. 
+        :param system: str or None
+            If None, the default system specified at instantiation
+            is used.  System defines which conversion approach to take.
+        :param tag: str or None
+            Tags define which set of conversion data is used.  If None, the
+            default tag specified at instantiation is used.  
         """
         sym = self.get(symbol)
         
-        addsystem = True
-        addtag = True
+        system = system or self.default_system
+        tag = tag or self.default_tag
         
-        if system in self.converters:
-            addsystem = False
-            if tag in self.converters[system]:
-                addtag = False
-                conv = self.converters[system][tag]
-        
-        if addsystem:
-            self.converters[system] = {}
-        
-        if addtag:
-            if system == 'FX':
-                conversion_syms = self.search_tag(tag)
-                conv = FXConverter()
-                conv.use_trump_data(conversion_syms)
-                self.converters[system][tag] = conv
+        conv = self.converters[system][tag]
 
         return conv.convert(sym.df, sym.units, units)
         
