@@ -248,7 +248,7 @@ class DBapiFT(bFeed):
         super(DBapiFT, self).__init__()
         self._set_stype()
         if sourcing_key:
-            self.set_sourcing_key(sourcing_key)
+            self._set_sourcing_key(sourcing_key)
         self.s = DBapiST(dsn, user, password, host, database, sourcing_key)
         if self.__class__.__name__ == 'DBapiFT':
             self.s.set_basic(table, indexcol, datacol)
@@ -257,7 +257,7 @@ class DBapiFT(bFeed):
     def _set_stype(self):
         self.meta['stype'] = 'DBAPI'
 
-    def set_sourcing_key(self, sourcing_key):
+    def _set_sourcing_key(self, sourcing_key):
         """ sets a sourcing key, sourcing keys are used to pull information
         from configuring files.  They refer to "sections", in python's
         config parser."""
