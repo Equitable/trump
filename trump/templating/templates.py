@@ -85,19 +85,19 @@ class AbsMT(bMunging, mixin_pab):
     """ Example munging template, which implements an absolute function."""
     def __init__(self):
         super(AbsMT, self).__init__()
-        self.bld_abs()
+        self._bld_abs()
 
 class RollingMeanMT(bMunging, mixin_pnab):
     """ Example munging template, which implements a rolling mean."""
     def __init__(self, **kwargs):
         super(RollingMeanMT, self).__init__()
-        self.bld_rolling_mean(**kwargs)
+        self._bld_rolling_mean(**kwargs)
 
 class PctChangeMT(bMunging, mixin_pab):
     """ Example munging template, which implements pct_change."""
     def __init__(self, **kwargs):
         super(PctChangeMT, self).__init__()
-        self.bld_pct_change(**kwargs)
+        self._bld_pct_change(**kwargs)
         
 class FFillRollingMeanMT(bMunging, mixin_pab, mixin_pnab):
     """ Example munging template, which implements a ffill using the generic
@@ -105,14 +105,14 @@ class FFillRollingMeanMT(bMunging, mixin_pab, mixin_pnab):
     def __init__(self, **kwargs):
         super(FFillRollingMeanMT, self).__init__()
         self._bld_pab_generic('ffill')
-        self.bld_rolling_mean(**kwargs)
+        self._bld_rolling_mean(**kwargs)
 
 class RollingMeanFFillMT(bMunging, mixin_pab, mixin_pnab):
     """ Example munging template, which implements a rolling mean
         and a generic pandas attribute based munging step."""
     def __init__(self, **kwargs):
         super(RollingMeanFFillMT, self).__init__()
-        self.bld_rolling_mean(**kwargs)
+        self._bld_rolling_mean(**kwargs)
         self._bld_pab_generic('ffill')
 
 class MultiExampleMT(bMunging, mixin_pnab, mixin_pab):
@@ -120,8 +120,8 @@ class MultiExampleMT(bMunging, mixin_pnab, mixin_pab):
         and add, using two sets of kwargs"""
     def __init__(self, pct_change_kwargs, add_kwargs):
         super(MultiExampleMT, self).__init__()
-        self.bld_pct_change(**pct_change_kwargs)
-        self.bld_add(**add_kwargs)
+        self._bld_pct_change(**pct_change_kwargs)
+        self._bld_add(**add_kwargs)
 
 class SimpleExampleMT(bMunging, mixin_pnab, mixin_pab):
     """ Example munging template, which has defaults to forward fill,
@@ -129,9 +129,9 @@ class SimpleExampleMT(bMunging, mixin_pnab, mixin_pab):
     def __init__(self, periods, window):
         super(SimpleExampleMT, self).__init__()
         kwargs = {'periods': periods, 'fill_method': 'ffill'}
-        self.bld_pct_change(**kwargs)
+        self._bld_pct_change(**kwargs)
         kwargs = {'window': window, 'min_periods': 5}
-        self.bld_rolling_mean(**kwargs)
+        self._bld_rolling_mean(**kwargs)
 
 #******************************************************************************
 #
@@ -152,7 +152,7 @@ class DBapiST(bSource, mixin_dbCon, mixin_dbIns):
     def __init__(self, dsn=None, user=None, password=None, host=None,
                  database=None, sourcing_key=None):
         super(DBapiST, self).__init__()
-        self.set_con_params(dsn, user, password, host, database, sourcing_key)
+        self._set_con_params(dsn, user, password, host, database, sourcing_key)
 
 
 class SQLAlchemyST(bSource):
@@ -246,18 +246,18 @@ class DBapiFT(bFeed):
                  user=None, password=None, host=None, database=None,
                  sourcing_key=None):
         super(DBapiFT, self).__init__()
-        self.set_stype()
+        self._set_stype()
         if sourcing_key:
-            self.set_sourcing_key(sourcing_key)
+            self._set_sourcing_key(sourcing_key)
         self.s = DBapiST(dsn, user, password, host, database, sourcing_key)
         if self.__class__.__name__ == 'DBapiFT':
-            self.s.set_basic(table, indexcol, datacol)
+            self.s._set_basic(table, indexcol, datacol)
             self.sourcing = self.s.as_dict
 
-    def set_stype(self):
+    def _set_stype(self):
         self.meta['stype'] = 'DBAPI'
 
-    def set_sourcing_key(self, sourcing_key):
+    def _set_sourcing_key(self, sourcing_key):
         """ sets a sourcing key, sourcing keys are used to pull information
         from configuring files.  They refer to "sections", in python's
         config parser."""
@@ -268,7 +268,7 @@ class ExplicitKeyColFT(DBapiFT):
     """ Feed template to implement a basic DBAPI Feed, using a keyed column"""
     def __init__(self, table, keycol, key, indexcol, datacol):
         super(ExplicitKeyColFT, self).__init__(sourcing_key=SKEY)
-        self.s.set_keycol(table, keycol, key, indexcol, datacol)
+        self.s._set_keycol(table, keycol, key, indexcol, datacol)
         self.sourcing = self.s.as_dict
 
 
@@ -280,7 +280,7 @@ class ExplicitBasicFT(DBapiFT):
                                               indexcol=indexcol,
                                               datacol=datacol,
                                               sourcing_key=SKEY)
-        self.s.set_basic(table, indexcol, datacol)
+        self.s._set_basic(table, indexcol, datacol)
         self.sourcing = self.s.as_dict
 
 
@@ -288,7 +288,7 @@ class ExplicitCommandFT(DBapiFT):
     """ Example use of pure SQL command """
     def __init__(self, command):
         super(ExplicitCommandFT, self).__init__(sourcing_key=SKEY)
-        self.s.set_command(command)
+        self.s._set_command(command)
         self.sourcing = self.s.as_dict
 
 
@@ -337,9 +337,9 @@ class QuandlFT(bFeed):
         tmp = {'dataset': dataset, 'authtoken': authtoken}
         tmp.update(kwargs)
         self.sourcing = tmp
-        self.set_stype()
+        self._set_stype()
 
-    def set_stype(self):
+    def _set_stype(self):
         self.meta['stype'] = 'Quandl'
 
 
@@ -352,7 +352,7 @@ class QuandlSecureFT(QuandlFT):
         tmp = {'dataset': dataset}
         tmp.update(kwargs)
         self.sourcing = tmp
-        self.set_stype()
+        self._set_stype()
         self.meta['sourcing_key'] = 'userone'
 
 
@@ -370,7 +370,7 @@ class GoogleFinanceFT(bFeed):
         source = PyDataDataReaderST('google', name, column=column,
                                     start=start, end=end)
         self.sourcing = source.as_dict
-        self.set_stype(source)
+        self._set_stype(source)
 
 
 #******************************************************************************
@@ -387,7 +387,7 @@ class StLouisFEDFT(bFeed):
         source = PyDataDataReaderST('fred', name, acol,
                                     start=start, end=end)
         self.sourcing = source.as_dict
-        self.set_stype(source)
+        self._set_stype(source)
 
 #******************************************************************************
 #
@@ -403,7 +403,7 @@ class YahooFinanceFT(bFeed):
         source = PyDataDataReaderST('yahoo', name, column=column,
                                     start=start, end=end)
         self.sourcing = source.as_dict
-        self.set_stype(source)
+        self._set_stype(source)
 
 #******************************************************************************
 #

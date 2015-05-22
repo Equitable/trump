@@ -10,7 +10,7 @@ from trump.options import read_settings
 
 
 class mixin_dbCon(object):
-    def set_con_params(self, dsn=None, user=None, password=None, host=None,
+    def _set_con_params(self, dsn=None, user=None, password=None, host=None,
                        database=None, sourcing_key=None):
         if sourcing_key:
             settings = read_settings()['DBAPI'][sourcing_key]
@@ -31,7 +31,7 @@ class mixin_dbCon(object):
             self.host = host or ''
             self.database = database or ''
 
-    def set_con_params_secure(self, sourcing_key, dsn=None, user=None,
+    def _set_con_params_secure(self, sourcing_key, dsn=None, user=None,
                               password=None, host=None, database=None):
         self.sourcing_key = sourcing_key
         self.dsn = dsn or ''
@@ -43,7 +43,7 @@ class mixin_dbCon(object):
 
 class mixin_dbIns(object):
 
-    def set_keycol(self, table, keycol, key,
+    def _set_keycol(self, table, keycol, key,
                    indexcol='date', datacol='value'):
         self.dbinstype = "KEYCOL"
         self.table = table
@@ -53,14 +53,14 @@ class mixin_dbIns(object):
         self.datacol = datacol
         return self
 
-    def set_basic(self, table, indexcol='date', datacol='value'):
+    def _set_basic(self, table, indexcol='date', datacol='value'):
         self.dbinstype = "BASIC"
         self.table = table
         self.indexcol = indexcol
         self.datacol = datacol
         return self
 
-    def set_revbasic(self, table, revdatecol,
+    def _set_revbasic(self, table, revdatecol,
                      indexcol='date', datacol='value'):
         self.dbinstype = "REVBASIC"
         self.table = table
@@ -69,7 +69,7 @@ class mixin_dbIns(object):
         self.datacol = datacol
         return self
 
-    def set_command(self, command):
+    def _set_command(self, command):
         self.dbinstype = "COMMAND"
         self.command = command
         return self
@@ -77,7 +77,7 @@ class mixin_dbIns(object):
 
 class mixin_attr_check(object):
 
-    def attr_check(self):
+    def _attr_check(self):
         if hasattr(self, 'table'):
             if self.table == 'UNSPECIFIEDTABLE':
                 err_msg = "Unspecified table in Feed-like object's " + \
