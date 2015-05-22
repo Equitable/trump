@@ -115,7 +115,7 @@ class bFeed(object):
         self.validity = {}
         self.meta = {}
 
-    def set_stype(self, sobj):
+    def _set_stype(self, sobj):
         self.meta['stype'] = sobj.__class__.__name__
 
     def addTagTemplate(self, tagtmpl):

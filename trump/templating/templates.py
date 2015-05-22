@@ -246,7 +246,7 @@ class DBapiFT(bFeed):
                  user=None, password=None, host=None, database=None,
                  sourcing_key=None):
         super(DBapiFT, self).__init__()
-        self.set_stype()
+        self._set_stype()
         if sourcing_key:
             self.set_sourcing_key(sourcing_key)
         self.s = DBapiST(dsn, user, password, host, database, sourcing_key)
@@ -254,7 +254,7 @@ class DBapiFT(bFeed):
             self.s.set_basic(table, indexcol, datacol)
             self.sourcing = self.s.as_dict
 
-    def set_stype(self):
+    def _set_stype(self):
         self.meta['stype'] = 'DBAPI'
 
     def set_sourcing_key(self, sourcing_key):
@@ -337,9 +337,9 @@ class QuandlFT(bFeed):
         tmp = {'dataset': dataset, 'authtoken': authtoken}
         tmp.update(kwargs)
         self.sourcing = tmp
-        self.set_stype()
+        self._set_stype()
 
-    def set_stype(self):
+    def _set_stype(self):
         self.meta['stype'] = 'Quandl'
 
 
@@ -352,7 +352,7 @@ class QuandlSecureFT(QuandlFT):
         tmp = {'dataset': dataset}
         tmp.update(kwargs)
         self.sourcing = tmp
-        self.set_stype()
+        self._set_stype()
         self.meta['sourcing_key'] = 'userone'
 
 
@@ -370,7 +370,7 @@ class GoogleFinanceFT(bFeed):
         source = PyDataDataReaderST('google', name, column=column,
                                     start=start, end=end)
         self.sourcing = source.as_dict
-        self.set_stype(source)
+        self._set_stype(source)
 
 
 #******************************************************************************
@@ -387,7 +387,7 @@ class StLouisFEDFT(bFeed):
         source = PyDataDataReaderST('fred', name, acol,
                                     start=start, end=end)
         self.sourcing = source.as_dict
-        self.set_stype(source)
+        self._set_stype(source)
 
 #******************************************************************************
 #
@@ -403,7 +403,7 @@ class YahooFinanceFT(bFeed):
         source = PyDataDataReaderST('yahoo', name, column=column,
                                     start=start, end=end)
         self.sourcing = source.as_dict
-        self.set_stype(source)
+        self._set_stype(source)
 
 #******************************************************************************
 #
