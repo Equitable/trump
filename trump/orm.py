@@ -1766,4 +1766,4 @@ def SetupTrump(engine_string=None):
         print pgerr.statement
         print pgerr.message
         raise
-    return True
+
