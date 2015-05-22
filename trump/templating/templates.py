@@ -152,7 +152,7 @@ class DBapiST(bSource, mixin_dbCon, mixin_dbIns):
     def __init__(self, dsn=None, user=None, password=None, host=None,
                  database=None, sourcing_key=None):
         super(DBapiST, self).__init__()
-        self.set_con_params(dsn, user, password, host, database, sourcing_key)
+        self._set_con_params(dsn, user, password, host, database, sourcing_key)
 
 
 class SQLAlchemyST(bSource):
@@ -251,7 +251,7 @@ class DBapiFT(bFeed):
             self._set_sourcing_key(sourcing_key)
         self.s = DBapiST(dsn, user, password, host, database, sourcing_key)
         if self.__class__.__name__ == 'DBapiFT':
-            self.s.set_basic(table, indexcol, datacol)
+            self.s._set_basic(table, indexcol, datacol)
             self.sourcing = self.s.as_dict
 
     def _set_stype(self):
@@ -268,7 +268,7 @@ class ExplicitKeyColFT(DBapiFT):
     """ Feed template to implement a basic DBAPI Feed, using a keyed column"""
     def __init__(self, table, keycol, key, indexcol, datacol):
         super(ExplicitKeyColFT, self).__init__(sourcing_key=SKEY)
-        self.s.set_keycol(table, keycol, key, indexcol, datacol)
+        self.s._set_keycol(table, keycol, key, indexcol, datacol)
         self.sourcing = self.s.as_dict
 
 
@@ -280,7 +280,7 @@ class ExplicitBasicFT(DBapiFT):
                                               indexcol=indexcol,
                                               datacol=datacol,
                                               sourcing_key=SKEY)
-        self.s.set_basic(table, indexcol, datacol)
+        self.s._set_basic(table, indexcol, datacol)
         self.sourcing = self.s.as_dict
 
 
@@ -288,7 +288,7 @@ class ExplicitCommandFT(DBapiFT):
     """ Example use of pure SQL command """
     def __init__(self, command):
         super(ExplicitCommandFT, self).__init__(sourcing_key=SKEY)
-        self.s.set_command(command)
+        self.s._set_command(command)
         self.sourcing = self.s.as_dict
 
 
