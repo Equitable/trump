@@ -37,7 +37,7 @@ class bTags(_ListConverter):
         pass
         #self.aTag = True
 
-    def add_tag(self, tag):
+    def _add_tag(self, tag):
         self.__setattr__(tag, True)
 
 
@@ -118,26 +118,26 @@ class bFeed(object):
     def _set_stype(self, sobj):
         self.meta['stype'] = sobj.__class__.__name__
 
-    def addTagTemplate(self, tagtmpl):
+    def _addTagTemplate(self, tagtmpl):
         self.tags.append(tagtmpl)
 
-    def addSourceTemplate(self, k, v):
+    def _addSourceTemplate(self, k, v):
         self.sourcing[k] = v
 
-    def addMungeTemplate(self, m, d=None, first=True):
+    def _addMungeTemplate(self, m, d=None, first=True):
         if hasattr(m, 'as_odict'):
             print m.as_odict
             for k, v in m.as_odict.items():
                 print k
                 print v
-                self.addMungeTemplate(k, v, True)
+                self._addMungeTemplate(k, v, True)
         else:
             if m not in self.munging:
                 self.munging[m] = {}
 
             if isinstance(d, tuple) and first:
                 for elem in d:
-                    self.addMungeTemplate(m, elem, False)
+                    self._addMungeTemplate(m, elem, False)
             elif isinstance(d, dict) and first:
                 for k in d:
                     self.munging[m][k] = str(d[k])
@@ -150,31 +150,31 @@ class bFeed(object):
                 raise Exception(
                     "Coulding add Munging {}, {}, {}".format(m, d, first))
 
-    def addValidityTemplate(self, k, v):
+    def _addValidityTemplate(self, k, v):
         self.validity[k] = v
 
-    def setTags(self, tag):
+    def _setTags(self, tag):
         if any([isinstance(tag, ty) for ty in (str, unicode)]):
             self.tags = [tag]
         elif any([isinstance(tag, ty) for ty in (list, tuple)]):
             self.tags = tag
         return self
 
-    def setSourcing(self, s):
+    def _setSourcing(self, s):
         if any([isinstance(s, ty) for ty in (dict, )]):
             self.sourcing = s
         else:
             raise Exception("Coudn't set source {}".format(s))
         return self
 
-    def setMunging(self, m):
+    def _setMunging(self, m):
         if any([isinstance(m, ty) for ty in (odict, )]):
             self.munging = m
         else:
             raise Exception("Coudn't set munging {}".format(m))
         return self
 
-    def setValidity(self, v):
+    def _setValidity(self, v):
         if any([isinstance(v, ty) for ty in (dict, )]):
             self.validity = v
         else:
