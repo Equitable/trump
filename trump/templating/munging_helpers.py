@@ -18,15 +18,15 @@ class mixin_pab(object):
     """mixin for implementing attribute based pandas functions.
     Eg. DataFrame.pct_change(...)"""
 
-    def bld_abs(self):
+    def _bld_abs(self):
         """implements pandas .abs()"""
         self.abs = {'mtype': pab, 'kwargs': {}}
 
-    def bld_pct_change(self, **kwargs):
+    def _bld_pct_change(self, **kwargs):
         """implements pandas .pct_change()"""
         self.pct_change = {'mtype': pab, 'kwargs': kwargs}
 
-    def bld_add(self, **kwargs):
+    def _bld_add(self, **kwargs):
         """implements pandas .add()"""
         self.add = {'mtype': pab, 'kwargs': kwargs}
 
@@ -42,7 +42,7 @@ pnab = 'pandas_nonattribute_based'
 class mixin_pnab(object):
     """mixin for implementing non-attribute based pandas functions.
     Eg. pd.rolling_mean(DataFrame,...)"""
-    def bld_rolling_mean(self, **kwargs):
+    def _bld_rolling_mean(self, **kwargs):
         """implement's pandas rolling_mean()"""
         self.rolling_mean = {'mtype': pnab, 'kwargs': kwargs}
 

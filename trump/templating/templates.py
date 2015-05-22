@@ -85,19 +85,19 @@ class AbsMT(bMunging, mixin_pab):
     """ Example munging template, which implements an absolute function."""
     def __init__(self):
         super(AbsMT, self).__init__()
-        self.bld_abs()
+        self._bld_abs()
 
 class RollingMeanMT(bMunging, mixin_pnab):
     """ Example munging template, which implements a rolling mean."""
     def __init__(self, **kwargs):
         super(RollingMeanMT, self).__init__()
-        self.bld_rolling_mean(**kwargs)
+        self._bld_rolling_mean(**kwargs)
 
 class PctChangeMT(bMunging, mixin_pab):
     """ Example munging template, which implements pct_change."""
     def __init__(self, **kwargs):
         super(PctChangeMT, self).__init__()
-        self.bld_pct_change(**kwargs)
+        self._bld_pct_change(**kwargs)
         
 class FFillRollingMeanMT(bMunging, mixin_pab, mixin_pnab):
     """ Example munging template, which implements a ffill using the generic
@@ -105,14 +105,14 @@ class FFillRollingMeanMT(bMunging, mixin_pab, mixin_pnab):
     def __init__(self, **kwargs):
         super(FFillRollingMeanMT, self).__init__()
         self._bld_pab_generic('ffill')
-        self.bld_rolling_mean(**kwargs)
+        self._bld_rolling_mean(**kwargs)
 
 class RollingMeanFFillMT(bMunging, mixin_pab, mixin_pnab):
     """ Example munging template, which implements a rolling mean
         and a generic pandas attribute based munging step."""
     def __init__(self, **kwargs):
         super(RollingMeanFFillMT, self).__init__()
-        self.bld_rolling_mean(**kwargs)
+        self._bld_rolling_mean(**kwargs)
         self._bld_pab_generic('ffill')
 
 class MultiExampleMT(bMunging, mixin_pnab, mixin_pab):
@@ -120,8 +120,8 @@ class MultiExampleMT(bMunging, mixin_pnab, mixin_pab):
         and add, using two sets of kwargs"""
     def __init__(self, pct_change_kwargs, add_kwargs):
         super(MultiExampleMT, self).__init__()
-        self.bld_pct_change(**pct_change_kwargs)
-        self.bld_add(**add_kwargs)
+        self._bld_pct_change(**pct_change_kwargs)
+        self._bld_add(**add_kwargs)
 
 class SimpleExampleMT(bMunging, mixin_pnab, mixin_pab):
     """ Example munging template, which has defaults to forward fill,
@@ -129,9 +129,9 @@ class SimpleExampleMT(bMunging, mixin_pnab, mixin_pab):
     def __init__(self, periods, window):
         super(SimpleExampleMT, self).__init__()
         kwargs = {'periods': periods, 'fill_method': 'ffill'}
-        self.bld_pct_change(**kwargs)
+        self._bld_pct_change(**kwargs)
         kwargs = {'window': window, 'min_periods': 5}
-        self.bld_rolling_mean(**kwargs)
+        self._bld_rolling_mean(**kwargs)
 
 #******************************************************************************
 #
