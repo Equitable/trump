@@ -1419,7 +1419,10 @@ class Feed(Base, ReprMixin):
 
         try:
             if not (self.data.index.is_monotonic and self.data.index.is_unique):
-                raise Exception('Feed index is not uniquely monotonic')
+                dtstr = str(self.data)
+                indstr = str(self.data.index)
+                msg = 'Feed index is not uniquely monotonic:' + dtstr + indstr
+                raise Exception(msg)
         except:
             point = "monounique"
             fdrp = self._generic_exception(point, fdrp)
