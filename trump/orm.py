@@ -1472,6 +1472,13 @@ class Feed(Base, ReprMixin):
         if hdlrp:
             reporter.add_handlepoint(hdlrp)
         return reporter
+    def _note_session(self):
+        self.ses = object_session(self)
+
+@event.listens_for(Feed, 'load')
+def __receive_load(target, context):
+    """ saves the session upon being queried """
+    target._note_session()
 
 class FeedTag(Base, ReprMixin):
     __tablename__ = '_feed_tags'
