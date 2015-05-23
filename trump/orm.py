@@ -1354,14 +1354,18 @@ class Feed(Base, ReprMixin):
                 con = db.connect(**con_kwargs)
                 cur = con.cursor()
 
-                if 'command' in kwargs:
-                    cur.execute(kwargs['command'])
-                elif set(['table', 'indexcol', 'datacol']).issubset(kwargs.keys()):
-
-                    rel = (kwargs[c] for c in ['indexcol', 'datacol', 'table'])
-                    qry = "SELECT {0},{1} FROM {2} ORDER BY {0};".format(*rel)
-                    cur.execute(qry)
-
+                if kwargs['dbinstype'] == 'COMMAND':
+                    qry = kwargs['command']
+                elif kwargs['dbinstype'] == 'KEYCOL':
+                    reqd = ['indexcol', 'datacol', 'table', 'keycol', 'key']
+                    rel = (kwargs[c] for c in reqd)
+                    qry = "SELECT {0},{1} FROM {2} WHERE {3} = '{4}' ORDER BY {0};"
+                    qry = qry.format(*rel)
+                else:
+                    raise NotImplementedError("The database type {} has not been created.".format(kwargs['dbinstype']))
+                   
+                cur.execute(qry)
+                    
                 results = [(row[0], row[1]) for row in cur.fetchall()]
                 con.close()
                 ind, dat = zip(*results)
