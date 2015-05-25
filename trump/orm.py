@@ -263,6 +263,17 @@ class SymbolManager(object):
         syms = [tagged.symbol for tagged in syms]
         return syms
     
+    def bulk_cache_of_tag(self, tag):
+        syms = self.search_tag(tag)
+        
+        name = 'Bulk Cache of Symbols tagged {}'.format(tag)
+        tr = TrumpReport(name)
+        for sym in syms:
+            sr = sym.cache()
+            tr.add_symbolreport(sr)
+        
+        return tr
+        
     def build_view_from_tag(self, tag):
         """
         Build a view of group of Symbols based on their tag.
@@ -1756,16 +1767,3 @@ def SetupTrump(engine_string=None):
         print pgerr.message
         raise
     return True
-
-if __name__ == '__main__':
-
-    ind = Index("newind", "date_range")
-
-    session.add(ind)
-
-    kw = {'start': '201001', 'end': '201002', 'freq': None}
-    ind.setkwargs(**kw)
-
-    session.commit()
-
-    print ind.getkwargs()

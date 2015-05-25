@@ -441,4 +441,21 @@ class TestORM(object):
         df = cm.get_converted('GBPUSD', 'CAD')
         
         print df
-  
+
+    def test_real_trumpreport(self):
+
+        sm = self.sm
+
+        fxdata = os.path.join(curdir,'testdata','fxdata.csv')
+        for pair in ['EURUSD', 'GBPUSD', 'USDCAD']:
+            sym = sm.create(pair, overwrite=True)
+            fdtemp = CSVFT(fxdata, pair, index_col=0)
+            sym.add_feed(fdtemp)
+            business_day = FFillIT('B')
+            sym.set_indexing(business_day)
+            sym.add_tags('forex')
+        
+        report = sm.bulk_cache_of_tag('forex')
+        fout = file(os.path.join(curdir,'test_forex.html'),'w+')
+        fout.write(report.html)
+        fout.close()
