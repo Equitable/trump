@@ -53,6 +53,7 @@ class TestTemplates(object):
                                   'user': 'username',
                                   'key': 'xxx',
                                   'table': 'econ',
+                                  'database' : 'adatabase',
                                   'password': 'password123',
                                   'dbinstype': 'KEYCOL'}
         assert ftemp.meta == {'sourcing_key': 'explicit',
