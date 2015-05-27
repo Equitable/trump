@@ -461,14 +461,13 @@ class Symbol(Base, ReprMixin):
 
     handle = relationship("SymbolHandle", uselist=False, backref='_symbols',
                          cascade=ADO)
+                         
     tags = relationship("SymbolTag", cascade=ADO)
     aliases = relationship("SymbolAlias", cascade=ADO)
     validity = relationship("SymbolValidity", cascade=ADO)
     feeds = relationship("Feed", cascade=ADO)
-
-    # overrides = relationship("Override",cascade="save-update",
-    #              passive_deletes=True)
-
+    meta = relationship("SymbolMeta", cascade=ADO)
+    
     def __init__(self, name, description=None, units=None,
                  agg_method="PRIORITY_FILL",
                  indexname="unnamed", indeximp="DatetimeIndexImp"):
@@ -521,6 +520,16 @@ class Symbol(Base, ReprMixin):
         self.index.setkwargs(**index_template.kwargs)
         objs.commit()
 
+    def add_meta(self, **metadict):
+        
+        objs = object_session(self)
+        
+        for attr,val in metadict.iteritems():
+            newmeta = SymbolMeta(self, attr, val)
+            self.meta.append(newmeta)
+            
+        objs.commit() 
+        
     def add_validator(self, val_template):
         """
         Creates and adds a SymbolValidity object to the Symbol.
@@ -1015,6 +1024,22 @@ class SymbolTag(Base, ReprMixin):
     def __init__(self, tag, sym=None):
         set_symbol_or_symname(self, sym)
         self.tag = tag
+
+class SymbolMeta(Base, ReprMixin):
+    __tablename__ = "_symbol_meta"
+
+    symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
+                     primary_key=True)
+
+    attr = Column('attr', String, primary_key=True)
+    value = Column('value', String)
+
+    symbol = relationship("Symbol")
+
+    def __init__(self, symbol, attr, value):
+        self.symbol = symbol
+        self.attr = attr
+        self.value = value
 
 class SymbolDataDef(Base, ReprMixin):
     __tablename__ = "_symbol_datadef"
