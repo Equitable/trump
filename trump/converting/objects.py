@@ -71,7 +71,7 @@ class FXConverter(object):
                 will attempt to use units to build the conversion table,
                 strings represent symbol names.
         """
-        dfs = {sym.name : sym.df[sym.name] for sym in symbols}
+        dfs = {sym.units : sym.df[sym.name] for sym in symbols}
                
         self.build_conversion_table(dfs)
         
@@ -80,17 +80,23 @@ class FXConverter(object):
         Build conversion table from a dictionary of dataframes
         """
         self.data = pd.DataFrame(dataframes)
-        tmp_pairs = [(s[:3], s[3:]) for s in self.data.columns]
+        tmp_pairs = [s.split("/") for s in self.data.columns]
         self.data.columns = pd.MultiIndex.from_tuples(tmp_pairs)
            
     def convert(self, data, denom, to):
         
+        # We need to do this, cause humans are dumb
+        if "/" in denom:
+            denom = denom.split(r"/")[0]
+        if "/" in to:
+            to = to.split(r"/")[1]
+            
         pair = (denom, to)
         
         if pair in self.data.columns:
-            tmp = data.mul(self.data[pair])
+            tmp = data.mul(self.data[pair], axis=0)
         elif recip(pair) in self.data.columns:
-            tmp = data.div(self.data[pair])
+            tmp = data.mul(self.data[recip(pair)], axis=0)
         else:
             tmp = self.convert(data, denom, 'USD')
             tmp = self.convert(tmp, 'USD', to)
