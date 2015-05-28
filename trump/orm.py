@@ -461,14 +461,13 @@ class Symbol(Base, ReprMixin):
 
     handle = relationship("SymbolHandle", uselist=False, backref='_symbols',
                          cascade=ADO)
+                         
     tags = relationship("SymbolTag", cascade=ADO)
     aliases = relationship("SymbolAlias", cascade=ADO)
     validity = relationship("SymbolValidity", cascade=ADO)
     feeds = relationship("Feed", cascade=ADO)
-
-    # overrides = relationship("Override",cascade="save-update",
-    #              passive_deletes=True)
-
+    meta = relationship("SymbolMeta", cascade=ADO)
+    
     def __init__(self, name, description=None, units=None,
                  agg_method="PRIORITY_FILL",
                  indexname="unnamed", indeximp="DatetimeIndexImp"):
@@ -521,6 +520,16 @@ class Symbol(Base, ReprMixin):
         self.index.setkwargs(**index_template.kwargs)
         objs.commit()
 
+    def add_meta(self, **metadict):
+        
+        objs = object_session(self)
+        
+        for attr,val in metadict.iteritems():
+            newmeta = SymbolMeta(self, attr, val)
+            self.meta.append(newmeta)
+            
+        objs.commit() 
+        
     def add_validator(self, val_template):
         """
         Creates and adds a SymbolValidity object to the Symbol.
@@ -1016,6 +1025,22 @@ class SymbolTag(Base, ReprMixin):
         set_symbol_or_symname(self, sym)
         self.tag = tag
 
+class SymbolMeta(Base, ReprMixin):
+    __tablename__ = "_symbol_meta"
+
+    symname = Column('symname', String, ForeignKey("_symbols.name", **CC),
+                     primary_key=True)
+
+    attr = Column('attr', String, primary_key=True)
+    value = Column('value', String)
+
+    symbol = relationship("Symbol")
+
+    def __init__(self, symbol, attr, value):
+        self.symbol = symbol
+        self.attr = attr
+        self.value = value
+
 class SymbolDataDef(Base, ReprMixin):
     __tablename__ = "_symbol_datadef"
 
@@ -1354,14 +1379,18 @@ class Feed(Base, ReprMixin):
                 con = db.connect(**con_kwargs)
                 cur = con.cursor()
 
-                if 'command' in kwargs:
-                    cur.execute(kwargs['command'])
-                elif set(['table', 'indexcol', 'datacol']).issubset(kwargs.keys()):
-
-                    rel = (kwargs[c] for c in ['indexcol', 'datacol', 'table'])
-                    qry = "SELECT {0},{1} FROM {2} ORDER BY {0};".format(*rel)
-                    cur.execute(qry)
-
+                if kwargs['dbinstype'] == 'COMMAND':
+                    qry = kwargs['command']
+                elif kwargs['dbinstype'] == 'KEYCOL':
+                    reqd = ['indexcol', 'datacol', 'table', 'keycol', 'key']
+                    rel = (kwargs[c] for c in reqd)
+                    qry = "SELECT {0},{1} FROM {2} WHERE {3} = '{4}' ORDER BY {0};"
+                    qry = qry.format(*rel)
+                else:
+                    raise NotImplementedError("The database type {} has not been created.".format(kwargs['dbinstype']))
+                   
+                cur.execute(qry)
+                    
                 results = [(row[0], row[1]) for row in cur.fetchall()]
                 con.close()
                 ind, dat = zip(*results)
@@ -1415,7 +1444,10 @@ class Feed(Base, ReprMixin):
 
         try:
             if not (self.data.index.is_monotonic and self.data.index.is_unique):
-                raise Exception('Feed index is not uniquely monotonic')
+                dtstr = str(self.data)
+                indstr = str(self.data.index)
+                msg = 'Feed index is not uniquely monotonic:' + dtstr + indstr
+                raise Exception(msg)
         except:
             point = "monounique"
             fdrp = self._generic_exception(point, fdrp)
@@ -1465,6 +1497,13 @@ class Feed(Base, ReprMixin):
         if hdlrp:
             reporter.add_handlepoint(hdlrp)
         return reporter
+    def _note_session(self):
+        self.ses = object_session(self)
+
+@event.listens_for(Feed, 'load')
+def __receive_load(target, context):
+    """ saves the session upon being queried """
+    target._note_session()
 
 class FeedTag(Base, ReprMixin):
     __tablename__ = '_feed_tags'
@@ -1766,4 +1805,4 @@ def SetupTrump(engine_string=None):
         print pgerr.statement
         print pgerr.message
         raise
-    return True
+

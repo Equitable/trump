@@ -5,6 +5,7 @@ import pandas as pd
 
 pdDatetimeIndex = pd.tseries.index.DatetimeIndex
 pdInt64Index = pd.core.index.Int64Index
+pdCoreIndex = pd.core.index.Index
 
 from sqlalchemy import DateTime, Integer, String
 
@@ -130,7 +131,7 @@ class DatetimeIndexImp(IndexImplementer):
         
         
         self.data = dfors
-	
+	  
         if case == 'asis':
             if isinstance(self.data.index, pdDatetimeIndex):
                 pass
@@ -140,6 +141,10 @@ class DatetimeIndexImp(IndexImplementer):
                     newind = [dt.date(y, 12, 31) for y in self.data.index]
                     self.data.index = newind
                     self.data.index = self.data.index.to_datetime()
+            elif isinstance(self.data.index, pdCoreIndex):
+                if isinstance(self.data.index[0], dt.date):
+                    newind = pdDatetimeIndex(self.data.index)
+                    self.data.index = newind
             else:
                 self.default(**kwargs)
 

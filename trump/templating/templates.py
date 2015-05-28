@@ -252,7 +252,9 @@ class DBapiFT(bFeed):
         self.s = DBapiST(dsn, user, password, host, database, sourcing_key)
         if self.__class__.__name__ == 'DBapiFT':
             self.s._set_basic(table, indexcol, datacol)
-            self.sourcing = self.s.as_dict
+        self._refresh_sourcing()
+    def _refresh_sourcing(self):    
+        self.sourcing = self.s.as_dict
 
     def _set_stype(self):
         self.meta['stype'] = 'DBAPI'

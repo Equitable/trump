@@ -1,8 +1,10 @@
+; Note: Use these as keys: ['dsn', 'user', 'password', 'host', 'database', 'port']
+
 [explicit]
 user: username
 password: password123
 port: 5432
-name: adatabase
+database: adatabase
 
 [partial]
 user: username
