@@ -427,12 +427,14 @@ class TestORM(object):
 
         fxdata = os.path.join(curdir,'testdata','fxdata.csv')
         for pair in ['EURUSD', 'GBPUSD', 'USDCAD']:
-            sym = sm.create(pair, overwrite=True)
+            
+            sym = sm.create(pair[:3], overwrite=True)
             fdtemp = CSVFT(fxdata, pair, index_col=0)
             sym.add_feed(fdtemp)
             business_day = FFillIT('B')
             sym.set_indexing(business_day)
-            sym.set_units("{}".format(pair[3:]))
+            #USDCAD -> "CAD/USD"
+            sym.set_units("{}/{}".format(pair[:3], pair[3:]))
             sym.add_tags('forex')
             sym.cache()
         
