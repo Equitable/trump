@@ -11,6 +11,8 @@ import os
 
 import datetime as dt
 
+def floats_equal(a,b,d=4):
+    return round(a,d) == round(b,d)
 
 curdir = os.path.dirname(os.path.realpath(__file__))
 
@@ -425,24 +427,47 @@ class TestORM(object):
 
         sm = self.sm
 
-        fxdata = os.path.join(curdir,'testdata','fxdata.csv')
-        for pair in ['EURUSD', 'GBPUSD', 'USDCAD']:
-            
-            sym = sm.create(pair[:3], overwrite=True)
+        fxdata = os.path.join(curdir,'testdata','fxdata3.csv')
+        for pair in ['EURUSD', 'GBPUSD', 'CADUSD', 'AUDEUR', 'USDJPY']:
+            print pair
+            sym = sm.create(pair, overwrite=True)
             fdtemp = CSVFT(fxdata, pair, index_col=0)
             sym.add_feed(fdtemp)
             business_day = FFillIT('B')
             sym.set_indexing(business_day)
             #USDCAD -> "CAD/USD"
-            sym.set_units("{}/{}".format(pair[:3], pair[3:]))
+            sym.set_units("{}/{}".format(pair[3:], pair[:3]))
             sym.add_tags('forex')
             sym.cache()
         
         cm = ConversionManager(self.eng, 'FX', 'forex')
         
+        #Should be the same as GBP...
+        df = cm.get_converted('GBPUSD', 'USD')
+        assert floats_equal(df.ix['2015-05-15'][0], 1.57370)
+
+        #Should be ~1.88
         df = cm.get_converted('GBPUSD', 'CAD')
-        
-        print df
+        assert floats_equal(df.ix['2015-05-15'][0], 1.88357)
+               
+        #Should be 1.0000
+        df = cm.get_converted('GBPUSD', 'GBP')
+        assert floats_equal(df.ix['2015-05-15'][0], 1.0)
+
+        #Should be ~0.97
+        df = cm.get_converted('AUDEUR', 'CAD')
+        assert floats_equal(df.ix['2015-05-15'][0], 0.96678)
+
+        #Should be ~187
+        df = cm.get_converted('GBPUSD', 'JPY')
+        assert floats_equal(df.ix['2015-05-15'][0], 187.7817525)
+
+        #Should error...since CHF wasn't added.
+        try:
+            df = cm.get_converted('GBPUSD', 'CHF')
+            assert False
+        except Exception, exp:
+            assert exp.message == "Converter has insufficient data to process USD to CHF"
 
     def test_real_trumpreport(self):
 
@@ -461,3 +486,4 @@ class TestORM(object):
         fout = file(os.path.join(curdir,'test_forex.html'),'w+')
         fout.write(report.html)
         fout.close()
+        

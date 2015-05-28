@@ -84,23 +84,39 @@ class FXConverter(object):
         self.data.columns = pd.MultiIndex.from_tuples(tmp_pairs)
            
     def convert(self, data, denom, to):
-        
-        # We need to do this, cause humans are dumb
+        # print "Trying to convert", denom, to
+    
+        # We need to do this, cause humans are dumb,
         if "/" in denom:
             denom = denom.split(r"/")[0]
         if "/" in to:
             to = to.split(r"/")[1]
-            
+
         pair = (denom, to)
         
-        if pair in self.data.columns:
-            tmp = data.mul(self.data[pair], axis=0)
-        elif recip(pair) in self.data.columns:
+        denusd = (denom, 'USD')
+        usdto = ('USD', to)
+        
+        #print pair
+        #print list(self.data.columns)
+        #print pair in self.data.columns
+        #print recip(pair) in self.data.columns
+        
+        pairs = self.data.columns
+        
+        if denom == to:
+            tmp = data
+        elif pair in pairs:
+            tmp = data.div(self.data[pair], axis=0)
+        elif recip(pair) in pairs:
             tmp = data.mul(self.data[recip(pair)], axis=0)
-        else:
+        elif ((denusd in pairs) or (recip(denusd) in pairs)) and \
+             ((usdto  in pairs) or (recip(usdto)  in pairs)):
             tmp = self.convert(data, denom, 'USD')
             tmp = self.convert(tmp, 'USD', to)
-        
+        else:
+            raise Exception ("Converter has insufficient data to process {} to {}".format(denom,to))
+
         return tmp
         
 if __name__ == '__main__':
