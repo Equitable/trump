@@ -6,7 +6,34 @@ from datetime import datetime as dt
 
 def recip(t):
     return t[1], t[0]
-    
+
+class CurPair(object):
+    def __init__(self, sym):
+        if len(sym) == 6:
+            self.num, self.den = sym[3:], sym[:3]
+        elif "//" in sym:
+            self.num, self.den = sym.split("//")
+        elif len(sym) == 2: #should be a tuple
+            self.num, self.den = sym
+            
+    @property
+    def pair(self):
+        return (self.num, self.den)
+    @property
+    def inverse(self):
+        return CurPair(self.pair[::-1])
+    def __eq__(self, obj):
+        if not isinstance(obj, CurPair):
+            obj = CurPair(obj)
+        return self.num == obj.num and self.den == obj.den
+    def __gt__(self, obj):
+        if self == obj:
+            return 'equal'
+        elif self == obj.inverse:
+            return 'recip'
+        elif self.den in obj.pair[0]:
+            raise NotImplementedError("CurPair not done")
+        
 class FXConverter(object):
     def __init__(self):
         
