@@ -118,7 +118,11 @@ class ProxyDict(object):
             return itm
         else:
             raise KeyError(key)
-
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
     def __setitem__(self, key, value):
         try:
             existing = self[key]

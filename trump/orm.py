@@ -44,7 +44,7 @@ import pandas as pd
 from sqlalchemy import event, Table, Column, ForeignKey, ForeignKeyConstraint,\
     String, Integer, Float, Boolean, DateTime, MetaData, func
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, aliased, backref
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.exc import ProgrammingError, NoSuchTableError
 from sqlalchemy.sql import and_, or_
@@ -273,23 +273,34 @@ class SymbolManager(object):
         Appending '%' to value will use SQL's "LIKE" functionality.
         """
 
-        qry = self.ses.query(SymbolMeta)
+        qry = self.ses.query(Symbol).join(SymbolMeta)
 
-        crit = []
         crits = []
         for attr, value in avargs.iteritems():
             if "%" in value:
                 acrit = SymbolMeta.value.like(value)
             else:
                 acrit = SymbolMeta.value == value
-            crit.append(acrit)
-            crit.append(SymbolMeta.attr == attr)
-            crits.append(and_(*crit))
+            crits.append(and_(acrit, SymbolMeta.attr == attr))
 
-        syms = qry.filter(or_(*crits)).all()
-        syms = [matched.symbol for matched in syms]
-        return syms
-    
+        candidates = qry.filter(or_(*crits)).order_by(SymbolMeta.symname).distinct()
+        
+        refined = []
+        
+        for sym in candidates:
+            keep = True
+            for attr, value in avargs.iteritems():
+                sym_meta_val = sym.meta_map.get(attr)
+                if sym_meta_val:
+                    keep = keep and (sym_meta_val.value == value)
+                else:
+                    keep = False
+                    break
+            if keep:
+                refined.append(sym)
+
+        return refined
+
     def bulk_cache_of_tag(self, tag):
         syms = self.search_tag(tag)
         
@@ -493,7 +504,7 @@ class Symbol(Base, ReprMixin):
     aliases = relationship("SymbolAlias", cascade=ADO)
     validity = relationship("SymbolValidity", cascade=ADO)
     feeds = relationship("Feed", cascade=ADO)
-    meta = relationship("SymbolMeta", cascade=ADO)
+    meta = relationship("SymbolMeta", lazy='dynamic', cascade=ADO)
     
     def __init__(self, name, description=None, units=None,
                  agg_method="PRIORITY_FILL",
@@ -1026,7 +1037,10 @@ class Symbol(Base, ReprMixin):
         if hdlrp:
             reporter.add_handlepoint(hdlrp)
         return reporter
-
+    @property
+    def meta_map(self):
+        return ProxyDict(self, 'meta', SymbolMeta, 'attr')
+        
 @event.listens_for(Symbol, 'load')
 def __receive_load(target, context):
     """ loads a symbols datatable upon being queried """
