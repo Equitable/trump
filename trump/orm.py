@@ -47,7 +47,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.exc import ProgrammingError, NoSuchTableError
-from sqlalchemy.sql import and_
+from sqlalchemy.sql import and_, or_
 from sqlalchemy import create_engine
 
 from indexing import indexingtypes
@@ -261,6 +261,33 @@ class SymbolManager(object):
         else:
             syms = qry.filter(SymbolTag.tag == tag).all()
         syms = [tagged.symbol for tagged in syms]
+        return syms
+
+    def search_meta(self, **avargs):
+        """
+        Get a list of Symbol objects by searching for specific 
+        meta's attribute and value.
+        
+        If more than one criteria is specified, AND logic is applied.
+
+        Appending '%' to value will use SQL's "LIKE" functionality.
+        """
+
+        qry = self.ses.query(SymbolMeta)
+
+        crit = []
+        crits = []
+        for attr, value in avargs.iteritems():
+            if "%" in value:
+                acrit = SymbolMeta.value.like(value)
+            else:
+                acrit = SymbolMeta.value == value
+            crit.append(acrit)
+            crit.append(SymbolMeta.attr == attr)
+            crits.append(and_(*crit))
+
+        syms = qry.filter(or_(*crits)).all()
+        syms = [matched.symbol for matched in syms]
         return syms
     
     def bulk_cache_of_tag(self, tag):
