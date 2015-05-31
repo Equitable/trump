@@ -486,4 +486,17 @@ class TestORM(object):
         fout = file(os.path.join(curdir,'test_forex.html'),'w+')
         fout.write(report.html)
         fout.close()
+
+    def test_search_meta(self):
+
+        sm = self.sm
+
+        for tikr in ['aaa', 'bbb', 'ccc']:
+            sym = sm.create(tikr, overwrite=True)
+            sym.add_meta(first = tikr[0].upper(), 
+                         second = tikr[1:],
+                         third = 'three')
+        
+        syms = sm.search_meta(third='three')
+        assert len(syms) == 3
         
