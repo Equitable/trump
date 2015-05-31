@@ -15,6 +15,7 @@ def floats_equal(a,b,d=4):
     return round(a,d) == round(b,d)
 
 curdir = os.path.dirname(os.path.realpath(__file__))
+inspect_reports = False
 
 class TestORM(object):
     
@@ -480,12 +481,15 @@ class TestORM(object):
             sym.add_feed(fdtemp)
             business_day = FFillIT('B')
             sym.set_indexing(business_day)
-            sym.add_tags('forex')
+            sym.add_tags('forex_report')
         
-        report = sm.bulk_cache_of_tag('forex')
-        fout = file(os.path.join(curdir,'test_forex.html'),'w+')
-        fout.write(report.html)
-        fout.close()
+        report = sm.bulk_cache_of_tag('forex_report')
+        print report.html
+        
+        if inspect_reports:
+            fout = file(os.path.join(curdir,'test_forex.html'),'w+')
+            fout.write(report.html)
+            fout.close()
 
     def test_search_meta(self):
 
