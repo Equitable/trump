@@ -891,9 +891,9 @@ class Symbol(Base, ReprMixin):
             self.aliases.append(a)
             objs.add(a)
 
-    def data(self):
+    def _final_data(self):
         """
-        :return: rows from the datatable
+        :return: rows from the datatable's final column, index accordingly.
         """
         dtbl = self.datatable
 
@@ -903,7 +903,7 @@ class Symbol(Base, ReprMixin):
         else:
             raise Exception("Symbol has no datatable")
 
-    def alldata(self):
+    def _all_datatable_data(self):
         """
         :return: all data from the datatable
         """
@@ -918,8 +918,12 @@ class Symbol(Base, ReprMixin):
 
     @property
     def df(self):
-        """ returns the dataframe representation of the symbol's final data """
-        data = self.data()
+        """
+        Note: this accessor is read-only.  It should be copied, if accessed in
+        an application, more than once.
+        :return: the dataframe representation of the symbol's final data
+        """
+        data = self._final_data()
 
         adf = pd.DataFrame(data)
         adf.columns = [self.index.name, self.name]
@@ -938,7 +942,7 @@ class Symbol(Base, ReprMixin):
     @property
     def datatable_df(self):
         """ returns the dataframe representation of the symbol's final data """
-        data = self.alldata()
+        data = self._all_datatable_data()
         adf = pd.DataFrame(data)
         
         adf.columns = self.dt_all_cols
@@ -958,10 +962,6 @@ class Symbol(Base, ReprMixin):
         
     def del_feed(self):
         """ remove a feed """
-        raise NotImplementedError
-
-    def add_feeds(self, symbol, ftype, sourcing, munging=None, fnum=None):
-        """ add several feeds with one method """
         raise NotImplementedError
 
     @property

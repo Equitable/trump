@@ -113,7 +113,7 @@ class TestORM(object):
 
         sym.cache()
 
-        ans = sym.alldata()
+        ans = sym._all_datatable_data()
 
         # the 13th is the last row, and it should be blank because
         # we only fetched through the 10th.
