@@ -263,14 +263,14 @@ class SymbolManager(object):
         syms = [tagged.symbol for tagged in syms]
         return syms
 
-    def search_meta_orm(self, **avargs):
+    def search_meta(self, **avargs):
         """
         Get a list of Symbol objects by searching for specific 
         meta's attribute and value.
         
         If more than one criteria is specified, AND logic is applied.
 
-        Appending '%' to value will use SQL's "LIKE" functionality.
+        Appending '%' to values will use SQL's "LIKE" functionality.
         """
         
         qry = self.ses.query(Symbol).join(SymbolMeta.symbol)
@@ -289,45 +289,6 @@ class SymbolManager(object):
 
         qry = qry.order_by(Symbol.name)
         return qry.all()
-
-        
-    def search_meta(self, **avargs):
-        """
-        Get a list of Symbol objects by searching for specific 
-        meta's attribute and value.
-        
-        If more than one criteria is specified, AND logic is applied.
-
-        Appending '%' to value will use SQL's "LIKE" functionality.
-        """
-
-        qry = self.ses.query(Symbol).join(SymbolMeta)
-
-        crits = []
-        for attr, value in avargs.iteritems():
-            if "%" in value:
-                acrit = SymbolMeta.value.like(value)
-            else:
-                acrit = SymbolMeta.value == value
-            crits.append(and_(acrit, SymbolMeta.attr == attr))
-
-        candidates = qry.filter(or_(*crits)).order_by(SymbolMeta.symname).distinct()
-        
-        refined = []
-        
-        for sym in candidates:
-            keep = True
-            for attr, value in avargs.iteritems():
-                sym_meta_val = sym.meta_map.get(attr)
-                if sym_meta_val:
-                    keep = keep and (sym_meta_val.value == value)
-                else:
-                    keep = False
-                    break
-            if keep:
-                refined.append(sym)
-
-        return refined
 
     def bulk_cache_of_tag(self, tag):
         syms = self.search_tag(tag)
