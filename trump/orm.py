@@ -263,6 +263,34 @@ class SymbolManager(object):
         syms = [tagged.symbol for tagged in syms]
         return syms
 
+    def search_meta_orm(self, **avargs):
+        """
+        Get a list of Symbol objects by searching for specific 
+        meta's attribute and value.
+        
+        If more than one criteria is specified, AND logic is applied.
+
+        Appending '%' to value will use SQL's "LIKE" functionality.
+        """
+        
+        qry = self.ses.query(Symbol).join(SymbolMeta.symbol)
+
+
+        for attr, value in avargs.iteritems():
+            SMA = aliased(SymbolMeta)
+            if "%" in value:
+                acrit = SMA.value.like(value)
+            else:
+                acrit = SMA.value == value
+            
+            crit = and_(acrit, SMA.attr == attr)
+
+            qry = qry.filter(crit).join(SMA, SMA.symname == SymbolMeta.symname)
+
+        qry = qry.order_by(Symbol.name)
+        return qry.all()
+
+        
     def search_meta(self, **avargs):
         """
         Get a list of Symbol objects by searching for specific 
