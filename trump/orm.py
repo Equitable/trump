@@ -255,22 +255,38 @@ class SymbolManager(object):
         """
 
         syms = []
+        
+        if isinstance(tag, (str, unicode)):
+            tags = [tag]
+        else:
+            tags = tag
 
         if symbols:
-            qry = self.ses.query(SymbolTag)
+            crits = []
+            for tag in tags:
+                if "%" in tag:
+                    crit = SymbolTag.tag.like(tag)
+                else:
+                    crit = SymbolTag.tag == tag
+                crits.append(crit)
 
-            if "%" in tag:
-                syms = qry.filter(SymbolTag.tag.like(tag)).all()
-            else:
-                syms = qry.filter(SymbolTag.tag == tag).all()
+            qry = self.ses.query(SymbolTag)
+            qry = qry.filter(or_(*crits))
+            syms = qry.all()
+            
             syms = [tagged.symbol for tagged in syms]
         if feeds:
-            qry = self.ses.query(Symbol).select_from(FeedTag).join(FeedTag.feed).join(Feed.symbol)
-
-            if "%" in tag:
-                qry = qry.filter(FeedTag.tag.like(tag))
-            else:
-                qry = qry.filter(FeedTag.tag == tag)
+            crits = []
+            for tag in tags:
+                if "%" in tag:
+                    crit = FeedTag.tag.like(tag)
+                else:
+                    crit = FeedTag.tag == tag
+                crits.append(crit)
+                    
+            qry = self.ses.query(Symbol).select_from(FeedTag)
+            qry = qry.join(FeedTag.feed).join(Feed.symbol)
+            qry = qry.filter(or_(*crits))
             fds = qry.distinct()
             
             syms = syms + [sym for sym in fds]
