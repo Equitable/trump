@@ -132,27 +132,43 @@ class TestORM(object):
         sym = sm.create("MSFT", overwrite=True)
 
         fdmsft = YahooFinanceFT("MSFT")
-
         sym.add_feed(fdmsft)
-
         sym.add_tags(['tech','software'])
-
         results = sm.search_tag('tech')
 
         msft = results[0]
-
         results = sm.search_tag('soft%')
-
         msft2 = results[0]
-
         assert msft2 is msft
-
+        
         msft.del_tags('tech')
-
         results = sm.search_tag('tech')
-
         assert len(results) == 0
+        
+    def test_tags_and_search_feeds(self):
+        
+        sm = self.sm
+        
+        for s in ['vaf', 'vbf', 'vcg']:
+            sym = sm.create(s, overwrite=True)
+            testdata = os.path.join(curdir,'testdata','testdailydata.csv')
+            fdtemp = CSVFT(testdata, 'Amount', parse_dates=0, index_col=0)
+            sym.add_feed(fdtemp)
+            if s == 'vaf':
+                sym.add_tags('vvvvv') #Should not be returned in search.
+            sym.feeds[0].add_tags([x * 5 for x  in list(s)])
 
+        syms = sm.search_tag('vvvvv', symbols=True, feeds=False)
+        assert len(syms) == 1      
+        assert syms[0].name == 'vaf'
+        
+        syms = sm.search_tag('vvvvv', symbols=False, feeds=True)
+        assert len(syms) == 3
+        syms = None
+        
+        syms = sm.search_tag('vvvvv', symbols=True, feeds=True)
+        assert len(syms) == 3
+        
     def test_existence_deletion(self):
 
         sm = self.sm

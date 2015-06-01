@@ -247,20 +247,34 @@ class SymbolManager(object):
         else:
             return syms[0]
 
-    def search_tag(self, tag):
+    def search_tag(self, tag, symbols=True, feeds=False):
         """
         Get a list of Symbol objects by searching a tag or partial tag.
 
         Appending '%' will use SQL's "LIKE" functionality.
         """
 
-        qry = self.ses.query(SymbolTag)
+        syms = []
 
-        if "%" in tag:
-            syms = qry.filter(SymbolTag.tag.like(tag)).all()
-        else:
-            syms = qry.filter(SymbolTag.tag == tag).all()
-        syms = [tagged.symbol for tagged in syms]
+        if symbols:
+            qry = self.ses.query(SymbolTag)
+
+            if "%" in tag:
+                syms = qry.filter(SymbolTag.tag.like(tag)).all()
+            else:
+                syms = qry.filter(SymbolTag.tag == tag).all()
+            syms = [tagged.symbol for tagged in syms]
+        if feeds:
+            qry = self.ses.query(Symbol).select_from(FeedTag).join(FeedTag.feed).join(Feed.symbol)
+
+            if "%" in tag:
+                qry = qry.filter(FeedTag.tag.like(tag))
+            else:
+                qry = qry.filter(FeedTag.tag == tag)
+            fds = qry.distinct()
+            
+            syms = syms + [sym for sym in fds]
+            return list(set(syms))
         return syms
 
     def search_meta(self, **avargs):
@@ -1351,6 +1365,16 @@ class Feed(Base, ReprMixin):
                 settings = chkpnt_settings[checkpoint]
                 setattr(self.handle, checkpoint, settings)
         objs.commit()
+    def add_tags(self, tags):
+        """ add a tag or tags to a symbol """
+
+        if isinstance(tags, (str, unicode)):
+            tags = [tags]
+
+        objs = object_session(self)
+        tmps = [FeedTag(tag=t, feed=self) for t in tags]
+        objs.add_all(tmps)
+        objs.commit()
 
     def cache(self):
         
@@ -1548,7 +1572,10 @@ class FeedTag(Base, ReprMixin):
                                 [Feed.symname, Feed.fnum],
                                 **CC)
     __table_args__ = (fkey, {})
-        
+    def __init__(self, tag, feed=None):
+        self.feed = feed
+        self.tag = tag
+
 class FeedSource(Base, ReprMixin):
     __tablename__ = "_feed_sourcing"
 
