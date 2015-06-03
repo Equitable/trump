@@ -88,8 +88,6 @@ else:
 
 Base = declarative_base()
 
-#metadata = MetaData(bind=engine)
-
 ADO = "all, delete-orphan"
 CC = {'onupdate': "CASCADE", 'ondelete': "CASCADE"}
 
@@ -101,62 +99,76 @@ class SymbolManager(object):
     overrides/failsafes.
     """
 
-    def __init__(self, engine_or_eng_str=None):
+    def __init__(self, engine_or_eng_str=None, loud=False, echo=False):
         """
-        :param engine_or_eng_str: str or None
+        Parameters
+        ----------
+        engine_or_eng_str : str or None, optional
             Pass a SQLAlchemy engine, or a string.  Without one,
-            it will use the defaul provided in trump/options/trump.cfg
+            it will use the string provided in trump/options/trump.cfg
             If it fails to get a value there, an in-memory SQLlite
             session would be created.
-        :return: SymbolManager
+        loud : bool, optional
+            Print information such as engine string used, defaults to False
+        echo : bool, optional
+            If a new engine is created, it will pass this to it'safes
+            constructor, enabling SQLAlchemy's echo mode.
+            
+        Returns
+        -------
+        SymbolManager
         """
         if engine_or_eng_str is None:
-            engine = create_engine(ENGINE_STR, echo=False)
+            engine = create_engine(ENGINE_STR, echo=echo)
         elif isinstance(engine_or_eng_str, (str, unicode)):
-            engine = create_engine(engine_or_eng_str, echo=False)
+            engine = create_engine(engine_or_eng_str, echo=echo)
         else:
             engine = engine_or_eng_str
         
         Base.metadata.bind = engine
         DBSession = sessionmaker(bind=engine)
         
-        print "Using engine: {}".format(ENGINE_STR)
+        self.loud = loud
+        if loud:
+            print "Using engine: {}".format(ENGINE_STR)
 
         self.ses = DBSession()
         
     def finish(self):
-        """
-        Closes the session with the database.
+        """ Closes the session with the database.
 
-        Call after doing any work with Trump.
+        Call at the end of a trump session. It also 
+        calls SessionManager.complete().
         """
         self.complete()
         self.ses.close()
 
     def create(self, name, description=None, units=None,
                agg_method="priority_fill", overwrite=False):
-        """
-        Create, or get if exists, a Symbol.
-
-        :param name: str
-            a symbol's name is a primary key, used across
+        """ Create, or get if exists, a Symbol.
+        
+        Parameters
+        ----------
+        name : str
+            A symbol's name is a primary key, used across
             the Trump ORM.
-        :param description:
-            an arbitrary string, used to store user information
+        description : str, optional
+            An arbitrary string, used to store user information
             related to the symbol.
-        :param units:
-            the functionality associated with units, is not
-            yet implemented, however, for now, this is simply
-            a string used to denote the units of the final
+        units : str, optional
+            This is a string used to denote the units of the final
             data Series.
-        :param agg_method: str
-            the aggregation method, used to calculate
-            the final feed.
-        :param overwrite: boolean
-            set to True, to delete an existing symbol
-        :return: Symbol
+        agg_method : str, optional
+            The aggregation method, used to calculate
+            the final feed.  Defaults to priority_fill.
+        overwrite : bool, optional
+            Set to True, to force deletion an existing symbol.
+            defaults to False.
+            
+        Returns
+        -------
+        Symbol
         """
-        """ Create, or gets if exists, a specific Symbol. """
         sym = self.try_to_get(name)
 
         if sym is not None:
@@ -185,7 +197,10 @@ class SymbolManager(object):
     def delete(self, symbol):
         """
         Deletes a Symbol.
-        :param symbol: str or Symbol
+        
+        Parameters
+        ----------
+        symbol : str or Symbol
         """
         if isinstance(symbol, str):
             sym = self.get(symbol)
@@ -197,15 +212,25 @@ class SymbolManager(object):
         self.ses.commit()
 
     def complete(self):
-        """ commits any changes to the database  """
+        """Commits any changes to the database.
+        In general, most of Trump API's auto-commits
+        or does so internally.  
+        
+        This is necessary when working directly with SQLAlchemy
+        exposed attributes.
+        """
         self.ses.commit()
 
     def exists(self, symbol):
-        """
-        checks to see if a symbol exists
-        :param symbol: str or Symbol
+        """Checks to if a symbol exists, by name.
+        
+        Parameters
+        ----------
+        symbol : str or Symbol
 
-        :returns: bool
+        Returns
+        -------
+        bool
         """
 
         if isinstance(symbol, str):
@@ -220,12 +245,21 @@ class SymbolManager(object):
             return True
 
     def get(self, symbol):
-        """
-        Gets a Symbol based on name, which is expected to exist. Errors if it
-        doesn't exist.  Use .try_to_get(), if the symbol may or may not
-        exist.
-
-        :param symbol: str
+        """ Gets a Symbol based on name, which is expected to exist. 
+        
+        Parameters
+        ----------
+        symbol : str or Symbol
+        
+        Returns
+        -------
+        Symbol
+        
+        Raises
+        ------
+        Exception
+            If it does not exist. Use .try_to_get(), 
+            if the symbol may or may not exist.
         """
         syms = self.try_to_get(symbol)
         if syms is None:
@@ -234,12 +268,21 @@ class SymbolManager(object):
             return syms
 
     def try_to_get(self, symbol):
-        """
-        Gets a Symbol based on name, which may or may not exist.  Returns
-        None, or the Symbol.  Use .get(), if the symbol should exist,
-        and an exception is needed if it doesn't.
+        """ Gets a Symbol based on name, which may or may not exist.
+        
+        Parameters
+        ----------
+        symbol : str
+        
+        Returns
+        -------
+        Symbol or None.  
+        
+        Note
+        ----
+        Use .get(), if the symbol should exist, and an exception 
+        is needed if it doesn't.
 
-        :param symbol: str
         """
         syms = self.ses.query(Symbol).filter(Symbol.name == symbol).all()
         if len(syms) == 0:
@@ -248,10 +291,22 @@ class SymbolManager(object):
             return syms[0]
 
     def search_tag(self, tag, symbols=True, feeds=False):
-        """
-        Get a list of Symbol objects by searching a tag or partial tag.
+        """ Get a list of Symbols by searching a tag or partial tag.
 
-        Appending '%' will use SQL's "LIKE" functionality.
+        Parameters
+        ----------
+        tag : str
+            The tag to search.  Appending '%' will use SQL's "LIKE"
+            functionality.
+        symbols : bool, optional
+            Search for Symbol's based on their tags.
+        feeds : bool, optional
+            Search for Symbol's based on their Feeds' tags.
+        
+        Returns
+        -------
+        List of Symbols or empty list
+        
         """
 
         syms = []
@@ -294,13 +349,23 @@ class SymbolManager(object):
         return syms
 
     def search_meta(self, **avargs):
-        """
-        Get a list of Symbol objects by searching for specific 
-        meta's attribute and value.
+        """Search list of Symbol objects by by querying specific 
+        meta attributes and their respective values.
         
-        If more than one criteria is specified, AND logic is applied.
-
-        Appending '%' to values will use SQL's "LIKE" functionality.
+        Parameters
+        ----------
+        avargs
+            The attributes and values passed as key word arguments.
+            If more than one criteria is specified, AND logic is applied.
+            Appending '%' to values will use SQL's "LIKE" functionality.
+        
+        Example
+        -------
+            sm.search_meta(geography='Canada', sector='Gov%')
+            
+        Returns
+        -------
+        List of Symbols or empty list
         """
         
         qry = self.ses.query(Symbol).join(SymbolMeta.symbol)
@@ -321,14 +386,20 @@ class SymbolManager(object):
         return qry.all()
 
     def bulk_cache_of_tag(self, tag):
-        """
-        Caches all the symbols by a certain tag.
+        """ Caches all the symbols by a certain tag.
 
-        No different, than cacheing each symbol individually.
+        For now, there is no different, than 
+        caching each symbol individually.  In the future,
+        this functionality could have speed improvements.
 
-        :param tag: str
+        Parameters
+        ----------
+        tag : str
+            Use '%' to enable SQL's "LIKE" functionality.
 
-        :return TrumpReport:
+        Returns
+        -------
+        TrumpReport
         """
 
         syms = self.search_tag(tag)
@@ -345,7 +416,11 @@ class SymbolManager(object):
         """
         Build a view of group of Symbols based on their tag.
         
-        Appending '%' will use SQL's "LIKE" functionality.
+        Parameters
+        ----------
+        tag : str
+            Use '%' to enable SQL's "LIKE" functionality.
+
         """
         
         syms = self.search_tag(tag)
