@@ -538,20 +538,25 @@ class Symbol(Base, ReprMixin):
     def __init__(self, name, description=None, units=None,
                  agg_method="PRIORITY_FILL",
                  indexname="UNNAMED", indeximp="DatetimeIndexImp"):
-        """
-        :param name: str
+        """A Trump Symbol persistently objectifies indexed data
+
+        Use the SymbolManager class to create or retrieve existing symbols.
+
+        Parameters
+        ----------
+        name : str
             The name of the symbol to be added to the database, serves
             as a primary key across the trump installation.
-        :param description: str, optional
+        description : str, optional
             a description of the symbol, just for notes.
-        :param units: str, optional
+        units : str, optional
             a string representing the units for the data.
-        :param agg_method: str, default PRIORITY_FILL
-            the method used for aggregating feeds, see 
+        agg_method : str, default PRIORITY_FILL
+            the method used for aggregating feeds, see
             trump.extensions.symbol_aggs.py for the list of available options.
-        :param indexname: str
+        indexname : str
             a proprietary name assigned to the index.
-        :param indeximp: str
+        indeximp : str
             a string representing an index implementer (one of the classes in indexing.py)
 
         """
