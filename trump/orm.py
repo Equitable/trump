@@ -321,6 +321,16 @@ class SymbolManager(object):
         return qry.all()
 
     def bulk_cache_of_tag(self, tag):
+        """
+        Caches all the symbols by a certain tag.
+
+        No different, than cacheing each symbol individually.
+
+        :param tag: str
+
+        :return TrumpReport:
+        """
+
         syms = self.search_tag(tag)
         
         name = 'Bulk Cache of Symbols tagged {}'.format(tag)
@@ -527,7 +537,7 @@ class Symbol(Base, ReprMixin):
     
     def __init__(self, name, description=None, units=None,
                  agg_method="PRIORITY_FILL",
-                 indexname="unnamed", indeximp="DatetimeIndexImp"):
+                 indexname="UNNAMED", indeximp="DatetimeIndexImp"):
         """
         :param name: str
             The name of the symbol to be added to the database, serves
@@ -966,7 +976,10 @@ class Symbol(Base, ReprMixin):
         indt = indexingtypes[self.index.indimp]
         indt = indt(adf, self.index.case, self.index.getkwargs())
         adf = indt.final_series()
-       
+
+        if adf.index.name == "UNNAMED":
+            adf.index.name = None
+
         return adf
 
     @property
