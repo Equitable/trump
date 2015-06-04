@@ -1076,22 +1076,22 @@ class Symbol(Base, ReprMixin):
         else:
             fnum = None
 
-        if isinstance(obj, bFeed):
-            munging = obj.munging
+        if isinstance(feedlike, bFeed):
+            munging = feedlike.munging
             if 'munging' in kwargs:
                 explicit_munging = kwargs['munging'].as_odict
                 for key in explicit_munging:
                     munging[key] = explicit_munging[key]
-            fed = Feed(self, obj.ftype,
-                       obj.sourcing,
+            fed = Feed(self, feedlike.ftype,
+                       feedlike.sourcing,
                        munging,
-                       obj.meta,
+                       feedlike.meta,
                        fnum)
 
-        elif isinstance(obj, Feed):
-            fed = obj
+        elif isinstance(feedlike, Feed):
+            fed = feedlike
         else:
-            raise Exception("Invalid Feed {}".format(repr(obj)))
+            raise Exception("Invalid Feed {}".format(repr(feedlike)))
         self.feeds.append(fed)
         
         objs = object_session(self)
