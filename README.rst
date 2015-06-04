@@ -111,6 +111,25 @@ Using a Symbol
 
    sm.finish()
 
+Contributing
+============
+
+If you're interested in contributing to Trump, we would love for you to do so!  The best place to
+start is cloning the project, then use the latest commit from the master branch to install the package.
+After that, follow the configuration instructions, in the installation instructions linked below.
+While you do so, please make notes about any unclear parts or errors you get, during the
+installation instructions. Please post an issue on GitHub with **ANY** notes, or if you're ambitious,
+feel free to submit a pull request yourself.  Don't hesitate, doing either.
+
+If it's not working, or unclear, it's our fault.  And, we really want it to be easy for people to
+get started. It's really hard for the creator of the project, to assess their own instructions.
+
+After installation, there are many paths to take; each one can be addressed by posting an issue,
+or a pull request.  Exploring the docs, you'll inevitably find areas that need improving. Explore
+the open issues, ones tagged with "Good First Pull Request" are the low hanging fruit.  Often,
+current issues won't have a ton of information.  If you want to work on one, just add a comment,
+asking for more info and mention that you're going to try to tackle it.  Also, just posting an
+issue to "Say Hi", and ask for recommended issues to start on, is a great way to get started too.
    
 Installation
 ============
