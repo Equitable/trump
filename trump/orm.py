@@ -361,7 +361,7 @@ class SymbolManager(object):
         
         Example
         -------
-            sm.search_meta(geography='Canada', sector='Gov%')
+        >>> sm.search_meta(geography='Canada', sector='Gov%')
             
         Returns
         -------
@@ -554,12 +554,14 @@ class ConversionManager(SymbolManager):
     """
     def __init__(self, engine_or_eng_str=None, system='FX', tag=None):
         """
-        :param engine_or_eng_str: str or None
+        Parameters
+        ----------
+        engine_or_eng_str : str or None
             Pass a SQLAlchemy engine, or a string.  Without one,
             it will use the defaul provided in trump/options/trump.cfg
             If it fails to get a value there, an in-memory SQLlite
             session would be created.
-        :param system: str, default to FX
+        system : str, optional
             Uses the FX conversion system logic by default.
             Currently, no other systems are implemented.  Eg. metric-only,
             imperial-metric, etc.
@@ -568,7 +570,7 @@ class ConversionManager(SymbolManager):
             ConversionManager, but the one specified at instantiation
             will be used as default.
             
-        :param tag: str, defaults to None
+        tag : str, optional
             Tag for the set of feeds to use for conversion.  Only necessary,
             if the conversion system relies on it.  For FX, it's needed, to 
             specify the set of feeds to use.       
@@ -601,17 +603,19 @@ class ConversionManager(SymbolManager):
                 
     def get_converted(self, symbol, units='CAD', system=None, tag=None):
         """
-        Gets a Symbol's Dataframe, after converting the units
-        appropriate converter.
-
-        :param symbol: str
+        Uses a Symbol's Dataframe, to build a new Dataframe,
+        with the data converted to the new units
+        
+        Parameters
+        ----------
+        symbol : str
             String representing a symbol
-        :param units: str, default to CAD
-            Specify the units to convert the symbol to. 
-        :param system: str or None
+        units : str, optional
+            Specify the units to convert the symbol to, default to CAD 
+        system : str, optional
             If None, the default system specified at instantiation
             is used.  System defines which conversion approach to take.
-        :param tag: str or None
+        tag : str, optional
             Tags define which set of conversion data is used.  If None, the
             default tag specified at instantiation is used.  
         """
@@ -686,16 +690,14 @@ class Symbol(Base, ReprMixin):
     
     def set_indexing(self, index_template):
         """
-        Update a symbol's indexing.  
-
-        :param: index_template, bIndex or bIndex-like
-            an index template used to overwrite all 
+        Update a symbol's indexing strategy
+        
+        Parameters
+        ----------
+        index_template : bIndex or bIndex-like
+            An index template used to overwrite all 
             details about the symbol's current index.
 
-        :return: None
-        
-        Changing the indexing implementer works only on indicies of the same
-        database type.  Otherwise, the symbol needs to be deleted first.
         """
         objs = object_session(self)
         self.index.name = index_template.name
@@ -705,6 +707,16 @@ class Symbol(Base, ReprMixin):
         objs.commit()
 
     def add_meta(self, **metadict):
+        """Add meta information to a Symbol.
+                
+        Parameters
+        ----------
+        metadict 
+            Attributes are passed as keywords, with their
+            associated values as strings.  For meta attributes with spaces,
+            use an unpacked dict.
+                    
+        """
         
         objs = object_session(self)
         
@@ -718,10 +730,11 @@ class Symbol(Base, ReprMixin):
         """
         Creates and adds a SymbolValidity object to the Symbol.
 
-        :param: validity_template, bValidity or bValidity-like
+        Parameters
+        ----------
+        validity_template : bValidity or bValidity-like
             a validity template.
 
-        :return: None
         """
         validator = val_template.validator
         
@@ -749,7 +762,9 @@ class Symbol(Base, ReprMixin):
         """
         Update a symbol's handle checkpoint settings
 
-        :param: chkpnt_settings, dict
+        Parameters
+        ----------
+        chkpnt_settings : dict
             a dictionary where the keys are stings representing
             individual handle checkpoint names, for a Symbol
             (eg. caching_of_feeds, feed_aggregation_problem, ...)
@@ -757,8 +772,6 @@ class Symbol(Base, ReprMixin):
             current list.
 
             The values can be either integer or BitFlags.
-
-        :return: None
         """
 
         # Note, for now, this function is nearly identical
@@ -775,7 +788,18 @@ class Symbol(Base, ReprMixin):
         objs.commit()
 
     def cache(self, checkvalidity=True):
-        """ Re-caches the Symbol's datatable by querying each Feed. """
+        """ Re-caches the Symbol's datatable by querying each Feed. 
+        
+        Parameters
+        ----------
+        checkvalidity : bool, optional
+            Optionally, check validity post-cache.  Improve speed by
+            turning to False.
+        
+        Returns
+        -------
+        SymbolReport
+        """
 
         data = []
         cols = ['final', 'override_feed000', 'failsafe_feed999']
@@ -901,7 +925,21 @@ class Symbol(Base, ReprMixin):
         return smrp
 
     def check_validity(self, checks=None, report=True):
+        """ Runs a Symbol's validity checks.
         
+        Parameters
+        ----------
+        checks : str, [str,], optional
+            Only run certain checks.  
+        report : bool, optional
+            If set to False, the method will return only the result of the
+            check checks (True/False).  Set to True, to have a 
+            SymbolReport returned as well.
+            
+        Returns
+        -------
+        Bool, or a Tuple of the form (Bool, SymbolReport)
+        """        
         if report:
             reportpoints = []
             
@@ -942,6 +980,12 @@ class Symbol(Base, ReprMixin):
         
     @property
     def isvalid(self):
+        """Quick access to the results of a a check_validity report
+        
+        Returns
+        -------
+        Bool
+        """
         return self.check_validity(report=False)
 
     @property
@@ -963,10 +1007,14 @@ class Symbol(Base, ReprMixin):
                                                        fed.ftype))
         return "\n".join(lines)
 
-
-
     def del_tags(self, tags):
-        """ remove a tag or tags from a symbol """
+        """ remove a tag or tags from a symbol 
+        
+        Parameters
+        ----------
+        tags : str or [str,]
+            Tags to be removed
+        """
         # SQLA Adding a SymbolTag object, feels awkward/uneccessary.
         # Should I be implementing this functionality a different way?
 
@@ -985,7 +1033,13 @@ class Symbol(Base, ReprMixin):
             objs.commit()
 
     def add_tags(self, tags):
-        """ add a tag or tags to a symbol """
+        """ add a tag or tags to a symbol
+        
+        Parameters
+        ----------
+        tags : str or [str,]
+            Tags to be added
+        """
         # SQLA Adding a SymbolTag object, feels awkward/uneccessary.
         # Should I be implementing this functionality a different way?
 
@@ -999,10 +1053,19 @@ class Symbol(Base, ReprMixin):
 
     @property
     def n_tags(self):
-        """ returns the number of tags  """
+        """ returns the number of tags """
         return len(self.tags)
 
-    def add_feed(self, obj, **kwargs):
+    def add_feed(self, feedlike, **kwargs):
+        """ Add a feed to the Symbol
+        
+        Parameters
+        ----------
+        feedlike : Feed or bFeed-like
+            The feed template, or Feed object to be added.
+        kwargs
+            Munging instructions
+        """
         if 'fnum' in kwargs:
             fnum = kwargs['fnum']
             del kwargs['fnum']
@@ -1029,28 +1092,31 @@ class Symbol(Base, ReprMixin):
         
         objs = object_session(self)
         objs.add(fed)
-
-        # SQLAQ - With Postgres, I don't need this commit here.
-        # with SQLite, I do. On SQLite, if I don't have it, I get a really
-        # strange situation where self.feeds can have two identical Feeds
-        # matching, after only ever calling add_feed ONCE, on a brand new
-        # SQLite file.
         objs.commit()
 
-    def add_alias(self, obj):
+    def add_alias(self, alias):
+        """ Add an alias to a Symbol
         
+        Parameters
+        ----------
+        alias : str
+            The alias
+        """
         objs = object_session(self)
         
-        if isinstance(obj, list):
+        if isinstance(alias, list):
             raise NotImplementedError
-        elif isinstanceofany(obj, (str, unicode)):
-            a = SymbolAlias(self, obj)
+        elif isinstanceofany(alias, (str, unicode)):
+            a = SymbolAlias(self, alias)
             self.aliases.append(a)
             objs.add(a)
 
     def _final_data(self):
         """
-        :return: rows from the datatable's final column, index accordingly.
+        Returns
+        -------
+        A list of tuples representing rows from the datatable's index
+        and final column, sorted accordingly.
         """
         dtbl = self.datatable
 
@@ -1062,7 +1128,10 @@ class Symbol(Base, ReprMixin):
 
     def _all_datatable_data(self):
         """
-        :return: all data from the datatable
+        Returns
+        -------
+        A list of tuples representing rows from all columns of the datatable,
+        sorted accordingly.
         """
         dtbl = self.datatable
         cols = (getattr(dtbl.c, col) for col in self.dt_all_cols)
@@ -1078,7 +1147,10 @@ class Symbol(Base, ReprMixin):
         """
         Note: this accessor is read-only.  It should be copied, if accessed in
         an application, more than once.
-        :return: the dataframe representation of the symbol's final data
+        
+        Returns
+        -------
+            Dataframe of the symbol's final data.
         """
         data = self._final_data()
 
@@ -1112,17 +1184,20 @@ class Symbol(Base, ReprMixin):
         for col in adf.columns:
             adf[col] = datt(adf[col]).converted
         
-        adf = adf.set_index('indx')
+        adf = adf.set_index(self.index.name)
 
         indt = indexingtypes[self.index.indimp]
         indt = indt(adf, self.index.case, self.index.getkwargs())
         adf = indt.raw_data()
-
+        
+        if adf.index.name == "UNNAMED":
+            adf.index.name = None
+            
         return adf
         
     def del_feed(self):
         """ remove a feed """
-        raise NotImplementedError
+        raise NotImplementedError("Feed deletion has not be created yet")
 
     @property
     def n_feeds(self):
@@ -1294,8 +1369,8 @@ class SymbolValidity(Base, ReprMixin):
 
 class SymbolHandle(Base, ReprMixin):
     """
-    Stores instructions about specific handle points during
-    Symbol caching:
+    Stores instructions about how to handle exceptions thrown
+    during specific points of Symbol caching:
 
     .. code-block:: python
 
@@ -1318,10 +1393,13 @@ class SymbolHandle(Base, ReprMixin):
 
     def __init__(self, chkpnt_settings={}, sym=None):
         """
-        :param chkpnt_settings: dict
+        
+        Parameters
+        ----------
+        chkpnt_settings : dict
             A dictionary with keys matching names of the handle points
             and the values either integers or BitFlags
-        :param str or sym: Symbol
+        sym : str or Symbol
             The Symbol that this SymbolHandle is associated with it.
         """
         set_symbol_or_symname(self, sym)
@@ -1512,7 +1590,7 @@ class Feed(Base, ReprMixin):
                 setattr(self.handle, checkpoint, settings)
         objs.commit()
     def add_tags(self, tags):
-        """ add a tag or tags to a symbol """
+        """ add a tag or tags to a Feed """
 
         if isinstance(tags, (str, unicode)):
             tags = [tags]
