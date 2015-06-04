@@ -1197,7 +1197,7 @@ class Symbol(Base, ReprMixin):
         for col in adf.columns:
             adf[col] = datt(adf[col]).converted
         
-        adf = adf.set_index(self.index.name)
+        adf = adf.set_index('indx')
 
         indt = indexingtypes[self.index.indimp]
         indt = indt(adf, self.index.case, self.index.getkwargs())
@@ -1205,6 +1205,8 @@ class Symbol(Base, ReprMixin):
         
         if adf.index.name == "UNNAMED":
             adf.index.name = None
+        else:
+            adf.index.name = self.index.name
             
         return adf
         
