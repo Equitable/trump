@@ -700,6 +700,10 @@ class Symbol(Base, ReprMixin):
 
         """
         objs = object_session(self)
+        
+        if self.index.indimp != index_template.imp_name:
+            self._refresh_datatable_schema()
+        
         self.index.name = index_template.name
         self.index.indimp = index_template.imp_name
         self.index.case = index_template.case
