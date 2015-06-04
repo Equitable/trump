@@ -437,75 +437,112 @@ class SymbolManager(object):
         self.ses.commit()        
         self.ses.execute(qry)
         self.ses.commit()
+    def _add_orfs(self, which, symbol, ind, val, dt_log=None, user=None, comment=None):
+        """
+        Appends a single indexed-value pair, to a symbol object, to be
+        used during the final steps of the aggregation of the datatable.
+
+        See add_override and add_fail_safe.
+        
+        Parameters
+        ----------
+        which : str
+            Fail Safe or Override?
+        symbol : Symbol or str
+            The Symbol to apply the fail safe
+        ind : obj
+            The index value where the fail safe should be applied
+        val : obj
+            The data value which will be used in the fail safe
+        dt_log : datetime
+            A log entry, for saving when this fail safe was created.
+        user : str
+            A string representing which user made the fail safe
+        comment : str
+            A string to store any notes related to this fail safe.
+        """
+        if not isinstance(symbol, (str, unicode)):
+            symbol = symbol.name
+
+        if not dt_log:
+            dt_log = dt.datetime.now()
+
+        if which.lower() == 'override':
+            qry = self.ses.query(func.max(Override.ornum).label('max_ornum'))
+            use = Override
+        elif which.lower() == 'failsafe':
+            qry = self.ses.query(func.max(FailSafe.fsnum).label('max_fsnum'))
+            use = FailSafe
+            
+        qry = qry.filter_by(symname = symbol)
+        
+        cur_num = qry.one()
+        
+        if cur_num[0] is None:
+            next_num = 0
+        else:
+            next_num = cur_num[0] + 1            
+
+        tmp = use(symname=symbol,
+                   ind=ind,
+                   val=val,
+                   dt_log=dt_log,
+                   user=user,
+                   comment=comment,
+                   ornum=next_num)
+                                             
+        self.ses.add(tmp)
+        self.ses.commit()
+        
     def add_override(self, symbol, ind, val, dt_log=None, user=None, comment=None):
         """
         Appends a single indexed-value pair, to a symbol object, to be
         used during the final steps of the aggregation of the datatable.
 
-        Overrides, get applied with highest priority.
+        With default settings Overrides, get applied with highest priority.
+        
+        Parameters
+        ----------
+        symbol : Symbol or str
+            The Symbol to override
+        ind : obj
+            The index value where the override should be applied
+        val : obj
+            The data value which will be used in the override
+        dt_log : datetime
+            A log entry, for saving when this override was created.
+        user : str
+            A string representing which user made the override
+        comment : str
+            A string to store any notes related to this override.
         """
+        self._add_orfs('override', symbol, ind, val, dt_log, user, comment)
 
-        if not isinstance(symbol, (str, unicode)):
-            symbol = symbol.name
-
-        if not dt_log:
-            dt_log = dt.datetime.now()
-
-        qry = self.ses.query(func.max(Override.ornum).label('max_ornum'))
-            
-        qry = qry.filter_by(symname = symbol)
-        
-        cur_ornum = qry.one()
-        
-        if cur_ornum[0] is None:
-            next_ornum = 0
-        else:
-            next_ornum = cur_ornum[0] + 1            
-
-        tmp = Override(symname=symbol,
-                       ind=ind,
-                       val=val,
-                       dt_log=dt_log,
-                       user=user,
-                       comment=comment,
-                       ornum=next_ornum)
-                                             
-        self.ses.add(tmp)
-        self.ses.commit()
 
     def add_fail_safe(self, symbol, ind, val,
                       dt_log=None, user=None, comment=None):
         """
-        Appends a single indexed-value, to a symbol object, to be
+        Appends a single indexed-value pair, to a symbol object, to be
         used during the final steps of the aggregation of the datatable.
 
-        Fail safes, get applied with the lowest priority.
+        With default settings FailSafes, get applied with lowest priority.
+        
+        Parameters
+        ----------
+        symbol : Symbol or str
+            The Symbol to apply the fail safe
+        ind : obj
+            The index value where the fail safe should be applied
+        val : obj
+            The data value which will be used in the fail safe
+        dt_log : datetime
+            A log entry, for saving when this fail safe was created.
+        user : str
+            A string representing which user made the fail safe
+        comment : str
+            A string to store any notes related to this fail safe.
         """
-        if not isinstance(symbol, (str, unicode)):
-            symbol = symbol.name
-
-        if not dt_log:
-            dt_log = dt.datetime.now()
-            
-        qry = self.ses.query(func.max(FailSafe.fsnum).label('max_fsnum'))
-        qry = qry.filter_by(symname = symbol)
-        
-        cur_fsnum = qry.one()
-        
-        if cur_fsnum[0] is None:
-            next_fsnum = 0
-        else:
-            next_fsnum = cur_fsnum[0] + 1        
-            
-        tmp = FailSafe(symname=symbol,
-                       ind=ind,
-                       val=val,
-                       dt_log=dt_log,
-                       user=user,
-                       comment=comment,
-                       fsnum=next_fsnum)
-        self.ses.add(tmp)
-        self.ses.commit()
+        self._add_orfs('failsafe', symbol, ind, val, dt_log, user, comment)
 
 class ConversionManager(SymbolManager):
     """
