@@ -469,10 +469,10 @@ class SymbolManager(object):
 
         if which.lower() == 'override':
             qry = self.ses.query(func.max(Override.ornum).label('max_ornum'))
-            use = Override
+            override = True
         elif which.lower() == 'failsafe':
             qry = self.ses.query(func.max(FailSafe.fsnum).label('max_fsnum'))
-            use = FailSafe
+            override = False
             
         qry = qry.filter_by(symname = symbol)
         
@@ -483,13 +483,22 @@ class SymbolManager(object):
         else:
             next_num = cur_num[0] + 1            
 
-        tmp = use(symname=symbol,
-                   ind=ind,
-                   val=val,
-                   dt_log=dt_log,
-                   user=user,
-                   comment=comment,
-                   ornum=next_num)
+        if override:
+            tmp = Override(symname=symbol,
+                           ind=ind,
+                           val=val,
+                           dt_log=dt_log,
+                           user=user,
+                           comment=comment,
+                           ornum=next_num)
+        else:
+            tmp = FailSafe(symname=symbol,
+                           ind=ind,
+                           val=val,
+                           dt_log=dt_log,
+                           user=user,
+                           comment=comment,
+                           fsnum=next_num)
                                              
         self.ses.add(tmp)
         self.ses.commit()
