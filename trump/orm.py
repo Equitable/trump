@@ -617,8 +617,10 @@ class ConversionManager(SymbolManager):
         
         Parameters
         ----------
-        symbol : str
-            String representing a symbol
+        symbol : str or tuple of the form (Dataframe, str)
+            String representing a symbol's name, or a dataframe
+            with the data required to be converted.  If supplying a 
+            dataframe, units must be passed.
         units : str, optional
             Specify the units to convert the symbol to, default to CAD 
         system : str, optional
@@ -628,15 +630,28 @@ class ConversionManager(SymbolManager):
             Tags define which set of conversion data is used.  If None, the
             default tag specified at instantiation is used.  
         """
-        sym = self.get(symbol)
+        if isinstance(symbol, (str, unicode)):
+            sym = self.get(symbol)
+            df = sym.df
+            curu = sym.units
+            requ = units
+        elif isinstance(symbol, tuple):
+            df = symbol[0]
+            curu = symbol[1]
+            requ = units
+        else:
+            raise TypeError("Expected str or (DataFrame, str), found {}".format(type(symbol)))
         
         system = system or self.default_system
         tag = tag or self.default_tag
         
         conv = self.converters[system][tag]
 
-        return conv.convert(sym.df, sym.units, units)
-        
+        newdf = conv.convert(df, curu, requ)
+        newdf = pd.merge(df, newdf, left_index=True, right_index=True)
+        newdf = newdf[df.columns[0] + "_y"].to_frame()
+        newdf.columns = df.columns
+        return newdf
 
 class Symbol(Base, ReprMixin):
     __tablename__ = '_symbols'

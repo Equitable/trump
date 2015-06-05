@@ -90,14 +90,18 @@ class FXConverter(object):
         if "/" in denom:
             denom = denom.split(r"/")[0]
         if "/" in to:
-            to = to.split(r"/")[1]
+            a,b = to.split(r"/")
+            if b == 'unit':
+                to = a
+            else:
+                to = b
 
         pair = (denom, to)
         
         denusd = (denom, 'USD')
         usdto = ('USD', to)
         
-        #print pair
+        #print "Trying to convert..." + str(pair)
         #print list(self.data.columns)
         #print pair in self.data.columns
         #print recip(pair) in self.data.columns
