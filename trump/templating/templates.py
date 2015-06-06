@@ -273,6 +273,12 @@ class ExplicitKeyColFT(DBapiFT):
         self.s._set_keycol(table, keycol, key, indexcol, datacol)
         self.sourcing = self.s.as_dict
 
+class ExplicitTwoKeyColFT(DBapiFT):
+    """ Feed template to implement a basic DBAPI Feed, using a keyed column"""
+    def __init__(self, table, keyacol, keya, keybcol, keyb, indexcol, datacol):
+        super(ExplicitTwoKeyColFT, self).__init__(sourcing_key=SKEY)
+        self.s._set_twokeycol(table, keyacol, keya, keybcol, keyb, indexcol, datacol)
+        self.sourcing = self.s.as_dict
 
 class ExplicitBasicFT(DBapiFT):
     """ Feed template to implement a basic DBAPI Feed, using explicit,

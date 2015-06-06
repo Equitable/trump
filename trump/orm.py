@@ -1694,6 +1694,11 @@ class Feed(Base, ReprMixin):
                     rel = (kwargs[c] for c in reqd)
                     qry = "SELECT {0},{1} FROM {2} WHERE {3} = '{4}' ORDER BY {0};"
                     qry = qry.format(*rel)
+                elif kwargs['dbinstype'] == 'TWOKEYCOL':
+                    reqd = ['indexcol', 'datacol', 'table', 'keyacol', 'keya', 'keybcol', 'keyb']
+                    rel = (kwargs[c] for c in reqd)
+                    qry = "SELECT {0},{1} FROM {2} WHERE {3} = '{4}' AND {5} = '{6}' ORDER BY {0};"
+                    qry = qry.format(*rel)
                 else:
                     raise NotImplementedError("The database type {} has not been created.".format(kwargs['dbinstype']))
                    

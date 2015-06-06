@@ -53,6 +53,19 @@ class mixin_dbIns(object):
         self.datacol = datacol
         return self
 
+    def _set_twokeycol(self, table, keyacol, keya, keybcol, keyb,
+                   indexcol='date', datacol='value'):
+        self.dbinstype = "TWOKEYCOL"
+        self.table = table
+        self.keyacol = keyacol
+        self.keya = keya
+        self.keybcol = keybcol
+        self.keyb = keyb
+        self.indexcol = indexcol
+        self.datacol = datacol
+        return self
+
+
     def _set_basic(self, table, indexcol='date', datacol='value'):
         self.dbinstype = "BASIC"
         self.table = table
