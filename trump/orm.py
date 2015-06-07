@@ -289,7 +289,35 @@ class SymbolManager(object):
             return None
         else:
             return syms[0]
+    def search(self, usrqry=None, name=False, desc=False, tags=False, meta=False, StringOnly=False):
+        if StringOnly:
+            qry = self.ses.query(Symbol.name)
+        else:
+            qry = self.ses.query(Symbol)
+        
+        if usrqry is not None:
+            if '%' not in usrqry:
+                usrqry = '%' + usrqry + '%'
+        
+        crits = []
+        if name:
+            crits.append(Symbol.name.like(usrqry))
+        if tags:
+            crits.append(SymbolTag.tag.like(usrqry))
+        if desc:
+            crits.append(Symbol.description.like(usrqry))
+        if meta:
+            crits.append(SymbolMeta.value.like(usrqry)) 
+        
+        if len(crits):
+            qry = qry.filter(or_(*crits))
+        
+        qry = qry.order_by(Symbol.name)
 
+        if StringOnly:
+            return [sym[0] for sym in qry.all()]
+        else:
+            return [sym for sym in qry.all()]
     def search_tag(self, tag, symbols=True, feeds=False):
         """ Get a list of Symbols by searching a tag or partial tag.
 
