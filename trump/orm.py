@@ -1472,6 +1472,12 @@ class SymbolHandle(Base, ReprMixin):
             if checkpoint in SymbolHandle.__table__.columns:
                 settings = chkpnt_settings[checkpoint]
                 setattr(self, checkpoint, settings)
+    def setting(self, handlepoint):
+        return getattr(self, handlepoint)
+    @property
+    def points(self):
+        pnts = [str(p).split(".")[1] for p in SymbolHandle.__table__.columns if 'symname' not in str(p)]
+        return [(pnt, getattr(self, pnt)) for pnt in pnts]
 
 class Index(Base, ReprMixin):
     __tablename__ = "_indicies"
@@ -2053,6 +2059,11 @@ class FeedHandle(Base, ReprMixin):
             if checkpoint in FeedHandle.__table__.columns:
                 settings = chkpnt_settings[checkpoint]
                 setattr(self, checkpoint, settings)
+    @property
+    def points(self):
+        exclude = ['symname', 'fnum']
+        pnts = [str(p).split(".")[1] for p in FeedHandle.__table__.columns if not any((ex in str(p) for ex in exclude))]
+        return [(pnt, getattr(self, pnt)) for pnt in pnts]
 
 
 class Override(Base, ReprMixin):
