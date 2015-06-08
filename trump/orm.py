@@ -131,6 +131,8 @@ class SymbolManager(object):
         self.loud = loud
         if loud:
             print "Using engine: {}".format(ENGINE_STR)
+        
+        self.eng = engine
 
         self.ses = DBSession()
         
@@ -289,15 +291,20 @@ class SymbolManager(object):
             return None
         else:
             return syms[0]
-    def search(self, usrqry=None, name=False, desc=False, tags=False, meta=False, StringOnly=False):
+    def search(self, usrqry=None, name=False, desc=False, tags=False, meta=False, StringOnly=False, dolikelogic=True):
         if StringOnly:
             qry = self.ses.query(Symbol.name)
         else:
             qry = self.ses.query(Symbol)
+            if tags:
+                qry = qry.join(SymbolTag)
+            if meta:
+                qry = qry.join(SymbolMeta)
         
-        if usrqry is not None:
-            if '%' not in usrqry:
-                usrqry = '%' + usrqry + '%'
+        if dolikelogic:
+            if usrqry is not None:
+                if '%' not in usrqry:
+                    usrqry = '%' + usrqry + '%'
         
         crits = []
         if name:
@@ -315,9 +322,9 @@ class SymbolManager(object):
         qry = qry.order_by(Symbol.name)
 
         if StringOnly:
-            return [sym[0] for sym in qry.all()]
+            return [sym[0] for sym in qry.distinct()]
         else:
-            return [sym for sym in qry.all()]
+            return [sym for sym in qry.distinct()]
     def search_tag(self, tag, symbols=True, feeds=False):
         """ Get a list of Symbols by searching a tag or partial tag.
 
