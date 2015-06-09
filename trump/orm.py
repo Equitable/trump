@@ -1197,11 +1197,11 @@ class Symbol(Base, ReprMixin):
         sorted accordingly.
         """
         dtbl = self.datatable
-        cols = (getattr(dtbl.c, col) for col in self.dt_all_cols)
-        
         objs = object_session(self)
+        imcols = [dtbl.c.indx, dtbl.c.final, dtbl.c.override_feed000, dtbl.c.failsafe_feed999]
+        cols = imcols[:3] + [c for c in dtbl.c if c not in (imcols)] + [imcols[3]]
         if isinstance(dtbl, Table):
-            return objs.query(*cols).all()
+            return objs.query(*cols).order_by(dtbl.c.indx).all()
         else:
             raise Exception("Symbol has no datatable")
 
