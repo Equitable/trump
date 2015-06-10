@@ -1,33 +1,95 @@
-Installation
+Installation 
 ============
 
 Step 1. Install Package
 -----------------------
-``pip install trump``
 
-or
+*SUMMARY OF STEP 1: Clone and install trump, from github.*
 
 ``git clone https://github.com/Equitable/trump.git``
 +
+``cd trump``
++
 ``python setup.py install``
 
-If you use any other installation method (Eg. ``python setup.py develop``),  
-you will need to manually create your own .cfg files by renaming the .cfg_sample files.
+.. note::
+
+	If you use any other installation method (Eg. ``python setup.py develop``),  
+	you will need to manually create your own .cfg files, in step 2, by renaming the 
+	.cfg_sample files to cfg files.
+
+.. note::
+
+	Trump is setup to work with ``pip install trump``, however the codebase and features
+	are being worked on very quickly right now (2015Q2).  The version on pypi, will be very stale, very
+	quickly.  It's best to install from the latest commit to the master branch direct from GitHub.
 
 Step 2. Configure Settings 
 --------------------------
-Edit trump/config/trump.cfg
 
-Populate the [readwrite] section with a SQLAlchemy engine string.  Setting other options, are optional.
+*SUMMARY OF STEP 2: Put a SQLAlchemy Engine String in trump\config\trump.cfg.  Comment out all other engines.*
 
-Step 3. Adjust Existing Template Settings
------------------------------------------
+Trump needs information about a database it can use, plus there are a couple other settings you
+may want to tweak.  You can either follow the instructions below, or pass a
+SQLAlchemy engine/engine-string, to both SetupTrump() and SymbolManager() everytime you use them.
+
+The configuration file for trump is in:
+
+userbase\PythonXY\site-packages\trump\config\trump.cfg
+
+or
+
+yourprojfolder\trump\config\trump.cfg
+
+.. note::
+
+	A sample config file is included, by the name trump.cfg_sample.  Depending on your installation
+	method, you may need to copy and rename it to trump.cfg.  cfg files aren't tracked by git,
+	nor does the installation do anything other than copy and rename the file extension.
+	``pip`` and ``python setup.py install`` will rename them for you.
+	``python setup.py develop`` won't rename them for you, you'll have to do it yourself.
+
+Assuming you want to use a file based sqlite database (easiest, for beginners), change:
+
+``engine: sqlite://`` to 
+``;engine: sqlite://``  (notice the semi-colon, this just comments out the line)
+
+and change this line:
+
+``;engine: sqlite:////home/jnmclarty/Desktop/trump.db``  to
+
+``engine: sqlite:////home/path/to/some/file/mytrumpfile.db`` (on linux) or
+
+``engine: sqlite:///C:\path\to\some\mytrumpfile.db`` (on windows)
+
+The folder needs to exist in advance, the file should not exist.  Trump creates the file.
+
+Step 3. Adjust Existing Template Settings (Optional)
+---------------------------------------------------
+
+*SUMMARY OF STEP 3: Adjust any settings for templates you intend you use.*
+
+Trump has template settings, stored in multiple settings files, using an identical method as the 
+config file in Step 2.  ``pip`` or ``python setup.py install`` would have created some from samples.
+Using any other installation methode, you would have to rename cfg_sample to cfg yourself.
+
+The files are here:
+
+userbase\PythonXY\site-packages\trump\templates\settings\
+
+or
+
+yourprojfolder\trump\templates\settings\
+
 Edit trump/templating/settings cfg files, depending on the intended data sources to be used.
 
 See the documentation section "Configuring Data Sources" for guidance.
 
 Step 4. Run SetupTrump()
 ------------------------
+
+*SUMMARY OF STEP 4: Run trump.SetupTrump(), to setup the tables required for Trump to work.*
+
 Running the code block below, will create all the tables required in the database
 provided in Step 2.
 
@@ -35,12 +97,26 @@ provided in Step 2.
 	
 	from trump import SetupTrump
 	SetupTrump()
+	# Or, if you skipped step 2 correctly, you could do:
+	SetupTrump(r'sqlite:////home/path/to/some/file/mytrumpfile.db')
 
-If it all worked, you will see "Trump is installed @..."
+If it all worked, you will see "Trump is installed @...".   You're Done!  Hard part is over.
 
-Configuring Data Sources
-========================
-Data feed source template classes map to their respective .cfg file in the templating/settings directory.
+You're now ready to create a SymbolManager, which will help you create your first symbol.  
+
+.. code-block:: python
+	
+	from trump import SymbolManager
+	sm = SymbolManager()
+	# Or, if you skipped step 2 correctly, you could do:
+	sm = SymbolManager(r'sqlite:////home/path/to/some/file/mytrumpfile.db')
+	...
+	mysymbol = sm.create('MyFirstSymbol') # should run without error.
+
+Configuring Data Sources (Optional)
+===================================
+Data feed source template classes map to their respective .cfg file in the templating/settings directory,
+as discussed in Step 3.
 
 The goal of the files is to add a small layer of security.  The goal of the template classes is to reduce code during
 symbol creation scripts.  There is nothing preventing a password from being hardcoded into a template, the 
@@ -104,5 +180,7 @@ This means that the cfg file values can be changed post symbol creation, outside
 Uninstall
 =========
 
-1. Download uninstall.py, and run it.  This will remove all tables created by Trump. The file will likely require minor changes if you use anything other than PostgreSQL.
+1. Delete all tables Trump created. (There is a script, which attempts to do that for you.  See uninstall.py.
+This will (attempt to) remove all tables created by Trump. The file will likely require minor changes
+if you use anything other than PostgreSQL, or if it hasn't been updated to reflect newer tables in Trump.)
 2. Delete site-packages/trump and all it's subdirectories.
