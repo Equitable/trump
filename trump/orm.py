@@ -1782,6 +1782,22 @@ class Feed(Base, ReprMixin):
                 adf = pydata.DataReader(**kwargs)
                 self.data = adf[col]
 
+            elif stype == 'WorldBankST':
+                from pandas.io import wb
+
+                ind = str(kwargs['indicator'])
+                cc = str(kwargs['country'])
+                
+                del kwargs['indicator']
+                del kwargs['country']
+                
+                df = wb.download(indicator=ind, country=cc, errors='raise', **kwargs)
+                firstlevel = df.index.levels[0][0]
+                self.data = df.ix[firstlevel][ind]
+
+                self.data = self.data.sort_index()
+                self.data.index = self.data.index.astype(int)
+
             else:
                 raise Exception("Unknown Source Type : {}".format(stype))
         except:

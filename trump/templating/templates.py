@@ -174,6 +174,14 @@ class PyDataDataReaderST(bSource):
         self.data_source = data_source
         self.data_column = column
 
+class WorldBankST(bSource):
+    """ implements the pydata datareaders sources """
+    def __init__(self, indicator, country, **kwargs):
+        self.indicator = indicator
+        self.country = country
+        for arg, val in kwargs.iteritems():
+            setattr(self, arg, val)
+        
 class PyDataCSVST(bSource):
     """ implements pandas.read_csv source """
     def __init__(self, filepath_or_buffer, data_column, **kwargs):
@@ -413,6 +421,22 @@ class YahooFinanceFT(bFeed):
         self.sourcing = source.as_dict
         self._set_stype(source)
 
+#******************************************************************************
+#
+#   World Bank
+#
+#******************************************************************************
+
+
+class WorldBankFT(bFeed):
+    """ PyData reader feed, generalized for Yahoo Finance. """
+    def __init__(self, indicator, country, **kwargs):
+        super(WorldBankFT, self).__init__()
+        source = WorldBankST(indicator, country, **kwargs)
+        self.sourcing = source.as_dict
+        print self.sourcing
+        self._set_stype(source)
+        
 #******************************************************************************
 #
 #   File Readers
