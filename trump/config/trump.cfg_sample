@@ -16,18 +16,18 @@ engine: sqlite://
 
 ;  SQLite (in-file, Linux)
 ;engine: sqlite:////absolute/path/to/foo.db
-;engine: sqlite:///home/jnmclarty/Desktop/trump.db
+;engine: sqlite:////home/jnmclarty/Desktop/trump.db
 
 ;  SQLite (in-file, Windows)
 ;engine: sqlite:///C:\trump.db
 
 ; MySQL, Microsoft SQL, Oracle, are all supported by SQLAlchemy, might work.
 
-; Not Used in Trump 0.0.2:
+; Not Used in Trump 0.0.3:
 [read]
 engine: {dialect}://{user}:{password}@{host}:{port}/{name}
 
-; Not Used in Trump 0.0.2:
+; Not Used in Trump 0.0.3:
 [options]
 raise_by_default: true
 debug: false
