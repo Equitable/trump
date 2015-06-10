@@ -27,7 +27,7 @@ Step 1. Install Package
 Step 2. Configure Settings 
 --------------------------
 
-*SUMMARY OF STEP 2: Put a SQLAlchemy Engine String in trump\config\trump.cfg.  Comment out all other engines.*
+*SUMMARY OF STEP 2: Put a SQLAlchemy Engine String in trump/config/trump.cfg.  Comment out all other engines.*
 
 Trump needs information about a database it can use, plus there are a couple other settings you
 may want to tweak.  You can either follow the instructions below, or pass a
@@ -35,11 +35,11 @@ SQLAlchemy engine/engine-string, to both SetupTrump() and SymbolManager() everyt
 
 The configuration file for trump is in:
 
-userbase\PythonXY\site-packages\trump\config\trump.cfg
+userbase/PythonXY/site-packages/trump/config/trump.cfg
 
 or
 
-yourprojfolder\trump\config\trump.cfg
+yourprojfolder/trump/config/trump.cfg
 
 .. note::
 
@@ -75,11 +75,11 @@ Using any other installation methode, you would have to rename cfg_sample to cfg
 
 The files are here:
 
-userbase\PythonXY\site-packages\trump\templates\settings\
+userbase/PythonXY/site-packages/trump/templates/settings/
 
 or
 
-yourprojfolder\trump\templates\settings\
+yourprojfolder/trump/templates/settings/
 
 Edit trump/templating/settings cfg files, depending on the intended data sources to be used.
 
