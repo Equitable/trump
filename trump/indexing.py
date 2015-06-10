@@ -151,6 +151,13 @@ class DatetimeIndexImp(IndexImplementer):
         elif case == 'asfreq':
             if isinstance(self.data.index, pdDatetimeIndex):
                 self.data = self.data.asfreq(**kwargs)
+            elif isinstance(self.data.index, pdInt64Index):
+                if all(len(str(i)) == 4 for i in self.data.index):
+                    #safe to assume we meant years...
+                    newind = [dt.date(y, 12, 31) for y in self.data.index]
+                    self.data.index = newind
+                    self.data.index = self.data.index.to_datetime()
+                    self.data = self.data.asfreq(**kwargs)
             elif isinstance(self.data.index[0], (str, unicode)):
                 newind = pd.DatetimeIndex(self.data.index)
                 self.data.index = newind

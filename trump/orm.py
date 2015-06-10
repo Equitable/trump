@@ -896,11 +896,16 @@ class Symbol(Base, ReprMixin):
             point = "concatenation"
             smrp = self._generic_exception(point, smrp)
         
+        preindlen = len(data)
         indt = indexingtypes[self.index.indimp]
         indkwargs = self.index.getkwargs()        
         indt = indt(data, self.index.case, indkwargs)
         data = indt.final_dataframe()
-
+        postindlen = len(data)
+        
+        if postindlen == 0 and preindlen > 0:
+            raise Exception("Indexing Implementer likely poorly designed")
+            
         data_len = len(data)
         data['override_feed000'] = [None] * data_len
         data['failsafe_feed999'] = [None] * data_len
@@ -1189,6 +1194,21 @@ class Symbol(Base, ReprMixin):
         else:
             raise Exception("Symbol has no datatable")
 
+    def _max_min(self):
+        """
+        Returns
+        -------
+        A tuple consisting of (max, min) of the index.
+        """
+        dtbl = self.datatable
+
+        objs = object_session(self)
+        if isinstance(dtbl, Table):
+            return objs.query(func.max(dtbl.c.indx).label("max_indx"),
+                              func.min(dtbl.c.indx).label("min_indx")).one()
+        else:
+            raise Exception("Symbol has no datatable")
+            
     def _all_datatable_data(self):
         """
         Returns
@@ -1216,8 +1236,13 @@ class Symbol(Base, ReprMixin):
             Dataframe of the symbol's final data.
         """
         data = self._final_data()
-
+    
         adf = pd.DataFrame(data)
+        
+        if len(adf.columns) != 2:
+            msg = "Symbol ({}) needs to be cached prior to building a Dataframe"
+            msg = msg.format(self.name)
+            raise Exception(msg)
         adf.columns = [self.index.name, self.name]
         
         datt = datadefs[self.dtype.datadef]       
