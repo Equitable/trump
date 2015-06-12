@@ -131,6 +131,8 @@ class SymbolManager(object):
         self.loud = loud
         if loud:
             print "Using engine: {}".format(ENGINE_STR)
+        
+        self.eng = engine
 
         self.ses = DBSession()
         
@@ -289,7 +291,40 @@ class SymbolManager(object):
             return None
         else:
             return syms[0]
+    def search(self, usrqry=None, name=False, desc=False, tags=False, meta=False, StringOnly=False, dolikelogic=True):
+        if StringOnly:
+            qry = self.ses.query(Symbol.name)
+        else:
+            qry = self.ses.query(Symbol)
+            if tags:
+                qry = qry.join(SymbolTag)
+            if meta:
+                qry = qry.join(SymbolMeta)
+        
+        if dolikelogic:
+            if usrqry is not None:
+                if '%' not in usrqry:
+                    usrqry = '%' + usrqry + '%'
+        
+        crits = []
+        if name:
+            crits.append(Symbol.name.like(usrqry))
+        if tags:
+            crits.append(SymbolTag.tag.like(usrqry))
+        if desc:
+            crits.append(Symbol.description.like(usrqry))
+        if meta:
+            crits.append(SymbolMeta.value.like(usrqry)) 
+        
+        if len(crits):
+            qry = qry.filter(or_(*crits))
+        
+        qry = qry.order_by(Symbol.name)
 
+        if StringOnly:
+            return [sym[0] for sym in qry.distinct()]
+        else:
+            return [sym for sym in qry.distinct()]
     def search_tag(self, tag, symbols=True, feeds=False):
         """ Get a list of Symbols by searching a tag or partial tag.
 
@@ -617,8 +652,10 @@ class ConversionManager(SymbolManager):
         
         Parameters
         ----------
-        symbol : str
-            String representing a symbol
+        symbol : str or tuple of the form (Dataframe, str)
+            String representing a symbol's name, or a dataframe
+            with the data required to be converted.  If supplying a 
+            dataframe, units must be passed.
         units : str, optional
             Specify the units to convert the symbol to, default to CAD 
         system : str, optional
@@ -628,15 +665,28 @@ class ConversionManager(SymbolManager):
             Tags define which set of conversion data is used.  If None, the
             default tag specified at instantiation is used.  
         """
-        sym = self.get(symbol)
+        if isinstance(symbol, (str, unicode)):
+            sym = self.get(symbol)
+            df = sym.df
+            curu = sym.units
+            requ = units
+        elif isinstance(symbol, tuple):
+            df = symbol[0]
+            curu = symbol[1]
+            requ = units
+        else:
+            raise TypeError("Expected str or (DataFrame, str), found {}".format(type(symbol)))
         
         system = system or self.default_system
         tag = tag or self.default_tag
         
         conv = self.converters[system][tag]
 
-        return conv.convert(sym.df, sym.units, units)
-        
+        newdf = conv.convert(df, curu, requ)
+        newdf = pd.merge(df, newdf, left_index=True, right_index=True)
+        newdf = newdf[df.columns[0] + "_y"].to_frame()
+        newdf.columns = df.columns
+        return newdf
 
 class Symbol(Base, ReprMixin):
     __tablename__ = '_symbols'
@@ -846,11 +896,16 @@ class Symbol(Base, ReprMixin):
             point = "concatenation"
             smrp = self._generic_exception(point, smrp)
         
+        preindlen = len(data)
         indt = indexingtypes[self.index.indimp]
         indkwargs = self.index.getkwargs()        
         indt = indt(data, self.index.case, indkwargs)
         data = indt.final_dataframe()
-
+        postindlen = len(data)
+        
+        if postindlen == 0 and preindlen > 0:
+            raise Exception("Indexing Implementer likely poorly designed")
+            
         data_len = len(data)
         data['override_feed000'] = [None] * data_len
         data['failsafe_feed999'] = [None] * data_len
@@ -1139,6 +1194,21 @@ class Symbol(Base, ReprMixin):
         else:
             raise Exception("Symbol has no datatable")
 
+    def _max_min(self):
+        """
+        Returns
+        -------
+        A tuple consisting of (max, min) of the index.
+        """
+        dtbl = self.datatable
+
+        objs = object_session(self)
+        if isinstance(dtbl, Table):
+            return objs.query(func.max(dtbl.c.indx).label("max_indx"),
+                              func.min(dtbl.c.indx).label("min_indx")).one()
+        else:
+            raise Exception("Symbol has no datatable")
+            
     def _all_datatable_data(self):
         """
         Returns
@@ -1147,11 +1217,11 @@ class Symbol(Base, ReprMixin):
         sorted accordingly.
         """
         dtbl = self.datatable
-        cols = (getattr(dtbl.c, col) for col in self.dt_all_cols)
-        
         objs = object_session(self)
+        imcols = [dtbl.c.indx, dtbl.c.final, dtbl.c.override_feed000, dtbl.c.failsafe_feed999]
+        cols = imcols[:3] + [c for c in dtbl.c if c not in (imcols)] + [imcols[3]]
         if isinstance(dtbl, Table):
-            return objs.query(*cols).all()
+            return objs.query(*cols).order_by(dtbl.c.indx).all()
         else:
             raise Exception("Symbol has no datatable")
 
@@ -1166,8 +1236,13 @@ class Symbol(Base, ReprMixin):
             Dataframe of the symbol's final data.
         """
         data = self._final_data()
-
+    
         adf = pd.DataFrame(data)
+        
+        if len(adf.columns) != 2:
+            msg = "Symbol ({}) needs to be cached prior to building a Dataframe"
+            msg = msg.format(self.name)
+            raise Exception(msg)
         adf.columns = [self.index.name, self.name]
         
         datt = datadefs[self.dtype.datadef]       
@@ -1429,6 +1504,12 @@ class SymbolHandle(Base, ReprMixin):
             if checkpoint in SymbolHandle.__table__.columns:
                 settings = chkpnt_settings[checkpoint]
                 setattr(self, checkpoint, settings)
+    def setting(self, handlepoint):
+        return getattr(self, handlepoint)
+    @property
+    def points(self):
+        pnts = [str(p).split(".")[1] for p in SymbolHandle.__table__.columns if 'symname' not in str(p)]
+        return [(pnt, getattr(self, pnt)) for pnt in pnts]
 
 class Index(Base, ReprMixin):
     __tablename__ = "_indicies"
@@ -1679,6 +1760,11 @@ class Feed(Base, ReprMixin):
                     rel = (kwargs[c] for c in reqd)
                     qry = "SELECT {0},{1} FROM {2} WHERE {3} = '{4}' ORDER BY {0};"
                     qry = qry.format(*rel)
+                elif kwargs['dbinstype'] == 'TWOKEYCOL':
+                    reqd = ['indexcol', 'datacol', 'table', 'keyacol', 'keya', 'keybcol', 'keyb']
+                    rel = (kwargs[c] for c in reqd)
+                    qry = "SELECT {0},{1} FROM {2} WHERE {3} = '{4}' AND {5} = '{6}' ORDER BY {0};"
+                    qry = qry.format(*rel)
                 else:
                     raise NotImplementedError("The database type {} has not been created.".format(kwargs['dbinstype']))
                    
@@ -1720,6 +1806,22 @@ class Feed(Base, ReprMixin):
 
                 adf = pydata.DataReader(**kwargs)
                 self.data = adf[col]
+
+            elif stype == 'WorldBankST':
+                from pandas.io import wb
+
+                ind = str(kwargs['indicator'])
+                cc = str(kwargs['country'])
+                
+                del kwargs['indicator']
+                del kwargs['country']
+                
+                df = wb.download(indicator=ind, country=cc, errors='raise', **kwargs)
+                firstlevel = df.index.levels[0][0]
+                self.data = df.ix[firstlevel][ind]
+
+                self.data = self.data.sort_index()
+                self.data.index = self.data.index.astype(int)
 
             else:
                 raise Exception("Unknown Source Type : {}".format(stype))
@@ -2005,6 +2107,11 @@ class FeedHandle(Base, ReprMixin):
             if checkpoint in FeedHandle.__table__.columns:
                 settings = chkpnt_settings[checkpoint]
                 setattr(self, checkpoint, settings)
+    @property
+    def points(self):
+        exclude = ['symname', 'fnum']
+        pnts = [str(p).split(".")[1] for p in FeedHandle.__table__.columns if not any((ex in str(p) for ex in exclude))]
+        return [(pnt, getattr(self, pnt)) for pnt in pnts]
 
 
 class Override(Base, ReprMixin):
