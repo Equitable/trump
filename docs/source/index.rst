@@ -54,3 +54,11 @@ Template Classes
    :maxdepth: 4
    
    templating/templates
+
+User Interface
+--------------
+
+.. toctree::
+   :maxdepth: 2
+
+   ui/ui
