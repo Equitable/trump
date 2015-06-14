@@ -1,4 +1,4 @@
-from ..orm import SetupTrump, SymbolManager, ConversionManager
+from ..orm import Symbol, SetupTrump, SymbolManager, ConversionManager
 
 from ..templating.templates import GoogleFinanceFT, YahooFinanceFT,\
     SimpleExampleMT, CSVFT, FFillIT, FeedsMatchVT, DateExistsVT, PctChangeMT
@@ -168,6 +168,36 @@ class TestORM(object):
         
         syms = sm.search_tag('vvvvv', symbols=True, feeds=True)
         assert len(syms) == 3
+    def test_general_search(self):
+        
+        sm = self.sm
+        
+        for s in ['gsvaf', 'gsvbf', 'gsvcg']:
+            sym = sm.create(s, overwrite=True)
+            testdata = os.path.join(curdir,'testdata','testdailydata.csv')
+            fdtemp = CSVFT(testdata, 'Amount', parse_dates=0, index_col=0)
+            sym.add_feed(fdtemp)
+            if s in ('gsvaf', 'gsvcg'):
+                sym.add_tags('gsvvv') #Should not be returned in search.
+            sym.set_description('exampledesc' + s)
+            sym.add_meta(keyattr=s[::-1])
+        
+        syms = sm.search("gsvaf", name=True)
+        assert len(syms) == 1
+
+        syms = sm.search("gsvvv", tags=True)
+        assert len(syms) == 2
+
+        syms = sm.search("exampledesc%", desc=True)
+        assert len(syms) == 3
+
+        syms = sm.search(s[::-1], meta=True)
+        assert len(syms) == 1
+        assert isinstance(syms[0], Symbol)
+
+        syms = sm.search(s[::-1], meta=True, StringOnly=True)
+        assert len(syms) == 1
+        assert isinstance(syms[0], (str, unicode))
         
     def test_existence_deletion(self):
 

@@ -296,10 +296,11 @@ class SymbolManager(object):
             qry = self.ses.query(Symbol.name)
         else:
             qry = self.ses.query(Symbol)
-            if tags:
-                qry = qry.join(SymbolTag)
-            if meta:
-                qry = qry.join(SymbolMeta)
+
+        if tags:
+            qry = qry.join(SymbolTag)
+        if meta:
+            qry = qry.join(SymbolMeta)
         
         if dolikelogic:
             if usrqry is not None:
