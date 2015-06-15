@@ -195,7 +195,7 @@ class TestORM(object):
         assert len(syms) == 1
         assert isinstance(syms[0], Symbol)
 
-        syms = sm.search(s[::-1], meta=True, StringOnly=True)
+        syms = sm.search(s[::-1], meta=True, stronly=True)
         assert len(syms) == 1
         assert isinstance(syms[0], (str, unicode))
         

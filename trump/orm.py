@@ -291,8 +291,36 @@ class SymbolManager(object):
             return None
         else:
             return syms[0]
-    def search(self, usrqry=None, name=False, desc=False, tags=False, meta=False, StringOnly=False, dolikelogic=True):
-        if StringOnly:
+    def search(self, usrqry=None, name=False, desc=False, tags=False, meta=False, stronly=False, dolikelogic=True):
+        """ Get a list of Symbols by searching a combination of 
+        a Symbol's name, description, tags or meta values.
+
+        Parameters
+        ----------
+        usrqry : str
+            The string used to query.  Appending '%' will use SQL's "LIKE"
+            functionality.
+        name : bool, optional, default False
+            Search by symbol name.
+        desc : bool, optional, default False
+            Search by symbol descriptions.
+        tags : bool, optional, default False
+            Search by symbol tags.
+        meta : bool, optional, default False
+            Search within a symbol's meta attribute's value.
+        stronly : bool, optional, default True
+            Return only a list of symbol names, as opposed
+            to the (entire) Symbol objects.
+        dolikelogic : 
+            Append '%' to either side of the string, if the string
+            doesn't already have % specified.
+        
+        Returns
+        -------
+        List of Symbols or empty list
+        
+        """
+        if stronly:
             qry = self.ses.query(Symbol.name)
         else:
             qry = self.ses.query(Symbol)
@@ -322,7 +350,7 @@ class SymbolManager(object):
         
         qry = qry.order_by(Symbol.name)
 
-        if StringOnly:
+        if stronly:
             return [sym[0] for sym in qry.distinct()]
         else:
             return [sym for sym in qry.distinct()]
