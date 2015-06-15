@@ -19,21 +19,15 @@ class FeedsMatch(object):
     def __init__(self, data, left, right, lastn):
         self.data = data
         
-        print self.data
-        
         feed_left = "feed%03d" % (left)
         feed_right = "feed%03d" % (right)
         
-        print feed_left, feed_right
-        
         self.match = False
         
-        #try:
         series_equal(data[feed_left][-1*lastn:],
-                     data[feed_right][-1*lastn:])
+                     data[feed_right][-1*lastn:],
+                     check_names=False)
         self.match = True
-        #except:
-        #    pass
  
     @property
     def result(self):
