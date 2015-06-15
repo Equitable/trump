@@ -407,7 +407,7 @@ class TestORM(object):
         
         sm = self.sm
         
-        sym = sm.create("fmvt", overwrite=True)
+        sym = sm.create("fmvttf", overwrite=True)
         
         fm = FeedsMatchVT(1,2)
         sym.add_validator(fm)
