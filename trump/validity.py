@@ -28,12 +28,12 @@ class FeedsMatch(object):
         
         self.match = False
         
-        try:
-            series_equal(data[feed_left][-1*lastn:],
-                         data[feed_right][-1*lastn:])
-            self.match = True
-        except:
-            pass
+        #try:
+        series_equal(data[feed_left][-1*lastn:],
+                     data[feed_right][-1*lastn:])
+        self.match = True
+        #except:
+        #    pass
  
     @property
     def result(self):
