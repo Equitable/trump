@@ -22,12 +22,10 @@ class FeedsMatch(object):
         feed_left = "feed%03d" % (left)
         feed_right = "feed%03d" % (right)
         
-        self.match = False
+        leftS = data[feed_left][-1*lastn:]
+        rightS = data[feed_right][-1*lastn:]
         
-        series_equal(data[feed_left][-1*lastn:],
-                     data[feed_right][-1*lastn:],
-                     check_names=False)
-        self.match = True
+        self.match = leftS.equals(rightS)
  
     @property
     def result(self):
