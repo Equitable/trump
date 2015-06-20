@@ -484,6 +484,12 @@ class SymbolManager(object):
         ----------
         tag : str
             Use '%' to enable SQL's "LIKE" functionality.
+        
+        Note
+        ----
+        
+        This function is written without SQLAlchemy,
+        so it only tested on Postgres.
 
         """
         
@@ -501,6 +507,11 @@ class SymbolManager(object):
         self.ses.commit()        
         self.ses.execute(qry)
         self.ses.commit()
+    def add_existing_ind_orfs(self, which, symbol, orfs_n, value, comment=None, user=None):
+        ind = self.ses.query(symbol.datatable.c.indx).order_by(symbol.datatable.c.indx).offset(orfs_n).limit(1).one()
+        ind = ind[0]
+        tmp = {'or' : 'override', 'fs' : 'failsafe'}
+        self._add_orfs(tmp[which], symbol, ind, value, user=user, comment=comment)
     def _add_orfs(self, which, symbol, ind, val, dt_log=None, user=None, comment=None):
         """
         Appends a single indexed-value pair, to a symbol object, to be
@@ -616,7 +627,19 @@ class SymbolManager(object):
             A string to store any notes related to this fail safe.
         """
         self._add_orfs('failsafe', symbol, ind, val, dt_log, user, comment)
-
+        
+    def delete_orfs(self, sym, which, orfs_num):
+        if which.lower() in ('or', 'override'):
+            crit = and_(Override.ornum == orfs_num, Override.symname == sym)
+            qry = self.ses.query(Override)
+        elif which.lower() in ('fs', 'failsafe'):
+            crit = and_(FailSafe.fsnum == orfs_num, FailSafe.symname == sym)
+            qry = self.ses.query(FailSafe)
+        else:
+            raise Exception("{} is not or/override or fs/failsafe".format(which))
+        qry.filter(crit).delete(synchronize_session=False)
+        self.ses.commit()
+        
 class ConversionManager(SymbolManager):
     """
     A ConversionManager handles the conversion of previously instantiated
@@ -716,7 +739,7 @@ class ConversionManager(SymbolManager):
         newdf = newdf[df.columns[0] + "_y"].to_frame()
         newdf.columns = df.columns
         return newdf
-
+        
 class Symbol(Base, ReprMixin):
     __tablename__ = '_symbols'
 
@@ -1383,6 +1406,16 @@ class Symbol(Base, ReprMixin):
     @property
     def meta_map(self):
         return ProxyDict(self, 'meta', SymbolMeta, 'attr')
+    def existing_orfs(self):
+        objs = object_session(self)
+        
+        #.order_by(Override.ornum.desc())
+        ors = objs.query(Override).filter(Override.symname == self.name).order_by(Override.ornum.asc()).all()
+        
+        #.order_by(FailSafe.fsnum.desc())
+        fss = objs.query(FailSafe).filter(FailSafe.symname == self.name).order_by(FailSafe.fsnum.asc()).all()
+        
+        return {'or' : ors, 'fs' : fss}
         
 @event.listens_for(Symbol, 'load')
 def __receive_load(target, context):
