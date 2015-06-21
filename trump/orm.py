@@ -2169,6 +2169,8 @@ class FeedHandle(Base, ReprMixin):
             if checkpoint in FeedHandle.__table__.columns:
                 settings = chkpnt_settings[checkpoint]
                 setattr(self, checkpoint, settings)
+    def setting(self, handlepoint):
+        return getattr(self, handlepoint)
     @property
     def points(self):
         exclude = ['symname', 'fnum']

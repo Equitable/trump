@@ -147,20 +147,28 @@ class BitFlag(Mutable, object):
     def asdict(self):
         """ convert the flags to a dictionary, with keys as flags. """
         return {bit: self[bit] for bit in BitFlag.flags}
-
+    
+    def flagged(self):
+        return [b.upper() if self[b] else b for b in BitFlag.flags]
     def __str__(self):
-        tmp = [b.upper() if self[b] else b for b in BitFlag.flags]
+        tmp = self.flagged()
         return " ".join(tmp)
 
     def __repr__(self):
         return "BitFlag({})".format(self.val)
 
     def __getitem__(self, key):
-        return self.__getattribute__(key)
-
+        if isinstance(key, int):
+            return self.bools[key]
+        else:
+            return self.__getattribute__(key)      
     def __setitem__(self, key, value):
-        setattr(self, key, value)
-        self.bools[BitFlag.flags.index(key)] = value
+        if isinstance(key, int):
+            setattr(self, BitFlag.flags[key], value)
+            self.bools[key] = value
+        else:
+            setattr(self, key, value)
+            self.bools[BitFlag.flags.index(key)] = value            
         # recalculate the value from scratch...
         self.val = 0
         for i, val in enumerate(self.bools):
