@@ -334,6 +334,9 @@ class TestORM(object):
         onetwo = sm.get("onetwo")
         sm.delete("onetwo")
         
+        sym = sm.create("onetwo", overwrite=True)
+        sm.delete("onetwo")
+        
     def test_symbol_describe(self):
         
         sm = self.sm

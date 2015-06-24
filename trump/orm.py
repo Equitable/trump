@@ -210,8 +210,19 @@ class SymbolManager(object):
             sym = symbol
         else:
             raise Exception("Invalid symbol {}".format((repr(symbol))))
+
+        # Has to handle the case where the table would exist already
+        # and where it wouldn't.
+        try:
+            sym.datatable = Table(sym.name, Base.metadata, autoload=True)
+            sym.datatable.drop(self.eng, checkfirst=True)
+        except NoSuchTableError:
+            print "No worries, {} never existed to begin with.".format(sym.name)
+
         self.ses.delete(sym)
         self.ses.commit()
+        
+   
 
     def complete(self):
         """Commits any changes to the database.
@@ -1149,6 +1160,7 @@ class Symbol(Base, ReprMixin):
                 objs.delete(symboltag)
                 docommit = True
 
+        
         if docommit:
             objs.commit()
 
