@@ -1543,7 +1543,7 @@ class SymbolHandle(Base, ReprMixin):
 
     symbol = relationship("Symbol")
 
-    def __init__(self, chkpnt_settings={}, sym=None):
+    def __init__(self, chkpnt_settings=None, sym=None):
         """
         
         Parameters
@@ -1560,7 +1560,8 @@ class SymbolHandle(Base, ReprMixin):
         self.concatenation = rbd or BitFlag(['raise'])
         self.aggregation = rbd or BitFlag(['stdout'])
         self.validity_check = rbd or BitFlag(['report'])
-
+        
+        chkpnt_settings = chkpnt_settings or {}
         # override with anything passed in settings
         for checkpoint in chkpnt_settings:
             if checkpoint in SymbolHandle.__table__.columns:
@@ -1590,13 +1591,14 @@ class Index(Base, ReprMixin):
 
     kwargs = relationship("IndexKwarg", lazy="dynamic", cascade=ADO)
 
-    def __init__(self, name, indimp, case=None, kwargs={}, sym=None):
+    def __init__(self, name, indimp, case=None, kwargs=None, sym=None):
 
         set_symbol_or_symname(self, sym)
 
         self.name = name
         self.indimp = indimp
         self.case = case or "asis"
+        kwargs = kwargs or {}
         self.setkwargs(**kwargs)
 
     def setkwargs(self, **kwargs):
@@ -2147,7 +2149,7 @@ class FeedHandle(Base, ReprMixin):
                                 [Feed.symname, Feed.fnum])
     __table_args__ = (fkey, {})
 
-    def __init__(self, chkpnt_settings={}, feed=None):
+    def __init__(self, chkpnt_settings=None, feed=None):
         """
         :param chkpnt_settings: dict
             A dictionary with keys matchin names of the handle points
@@ -2163,7 +2165,9 @@ class FeedHandle(Base, ReprMixin):
         self.index_property_problem = rbd or BitFlag(['stdout'])
         self.data_type_problem = rbd or BitFlag(['stdout', 'report'])
         self.monounique = rbd or BitFlag(['raise'])
-
+        
+        chkpnt_settings = chkpnt_settings or {}
+        
         # override with anything passed in settings
         for checkpoint in chkpnt_settings:
             if checkpoint in FeedHandle.__table__.columns:
