@@ -83,6 +83,13 @@ if rbd.upper() == 'TRUE':
 else:
     rbd = None
 
+try:
+    import equitable.bpsdl as bf
+    bbapi_connected = False
+    bbapi = None
+except:
+    pass
+    
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
 
@@ -1898,7 +1905,16 @@ class Feed(Base, ReprMixin):
 
                 self.data = self.data.sort_index()
                 self.data.index = self.data.index.astype(int)
+            elif stype == 'BBFetch':
+                global bbapi_connected
+                global bbapi
+                
+                if not bbapi_connected:
+                    bbapi = bf.Getter.BBapi(clean=False)
+                    bbapi_connected = True
 
+                bbsec = bbapi.GetSecurity(kwargs['elid'])
+                self.data = bbsec.GetDataMostRecentFetchDaily(kwargs['valuefieldname'],KeepTime=False,KeepTimeZone=False)              
             else:
                 raise Exception("Unknown Source Type : {}".format(stype))
         except:
