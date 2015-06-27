@@ -1,4 +1,5 @@
-from ..orm import Symbol, SetupTrump, SymbolManager, ConversionManager
+from ..orm import Symbol, SetupTrump, SymbolManager, ConversionManager, \
+                  SymbolLogEvent
 
 from ..templating.templates import GoogleFinanceFT, YahooFinanceFT,\
     SimpleExampleMT, CSVFT, FFillIT, FeedsMatchVT, DateExistsVT, PctChangeMT
@@ -10,6 +11,8 @@ import pytest
 import os
 
 import datetime as dt
+
+import shutil as sh
 
 def floats_equal(a,b,d=4):
     return round(a,d) == round(b,d)
@@ -168,6 +171,37 @@ class TestORM(object):
         
         syms = sm.search_tag('vvvvv', symbols=True, feeds=True)
         assert len(syms) == 3
+
+    def test_symbol_event_log(self):
+        
+        sm = self.sm
+        
+        s = 'evlg'
+        sym = sm.create(s, overwrite=True)
+        
+        origdata = os.path.join(curdir,'testdata','testdailydata.csv')
+        tmpdata = os.path.join(curdir,'testdata','testdailydatatmp.csv')
+        
+        sh.copy2(origdata,tmpdata)
+        
+        fdtemp = CSVFT(tmpdata, 'Amount', parse_dates=0, index_col=0)
+        sym.add_feed(fdtemp)
+        
+        sym.cache()
+        sym.cache()
+        gc = sym.last_cache()
+        
+        os.remove(tmpdata)
+        
+        try:
+            sym.cache()
+        except:
+            print "Excepted to fail..."
+            
+        assert sym.last_cache() == gc
+        lasttry = sym.last_cache('START')
+        assert lasttry > gc
+        
     def test_general_search(self):
         
         sm = self.sm

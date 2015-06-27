@@ -1,3 +1,6 @@
+[about]
+monicker: default
+
 [readwrite]
 
 ;  Uncomment one of the 'engine' examples below.

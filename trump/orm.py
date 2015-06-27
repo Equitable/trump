@@ -42,9 +42,9 @@ import datetime as dt
 
 import pandas as pd
 from sqlalchemy import event, Table, Column, ForeignKey, ForeignKeyConstraint,\
-    String, Integer, Float, Boolean, DateTime, MetaData, func
+    String, Integer, BigInteger, Float, Boolean, DateTime, func
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship, aliased, backref
+from sqlalchemy.orm import sessionmaker, relationship, aliased
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.exc import ProgrammingError, NoSuchTableError
 from sqlalchemy.sql import and_, or_
@@ -77,6 +77,13 @@ except:
            "because, What's the point of non-persistent persistent objects?")
     ENGINE_STR = "sqlite://"
 
+try:
+    MONICKER = read_config(sect='about', sett='monicker')
+except:
+    print ("Problem reading trump.cfg.  Continuing using the monicker"
+           "defined in orm.py")
+    MONICKER = "unknown"
+    
 rbd = read_config(sect='options', sett='raise_by_default')
 if rbd.upper() == 'TRUE':
     rbd = BitFlag(1)
@@ -765,7 +772,12 @@ class Symbol(Base, ReprMixin):
     description = Column('description', String)
     units = Column('units', String)
     agg_method = Column('agg_method', String)
+    
+    #minutes since last cache
+    freshthresh = Column('freshthresh', Integer, default=1)
 
+    log = relationship('SymbolLogEvent', lazy="dynamic", backref='_symbols', cascade=ADO)
+                         
     index = relationship('Index', uselist=False, backref='_symbols',
                          cascade=ADO)
     dtype = relationship('SymbolDataDef', uselist=False, backref='_symbols',
@@ -782,7 +794,8 @@ class Symbol(Base, ReprMixin):
     
     def __init__(self, name, description=None, units=None,
                  agg_method="PRIORITY_FILL",
-                 indexname="UNNAMED", indeximp="DatetimeIndexImp"):
+                 indexname="UNNAMED", indeximp="DatetimeIndexImp",
+                 freshthresh=1):
         """A Trump Symbol persistently objectifies indexed data
 
         Use the SymbolManager class to create or retrieve existing symbols.
@@ -803,12 +816,15 @@ class Symbol(Base, ReprMixin):
             a proprietary name assigned to the index.
         indeximp : str
             a string representing an index implementer (one of the classes in indexing.py)
+        freshthresh : int
+            number of minutes before the feed is considered stale
 
         """
         
         self.name = name
         self.description = description
         self.units = units
+        self.freshthresh = freshthresh
 
         self.index = Index(indexname, indeximp, sym=name)
         self.dtype = SymbolDataDef("SkipDataDef", sym=name)
@@ -817,6 +833,22 @@ class Symbol(Base, ReprMixin):
         self.datatable = None
         self.datatable_exists = False
     
+    def last_cache(self,result='COMPLETE'):
+        """
+        returns datetime
+        """
+        crit = and_(SymbolLogEvent.event == 'CACHE',
+                    SymbolLogEvent.evresult == result)
+        qry = self.log.filter(crit)
+        qry = qry.order_by(SymbolLogEvent.evtime.desc())
+        
+        t = qry.first()
+        
+        if t:
+            return t.evtime
+        else:
+            return None
+            
     def set_indexing(self, index_template):
         """
         Update a symbol's indexing strategy
@@ -920,7 +952,7 @@ class Symbol(Base, ReprMixin):
                 setattr(self.handle, checkpoint, settings)
         objs.commit()
 
-    def cache(self, checkvalidity=True):
+    def cache(self, checkvalidity=True, staleonly=True):
         """ Re-caches the Symbol's datatable by querying each Feed. 
         
         Parameters
@@ -933,6 +965,9 @@ class Symbol(Base, ReprMixin):
         -------
         SymbolReport
         """
+        
+        note = "staleonly = {}".format(staleonly)
+        self._log_an_event('CACHE','START',note)
 
         data = []
         cols = ['final', 'override_feed000', 'failsafe_feed999']
@@ -1048,7 +1083,9 @@ class Symbol(Base, ReprMixin):
         objs = object_session(self)
         objs.execute(self.datatable.insert(), datarecords)
         objs.commit()
-
+        
+        self._log_an_event('CACHE','COMPLETE')
+        
         if checkvalidity:
             try:
                 isvalid, reports = self.check_validity(report=True)
@@ -1190,6 +1227,19 @@ class Symbol(Base, ReprMixin):
         objs.add_all(tmps)
         objs.commit()
 
+    def _log_an_event(self, event, evresult='No Result', note='No Note'):
+        """ log an event
+        
+        Parameters
+        ----------
+        event : string
+        evresult : string
+        note : string
+        """
+        objs = object_session(self)
+        evnt = SymbolLogEvent(event, evresult, note, sym=self.name)
+        objs.add(evnt)
+        objs.commit()
     @property
     def n_tags(self):
         """ returns the number of tags """
@@ -1448,7 +1498,25 @@ def set_symbol_or_symname(self, sym):
     else:
         setattr(self, "symbol", sym)
 
+class SymbolLogEvent(Base, ReprMixin):
+    __tablename__ = '_symbollogevents'
+    evtime = Column('evtime', DateTime, primary_key=True)
+    symname = Column('symname', String, ForeignKey('_symbols.name', **CC),
+                     primary_key=True)
 
+    event = Column('event', String)
+    evresult = Column('evresult', String)
+    monicker = Column('monicker', String)
+    note = Column('note', String)
+    
+    def __init__(self, event, evresult='No Result', note='No Note', sym=None):
+        set_symbol_or_symname(self, sym)
+        self.event = event
+        self.evresult = evresult
+        self.monicker = MONICKER
+        self.note = note
+        self.evtime = dt.datetime.now()
+        
 class SymbolTag(Base, ReprMixin):
     __tablename__ = '_symbol_tags'
     symname = Column('symname', String, ForeignKey('_symbols.name', **CC),
