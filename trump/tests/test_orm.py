@@ -188,15 +188,15 @@ class TestORM(object):
         sym.add_feed(fdtemp)
         
         sym.cache()
-        sym.cache()
+        sym.cache(staleonly=False)
         gc = sym.last_cache()
         
         os.remove(tmpdata)
         
         try:
-            sym.cache()
+            sym.cache(staleonly=False)
         except:
-            print "Excepted to fail..."
+            print "Expected to fail..."
             
         assert sym.last_cache() == gc
         lasttry = sym.last_cache('START')
@@ -365,6 +365,7 @@ class TestORM(object):
         sym.cache()
         df = sym.df
         assert df.onetwo['2015-12-31'] == 'f'
+        
         onetwo = sm.get("onetwo")
         sm.delete("onetwo")
         

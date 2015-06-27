@@ -8,5 +8,5 @@ class TestToolsSQLA(object):
 
     def test_repr_mixin(self):
         sym = self.sm.create("testsym", overwrite=True)
-        assert repr(sym) == """Symbol(name=u'testsym', description=None, units=None, agg_method=u'priority_fill', freshthresh=1)"""
+        assert repr(sym) == """Symbol(name=u'testsym', description=None, units=None, agg_method=u'priority_fill', freshthresh=0)"""
         
