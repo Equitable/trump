@@ -39,7 +39,6 @@ class IndexImplementer(object):
 
         :param kwargs: dict
         """
-		
         self.data = df_or_s
         self.case = case
         self.kwargs = kwargs
@@ -88,8 +87,8 @@ class IndexImplementer(object):
 
         :return: pd.Dataframe
         """
-        return self.data
-
+        return self.data      
+        
 class DatetimeIndexImp(IndexImplementer):
     """
     Implements a pandas DatetimeIndex

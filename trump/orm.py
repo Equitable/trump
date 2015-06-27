@@ -40,11 +40,13 @@ error handling and validity instructions.
 
 import datetime as dt
 
+from dateutil.relativedelta import relativedelta as rd
+
 import pandas as pd
 from sqlalchemy import event, Table, Column, ForeignKey, ForeignKeyConstraint,\
-    String, Integer, Float, Boolean, DateTime, MetaData, func
+    String, Integer, Float, Boolean, DateTime, func
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship, aliased, backref
+from sqlalchemy.orm import sessionmaker, relationship, aliased
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.exc import ProgrammingError, NoSuchTableError
 from sqlalchemy.sql import and_, or_
@@ -77,12 +79,26 @@ except:
            "because, What's the point of non-persistent persistent objects?")
     ENGINE_STR = "sqlite://"
 
+try:
+    MONICKER = read_config(sect='about', sett='monicker')
+except:
+    print ("Problem reading trump.cfg.  Continuing using the monicker"
+           "defined in orm.py")
+    MONICKER = "unknown"
+    
 rbd = read_config(sect='options', sett='raise_by_default')
 if rbd.upper() == 'TRUE':
     rbd = BitFlag(1)
 else:
     rbd = None
 
+try:
+    import equitable.bpsdl as bf
+    bbapi_connected = False
+    bbapi = None
+except:
+    pass
+    
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
 
@@ -210,8 +226,19 @@ class SymbolManager(object):
             sym = symbol
         else:
             raise Exception("Invalid symbol {}".format((repr(symbol))))
+
+        # Has to handle the case where the table would exist already
+        # and where it wouldn't.
+        try:
+            sym.datatable = Table(sym.name, Base.metadata, autoload=True)
+            sym.datatable.drop(self.eng, checkfirst=True)
+        except NoSuchTableError:
+            print "No worries, {} never existed to begin with.".format(sym.name)
+
         self.ses.delete(sym)
         self.ses.commit()
+        
+   
 
     def complete(self):
         """Commits any changes to the database.
@@ -747,7 +774,12 @@ class Symbol(Base, ReprMixin):
     description = Column('description', String)
     units = Column('units', String)
     agg_method = Column('agg_method', String)
+    
+    #minutes since last cache
+    freshthresh = Column('freshthresh', Integer, default=0)
 
+    log = relationship('SymbolLogEvent', lazy="dynamic", backref='_symbols', cascade=ADO)
+                         
     index = relationship('Index', uselist=False, backref='_symbols',
                          cascade=ADO)
     dtype = relationship('SymbolDataDef', uselist=False, backref='_symbols',
@@ -764,7 +796,8 @@ class Symbol(Base, ReprMixin):
     
     def __init__(self, name, description=None, units=None,
                  agg_method="PRIORITY_FILL",
-                 indexname="UNNAMED", indeximp="DatetimeIndexImp"):
+                 indexname="UNNAMED", indeximp="DatetimeIndexImp",
+                 freshthresh=0):
         """A Trump Symbol persistently objectifies indexed data
 
         Use the SymbolManager class to create or retrieve existing symbols.
@@ -785,12 +818,15 @@ class Symbol(Base, ReprMixin):
             a proprietary name assigned to the index.
         indeximp : str
             a string representing an index implementer (one of the classes in indexing.py)
+        freshthresh : int, default 0
+            number of minutes before the feed is considered stale.
 
         """
         
         self.name = name
         self.description = description
         self.units = units
+        self.freshthresh = freshthresh
 
         self.index = Index(indexname, indeximp, sym=name)
         self.dtype = SymbolDataDef("SkipDataDef", sym=name)
@@ -799,6 +835,22 @@ class Symbol(Base, ReprMixin):
         self.datatable = None
         self.datatable_exists = False
     
+    def last_cache(self,result='COMPLETE'):
+        """
+        returns datetime
+        """
+        crit = and_(SymbolLogEvent.event == 'CACHE',
+                    SymbolLogEvent.evresult == result)
+        qry = self.log.filter(crit)
+        qry = qry.order_by(SymbolLogEvent.evtime.desc())
+        
+        t = qry.first()
+        
+        if t:
+            return t.evtime
+        else:
+            return None
+            
     def set_indexing(self, index_template):
         """
         Update a symbol's indexing strategy
@@ -902,7 +954,7 @@ class Symbol(Base, ReprMixin):
                 setattr(self.handle, checkpoint, settings)
         objs.commit()
 
-    def cache(self, checkvalidity=True):
+    def cache(self, checkvalidity=True, staleonly=True):
         """ Re-caches the Symbol's datatable by querying each Feed. 
         
         Parameters
@@ -910,139 +962,160 @@ class Symbol(Base, ReprMixin):
         checkvalidity : bool, optional
             Optionally, check validity post-cache.  Improve speed by
             turning to False.
+        staleonly : bool, default True
+            
         
         Returns
         -------
         SymbolReport
         """
+        note = "staleonly = {}".format(staleonly)
+        self._log_an_event('CACHE','START',note)
 
-        data = []
-        cols = ['final', 'override_feed000', 'failsafe_feed999']
+        docache = True
+        if staleonly:
+            lc = self.last_cache()
+            if lc:
+                freshthresh = self.freshthresh 
+                
+                nw = dt.datetime.now()
+                freshness = (nw - lc).total_seconds() / 60.0
+
+                if freshness <= freshthresh:
+                    docache = False
         
         smrp = SymbolReport(self.name)
-
-        if len(self.feeds) == 0:
-            err_msg = "Symbol has no Feeds. Can't cache a feed-less Symbol."
-            raise Exception(err_msg)
-
-        smrp
-        try:
-            datt = datadefs[self.dtype.datadef]
-            
-            rp = ReportPoint('datadef', 'class', datt)
-            smrp.add_reportpoint(rp)
-            
-            for afeed in self.feeds:
-                fdrp = afeed.cache()
-                smrp.add_feedreport(fdrp)
-                tmp = datt(afeed.data).converted
-                data.append(tmp)
-                cols.append(afeed.data.name)
-        except:
-            point = "caching"
-            smrp = self._generic_exception(point, smrp)
-                
-        try:
-            data = pd.concat(data, axis=1)
-        except:
-            point = "concatenation"
-            smrp = self._generic_exception(point, smrp)
-        
-        preindlen = len(data)
-        indt = indexingtypes[self.index.indimp]
-        indkwargs = self.index.getkwargs()        
-        indt = indt(data, self.index.case, indkwargs)
-        data = indt.final_dataframe()
-        postindlen = len(data)
-        
-        if postindlen == 0 and preindlen > 0:
-            raise Exception("Indexing Implementer likely poorly designed")
-            
-        data_len = len(data)
-        data['override_feed000'] = [None] * data_len
-        data['failsafe_feed999'] = [None] * data_len
-        
-
-        objs = object_session(self)
-
-        qry = objs.query(Override.ind,
-                         func.max(Override.dt_log).label('max_dt_log'))
-        
-        qry = qry.filter_by(symname = self.name)
-        
-        grb = qry.group_by(Override.ind).subquery()
-
-        qry = objs.query(Override)
-        ords = qry.join((grb, and_(Override.ind == grb.c.ind,
-                                   Override.dt_log == grb.c.max_dt_log))).all()
-
-        for row in ords:
-            data.loc[row.ind, 'override_feed000'] = row.val
-
-        qry = objs.query(FailSafe.ind,
-                         func.max(FailSafe.dt_log).label('max_dt_log'))
-                         
-        qry = qry.filter_by(symname = self.name)
-                         
-        grb = qry.group_by(FailSafe.ind).subquery()
-
-        qry = objs.query(FailSafe)
-        ords = qry.join((grb, and_(FailSafe.ind == grb.c.ind,
-                                   FailSafe.dt_log == grb.c.max_dt_log))).all()
-
-        for row in ords:
-            data.loc[row.ind, 'failsafe_feed999'] = row.val
-            
-        try:
-            data = data.fillna(value=pd.np.nan)
-            data = data[sorted_feed_cols(data)]
-            data['final'] = FeedAggregator(self.agg_method).aggregate(data)
-        except:
-            point = "aggregation"
-            smrp = self._generic_exception(point, smrp)
-
-
-        # SQLAQ There are several states to deal with at this point
-        # A) the datatable exists but a feed has been added
-        # B) the datatable doesn't exist and needs to be created
-        # C) the datatable needs to be updated for more or less feeds
-        # D) the datatable_exists flag is incorrect because all edge cases
-        #    haven't been handled yet.
-        #
-        # My logic is that once Trump is more functional, I'll be able to
-        # eliminate this hacky solution.  But, SQLAlchemy might have
-        # a more elegant answer.  A check, of somekind prior to deletion?
-
-        # if not self.datatable_exists:
-        #     self._init_datatable() #older version of _init_datatable
-        # delete(self.datatable).execute()
-        # self._init_datatable() #older version of _init_datatable
-
-        # Is this the best way to check?
-        # if engine.dialect.has_table(session.connection(), self.name):
-        #    delete(self.datatable).execute()
-        self._refresh_datatable_schema()
-
-        data.index.name = 'indx'
-        data = data.reset_index()
-        datarecords = data.to_dict(orient='records')
-        
-        objs = object_session(self)
-        objs.execute(self.datatable.insert(), datarecords)
-        objs.commit()
-
-        if checkvalidity:
+        if docache:
+            data = []
+            cols = ['final', 'override_feed000', 'failsafe_feed999']
+    
+            if len(self.feeds) == 0:
+                err_msg = "Symbol has no Feeds. Can't cache a feed-less Symbol."
+                raise Exception(err_msg)
+    
+            smrp
             try:
-                isvalid, reports = self.check_validity(report=True)
-                for rep in reports:
-                    smrp.add_reportpoint(rep)
-                if not isvalid:
-                    raise Exception('{} is not valid'.format(self.name))
+                datt = datadefs[self.dtype.datadef]
+                
+                rp = ReportPoint('datadef', 'class', datt)
+                smrp.add_reportpoint(rp)
+                
+                for afeed in self.feeds:
+                    fdrp = afeed.cache()
+                    smrp.add_feedreport(fdrp)
+                    tmp = datt(afeed.data).converted
+                    data.append(tmp)
+                    cols.append(afeed.data.name)
             except:
-                point = "validity_check"
+                point = "caching"
                 smrp = self._generic_exception(point, smrp)
+                    
+            try:
+                data = pd.concat(data, axis=1)
+            except:
+                point = "concatenation"
+                smrp = self._generic_exception(point, smrp)
+            
+            preindlen = len(data)
+            indtt = indexingtypes[self.index.indimp]
+            indkwargs = self.index.getkwargs()
+            
+            if preindlen > 0 : 
+                indt = indtt(data, self.index.case, indkwargs)
+                data = indt.final_dataframe()
+
+                postindlen = len(data)   
+                if postindlen == 0 and preindlen > 0:
+                    raise Exception("Indexing Implementer likely poorly designed")
+            else:
+                postindlen = 0
+            
+            
+            def build_hi_df(which, colname):
+                
+                objs = object_session(self)
+    
+                qry = objs.query(which.ind,
+                                 func.max(which.dt_log).label('max_dt_log'))
+                
+                qry = qry.filter_by(symname = self.name)
+                
+                grb = qry.group_by(which.ind).subquery()
         
-        return smrp
+                qry = objs.query(which)
+                ords = qry.join((grb, and_(which.ind == grb.c.ind,
+                                           which.dt_log == grb.c.max_dt_log))).all()
+            
+                if len(ords):
+                    orind = [row.ind for row in ords]
+                    orval = [row.val for row in ords]
+                    ordf = pd.DataFrame(data=orval, index=orind, columns=[colname])
+                    indt = indtt(ordf, self.index.case, indkwargs)
+                    ordf = indt.final_dataframe()
+                else:
+                    ordf = pd.DataFrame(columns=[colname])
+                return ordf
+            
+            ordf = build_hi_df(Override, 'override_feed000')
+            fsdf = build_hi_df(FailSafe, 'failsafe_feed999')
+            
+            orfsdf = pd.merge(ordf, fsdf, how='outer', left_index=True, right_index=True)
+            data = pd.merge(orfsdf, data, how='outer', left_index=True, right_index=True)
+
+            try:
+                data = data.fillna(value=pd.np.nan)
+                data = data[sorted_feed_cols(data)]
+                data['final'] = FeedAggregator(self.agg_method).aggregate(data)
+            except:
+                point = "aggregation"
+                smrp = self._generic_exception(point, smrp)
+    
+    
+            # SQLAQ There are several states to deal with at this point
+            # A) the datatable exists but a feed has been added
+            # B) the datatable doesn't exist and needs to be created
+            # C) the datatable needs to be updated for more or less feeds
+            # D) the datatable_exists flag is incorrect because all edge cases
+            #    haven't been handled yet.
+            #
+            # My logic is that once Trump is more functional, I'll be able to
+            # eliminate this hacky solution.  But, SQLAlchemy might have
+            # a more elegant answer.  A check, of somekind prior to deletion?
+    
+            # if not self.datatable_exists:
+            #     self._init_datatable() #older version of _init_datatable
+            # delete(self.datatable).execute()
+            # self._init_datatable() #older version of _init_datatable
+    
+            # Is this the best way to check?
+            # if engine.dialect.has_table(session.connection(), self.name):
+            #    delete(self.datatable).execute()
+            self._refresh_datatable_schema()
+            
+            if len(data) > 0:
+                data.index.name = 'indx'
+                data = data.reset_index()
+                datarecords = data.to_dict(orient='records')
+                
+                objs = object_session(self)
+                objs.execute(self.datatable.insert(), datarecords)
+                objs.commit()
+            
+            
+            if checkvalidity:
+                try:
+                    isvalid, reports = self.check_validity(report=True)
+                    for rep in reports:
+                        smrp.add_reportpoint(rep)
+                    if not isvalid:
+                        raise Exception('{} is not valid'.format(self.name))
+                except:
+                    point = "validity_check"
+                    smrp = self._generic_exception(point, smrp)
+            self._log_an_event('CACHE','COMPLETE', "Fresh!")
+        else:
+            self._log_an_event('CACHE','FRESH', "Was still fresh")
+        return smrp          
 
     def check_validity(self, checks=None, report=True):
         """ Runs a Symbol's validity checks.
@@ -1149,6 +1222,7 @@ class Symbol(Base, ReprMixin):
                 objs.delete(symboltag)
                 docommit = True
 
+        
         if docommit:
             objs.commit()
 
@@ -1171,6 +1245,19 @@ class Symbol(Base, ReprMixin):
         objs.add_all(tmps)
         objs.commit()
 
+    def _log_an_event(self, event, evresult='No Result', note='No Note'):
+        """ log an event
+        
+        Parameters
+        ----------
+        event : string
+        evresult : string
+        note : string
+        """
+        objs = object_session(self)
+        evnt = SymbolLogEvent(event, evresult, note, sym=self.name)
+        objs.add(evnt)
+        objs.commit()
     @property
     def n_tags(self):
         """ returns the number of tags """
@@ -1244,7 +1331,7 @@ class Symbol(Base, ReprMixin):
         if isinstance(dtbl, Table):
             return objs.query(dtbl.c.indx, dtbl.c.final).all()
         else:
-            raise Exception("Symbol has no datatable")
+            raise Exception("Symbol has no datatable, likely need to cache first.")
 
     def _max_min(self):
         """
@@ -1288,7 +1375,11 @@ class Symbol(Base, ReprMixin):
             Dataframe of the symbol's final data.
         """
         data = self._final_data()
-    
+        
+        if len(data) == 0:
+            adf = pd.DataFrame(columns = [self.index.name, self.name])
+            return adf.set_index(self.index.name)
+            
         adf = pd.DataFrame(data)
         
         if len(adf.columns) != 2:
@@ -1429,7 +1520,25 @@ def set_symbol_or_symname(self, sym):
     else:
         setattr(self, "symbol", sym)
 
+class SymbolLogEvent(Base, ReprMixin):
+    __tablename__ = '_symbol_log_events'
+    evtime = Column('evtime', DateTime, primary_key=True)
+    symname = Column('symname', String, ForeignKey('_symbols.name', **CC),
+                     primary_key=True)
 
+    event = Column('event', String)
+    evresult = Column('evresult', String)
+    monicker = Column('monicker', String)
+    note = Column('note', String)
+    
+    def __init__(self, event, evresult='No Result', note='No Note', sym=None):
+        set_symbol_or_symname(self, sym)
+        self.event = event
+        self.evresult = evresult
+        self.monicker = MONICKER
+        self.note = note
+        self.evtime = dt.datetime.now()
+        
 class SymbolTag(Base, ReprMixin):
     __tablename__ = '_symbol_tags'
     symname = Column('symname', String, ForeignKey('_symbols.name', **CC),
@@ -1543,7 +1652,7 @@ class SymbolHandle(Base, ReprMixin):
 
     symbol = relationship("Symbol")
 
-    def __init__(self, chkpnt_settings={}, sym=None):
+    def __init__(self, chkpnt_settings=None, sym=None):
         """
         
         Parameters
@@ -1560,7 +1669,8 @@ class SymbolHandle(Base, ReprMixin):
         self.concatenation = rbd or BitFlag(['raise'])
         self.aggregation = rbd or BitFlag(['stdout'])
         self.validity_check = rbd or BitFlag(['report'])
-
+        
+        chkpnt_settings = chkpnt_settings or {}
         # override with anything passed in settings
         for checkpoint in chkpnt_settings:
             if checkpoint in SymbolHandle.__table__.columns:
@@ -1590,13 +1700,14 @@ class Index(Base, ReprMixin):
 
     kwargs = relationship("IndexKwarg", lazy="dynamic", cascade=ADO)
 
-    def __init__(self, name, indimp, case=None, kwargs={}, sym=None):
+    def __init__(self, name, indimp, case=None, kwargs=None, sym=None):
 
         set_symbol_or_symname(self, sym)
 
         self.name = name
         self.indimp = indimp
         self.case = case or "asis"
+        kwargs = kwargs or {}
         self.setkwargs(**kwargs)
 
     def setkwargs(self, **kwargs):
@@ -1884,7 +1995,16 @@ class Feed(Base, ReprMixin):
 
                 self.data = self.data.sort_index()
                 self.data.index = self.data.index.astype(int)
+            elif stype == 'BBFetch':
+                global bbapi_connected
+                global bbapi
+                
+                if not bbapi_connected:
+                    bbapi = bf.Getter.BBapi(clean=False)
+                    bbapi_connected = True
 
+                bbsec = bbapi.GetSecurity(kwargs['elid'])
+                self.data = bbsec.GetDataMostRecentFetchDaily(kwargs['valuefieldname'],KeepTime=False,KeepTimeZone=False)              
             else:
                 raise Exception("Unknown Source Type : {}".format(stype))
         except:
@@ -2147,7 +2267,7 @@ class FeedHandle(Base, ReprMixin):
                                 [Feed.symname, Feed.fnum])
     __table_args__ = (fkey, {})
 
-    def __init__(self, chkpnt_settings={}, feed=None):
+    def __init__(self, chkpnt_settings=None, feed=None):
         """
         :param chkpnt_settings: dict
             A dictionary with keys matchin names of the handle points
@@ -2163,7 +2283,9 @@ class FeedHandle(Base, ReprMixin):
         self.index_property_problem = rbd or BitFlag(['stdout'])
         self.data_type_problem = rbd or BitFlag(['stdout', 'report'])
         self.monounique = rbd or BitFlag(['raise'])
-
+        
+        chkpnt_settings = chkpnt_settings or {}
+        
         # override with anything passed in settings
         for checkpoint in chkpnt_settings:
             if checkpoint in FeedHandle.__table__.columns:

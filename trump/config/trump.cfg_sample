@@ -1,3 +1,11 @@
+[about]
+; name this trump installation, only really used in logging.
+monicker: default
+
+[logging]
+; use a path and file here, or put just a file to write to the cwd
+location: trump_handle.log
+
 [readwrite]
 
 ;  Uncomment one of the 'engine' examples below.
