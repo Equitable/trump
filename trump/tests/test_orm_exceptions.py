@@ -87,8 +87,8 @@ class TestORM_Exceptions(object):
         c1.feeds[0].handle.empty_feed['raise'] = False
         c1.feeds[0].handle.empty_feed['report'] = True
 
-        gooddata = os.path.join(curdir,'testdata','nonexistentdata.csv')
-        fdtemp = CSVFT(gooddata, 'Amount', index_col=0)
+        baddata = os.path.join(curdir,'testdata','nonexistentdata.csv')
+        fdtemp = CSVFT(baddata, 'Amount', index_col=0)
         c2.add_feed(fdtemp)
         c2.feeds[0].handle.api_failure['report'] = True
         
@@ -104,7 +104,6 @@ class TestORM_Exceptions(object):
             return tr
         
         repf = trytocache(False)
-        print len(repf.sreports)
         sreports = repf.sreports
         for i in range(len(sreports)):
             sreport = sreports[i]
@@ -119,6 +118,45 @@ class TestORM_Exceptions(object):
 
         with pytest.raises(IOError):
             trytocache(True)
+
+    def test_multireportdf(self):
+        """ This is an example of how to setup problematic symbols,
+        and while caching a set of them, silencing the known problems
+        optionally."""
+
+        sm = self.sm
+
+        d1 = sm.create("orm_exc_test_symbol_d_good", overwrite=True)
+        d2 = sm.create("orm_exc_test_symbol_d_bad", overwrite=True)
+        d3 = sm.create("orm_exc_test_symbol_d_okay", overwrite=True)
+        
+        emptydata = os.path.join(curdir,'testdata','emptydata.csv')
+        baddata = os.path.join(curdir,'testdata','nonexistentdata.csv')
+        gooddata = os.path.join(curdir,'testdata','testdata.csv')
+        
+        d1.add_feed(CSVFT(emptydata, 'Amount', index_col=0))
+        d1.add_feed(CSVFT(baddata, 'Amount', index_col=0)) 
+        d1.add_feed(CSVFT(emptydata, 'Amount', index_col=0)) 
+        d1.add_feed(CSVFT(gooddata, 'Amount', index_col=0))
+        
+        for i in range(4):
+            d1.feeds[i].handle.empty_feed['report'] = True
+            d1.feeds[i].handle.api_failure['report'] = True
+
+        d2.add_feed(CSVFT(baddata, 'Amount', index_col=0))
+        d2.add_feed(CSVFT(gooddata, 'Amount', index_col=0))
+        
+        d2.feeds[0].handle.api_failure['report'] = True
+        d2.feeds[1].handle.api_failure['report'] = True
+        
+        d3.add_feed(CSVFT(gooddata, 'Amount', index_col=0))
+        
+        tr = TrumpReport("testreport")
+        for sym in [d1, d2, d3]:
+            rep = sym.cache(allowraise=False)
+            tr.add_symbolreport(rep)
+        
+        print tr.hpdf
 
         
         

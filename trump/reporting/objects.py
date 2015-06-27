@@ -11,10 +11,21 @@ import pandas as pd
 
 import datetime as dt
 
+from collections import OrderedDict as odict
+
 class HandlePointReport(object):
     def __init__(self, handlepoint, trace):
         self.hpoint = handlepoint
         self.trace = trace
+    @property
+    def df(self):
+        return pd.DataFrame({'handlepoint' : self.hpoint, 
+                            'tracelineno' : i, 
+                            'file' : tr[0], 
+                            'traceline' : tr[1], 
+                            'tracefunc' : tr[2], 
+                            'tracecode' : tr[3]} 
+                            for i, tr in enumerate(self.trace))
     @property
     def html(self):
         return "{}\n{}".format(self.hpoint, self.trace[-3:])
@@ -26,6 +37,9 @@ class ReportPoint(object):
         self.value = value
         self.extended = extended
     @property
+    def df(self):
+        return pd.DataFrame({'reportpoint' : self.rpoint, 'attribute' : self.attribute, 'value' : self.value, 'extended' : self.extended})
+    @property
     def html(self):
         return "{} {} {}\n{}".format(self.rpoint, self.attribute, self.value,
                                     self.extended)
@@ -36,10 +50,31 @@ class FeedReport(object):
         self.tstamp = dt.datetime.now() 
         self.handlepoints = []
         self.reportpoints = []
+    @property
+    def hpdf(self):
+        dfs = [hp.df for hp in self.handlepoints]
+        if len(dfs):
+            df = pd.concat(dfs, axis=0)
+            df['tstamp'] = [self.tstamp] * len(df)
+            df['feednum'] = [self.num] * len(df)
+            return df
+        else:
+            return pd.DataFrame()
     def add_handlepoint(self, hpreport):
         self.handlepoints.append(hpreport)
     def add_reportpoint(self, rpoint):
         self.reportpoints.append(rpoint)
+    def asodict(self, handlepoints=True, reportpoints=True):
+        out = odict()
+        if handlepoints:
+            for hp in self.handlepoints:
+                out[hp.hpoint] = hp.trace
+        if reportpoints:
+            for rp in self.reportpoints:
+                if not (rp.rpoint in out):
+                    out[rp.rpoint] = odict()
+                out[rp.rpoint][self.attribute] = {'value' : rp.value, 'extended': rp.extended}
+        return out
     @property
     def html(self):
         
@@ -64,12 +99,56 @@ class SymbolReport(object):
         self.freports = []
         self.handlepoints = []
         self.reportpoints = []
+    @property
+    def hpdf(self):
+
+        fddfs = [fd.hpdf for fd in self.freports]
+            
+        dfs = [hp.df for hp in self.handlepoints]
+        if len(dfs):
+            df = pd.concat(dfs, axis=0)
+            df['tstamp'] = [0] * len(dfs)
+            df['feednum'] = [-1] * len(dfs)
+            fddfs.append(df)
+        
+        df = pd.concat(fddfs, axis=0)
+        
+        df['symbol'] = [self.name] * len(df)
+    
+        return df
     def add_feedreport(self, freport):
         self.freports.append(freport)
     def add_handlepoint(self, hpreport):
         self.handlepoints.append(hpreport)
     def add_reportpoint(self, rpoint):
         self.reportpoints.append(rpoint)
+    def asodict(self, freports=True, handlepoints=True, reportpoints=True):
+        out = odict()
+        if freports:
+            for fr in self.freports:
+                out[fr.num] = {'tstamp' : fr.tstamp, 
+                               'report' : fr.asodict(handlepoints, reportpoints)}           
+        if handlepoints:
+            for hp in self.handlepoints:
+                out[hp.hpoint] = hp.trace
+        if reportpoints:
+            for rp in self.reportpoints:
+                if not (rp.rpoint in out):
+                    out[rp.rpoint] = odict()
+                out[rp.rpoint][self.attribute] = {'value' : rp.value, 'extended': rp.extended}
+        return out
+    def all_handlepoints(self):
+        out = odict()
+        for fr in self.freports:
+            for hp in fr.handlepoints:
+                if not (hp.hpoint in out):
+                    out[hp.hpoint] = []
+                out[hp.hpoint].append((self.name, fr.num, hp.trace))
+        for hp in self.handlepoints:
+            if not (hp.hpoint in out):
+                out[hp.hpoint] = []
+            out[hp.hpoint].append((self.name, None, hp.trace))
+        return out
     @property
     def html(self):
         
@@ -97,7 +176,17 @@ class TrumpReport(object):
         self.sreports = []
     def add_symbolreport(self, sreport):
         self.sreports.append(sreport)
-    
+    @property
+    def hpdf(self):
+
+        dfs = [sr.hpdf for sr in self.sreports]
+            
+        if len(dfs):
+            dfs = pd.concat(dfs, axis=0)
+            return dfs.reset_index(drop=True)
+        else:
+            return pd.DataFrame()
+            
     @property
     def html(self):
         
@@ -110,7 +199,16 @@ class TrumpReport(object):
             thtml.append("<br>")
             
         return "".join(thtml)
-
+    def all_handlepoints(self):
+        out = {}
+        for sr in self.sreports:
+            sout = sr.all_handlepoints()
+            for hp in sout.keys():
+                if not (hp in out):
+                    out[hp] = []
+                out[hp].append(sout[hp])
+        return out
+        
 if __name__ == '__main__':
     tr = TrumpReport("Test Report")
     
