@@ -1017,63 +1017,51 @@ class Symbol(Base, ReprMixin):
                 smrp = self._generic_exception(point, smrp)
             
             preindlen = len(data)
-            indt = indexingtypes[self.index.indimp]
+            indtt = indexingtypes[self.index.indimp]
             indkwargs = self.index.getkwargs()
-            indeximplemented = False
             
             if preindlen > 0 : 
-                indt = indt(data, self.index.case, indkwargs)
+                indt = indtt(data, self.index.case, indkwargs)
                 data = indt.final_dataframe()
 
                 postindlen = len(data)   
                 if postindlen == 0 and preindlen > 0:
                     raise Exception("Indexing Implementer likely poorly designed")
-                indeximplemented = True
             else:
                 postindlen = 0
-                        
-            objs = object_session(self)
-    
-            qry = objs.query(Override.ind,
-                             func.max(Override.dt_log).label('max_dt_log'))
             
-            qry = qry.filter_by(symname = self.name)
             
-            grb = qry.group_by(Override.ind).subquery()
+            def build_hi_df(which, colname):
+                
+                objs = object_session(self)
     
-            qry = objs.query(Override)
-            ords = qry.join((grb, and_(Override.ind == grb.c.ind,
-                                       Override.dt_log == grb.c.max_dt_log))).all()
-    
-            qry = objs.query(FailSafe.ind,
-                             func.max(FailSafe.dt_log).label('max_dt_log'))
-                             
-            qry = qry.filter_by(symname = self.name)
-                             
-            grb = qry.group_by(FailSafe.ind).subquery()
-    
-            qry = objs.query(FailSafe)
-            flsf = qry.join((grb, and_(FailSafe.ind == grb.c.ind,
-                                       FailSafe.dt_log == grb.c.max_dt_log))).all()
+                qry = objs.query(which.ind,
+                                 func.max(which.dt_log).label('max_dt_log'))
+                
+                qry = qry.filter_by(symname = self.name)
+                
+                grb = qry.group_by(which.ind).subquery()
+        
+                qry = objs.query(which)
+                ords = qry.join((grb, and_(which.ind == grb.c.ind,
+                                           which.dt_log == grb.c.max_dt_log))).all()
             
-            norfs = max(len(ords), len(flsf))
+                if len(ords):
+                    orind = [row.ind for row in ords]
+                    orval = [row.val for row in ords]
+                    ordf = pd.DataFrame(data=orval, index=orind, columns=[colname])
+                    indt = indtt(ordf, self.index.case, indkwargs)
+                    ordf = indt.final_dataframe()
+                else:
+                    ordf = pd.DataFrame(columns=[colname])
+                return ordf
+            
+            ordf = build_hi_df(Override, 'override_feed000')
+            fsdf = build_hi_df(FailSafe, 'failsafe_feed999')
+            
+            orfsdf = pd.merge(ordf, fsdf, how='outer', left_index=True, right_index=True)
+            data = pd.merge(orfsdf, data, how='outer', left_index=True, right_index=True)
 
-            data['override_feed000'] = [None] * (postindlen + norfs)
-            data['failsafe_feed999'] = [None] * (postindlen + norfs)
-            
-            for row in ords:
-                data.loc[row.ind, 'override_feed000'] = row.val
-                
-            for row in flsf:
-                data.loc[row.ind, 'failsafe_feed999'] = row.val
-            
-            # This is a hail marry, it's really only a meager
-            # attempt at handling ORs and FSs, for a feed with no
-            # data...
-            if not indeximplemented and norfs > 0:
-                indt = indt(data, self.index.case, indkwargs)
-                data = indt.final_dataframe()
-                
             try:
                 data = data.fillna(value=pd.np.nan)
                 data = data[sorted_feed_cols(data)]
