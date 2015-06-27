@@ -960,7 +960,7 @@ class Symbol(Base, ReprMixin):
                 setattr(self.handle, checkpoint, settings)
         objs.commit()
 
-    def cache(self, checkvalidity=True, staleonly=True):
+    def cache(self, checkvalidity=True, staleonly=False, allowraise=True):
         """ Re-caches the Symbol's datatable by querying each Feed. 
         
         Parameters
@@ -968,8 +968,13 @@ class Symbol(Base, ReprMixin):
         checkvalidity : bool, optional
             Optionally, check validity post-cache.  Improve speed by
             turning to False.
-        staleonly : bool, default True
-            
+        staleonly : bool, default False
+            Set to True, for speed up, by looking at staleness
+        allowraise : bool, default True
+            AND with the Symbol.handle and Feed.handle's 'raise',
+            set to False, to do a list of symbols.  Note, this
+            won't silence bugs in Trump, eg. unhandled edge cases.
+            So, those still need to be handled by the application.
         
         Returns
         -------
@@ -999,7 +1004,6 @@ class Symbol(Base, ReprMixin):
                 err_msg = "Symbol has no Feeds. Can't cache a feed-less Symbol."
                 raise Exception(err_msg)
     
-            smrp
             try:
                 datt = datadefs[self.dtype.datadef]
                 
@@ -1007,20 +1011,20 @@ class Symbol(Base, ReprMixin):
                 smrp.add_reportpoint(rp)
                 
                 for afeed in self.feeds:
-                    fdrp = afeed.cache()
+                    fdrp = afeed.cache(allowraise)
                     smrp.add_feedreport(fdrp)
                     tmp = datt(afeed.data).converted
                     data.append(tmp)
                     cols.append(afeed.data.name)
             except:
                 point = "caching"
-                smrp = self._generic_exception(point, smrp)
+                smrp = self._generic_exception(point, smrp, allowraise)
                     
             try:
                 data = pd.concat(data, axis=1)
             except:
                 point = "concatenation"
-                smrp = self._generic_exception(point, smrp)
+                smrp = self._generic_exception(point, smrp, allowraise)
             
             preindlen = len(data)
             indtt = indexingtypes[self.index.indimp]
@@ -1074,7 +1078,7 @@ class Symbol(Base, ReprMixin):
                 data['final'] = FeedAggregator(self.agg_method).aggregate(data)
             except:
                 point = "aggregation"
-                smrp = self._generic_exception(point, smrp)
+                smrp = self._generic_exception(point, smrp, allowraise)
     
     
             # SQLAQ There are several states to deal with at this point
@@ -1117,7 +1121,7 @@ class Symbol(Base, ReprMixin):
                         raise Exception('{} is not valid'.format(self.name))
                 except:
                     point = "validity_check"
-                    smrp = self._generic_exception(point, smrp)
+                    smrp = self._generic_exception(point, smrp, allowraise)
             self._log_an_event('CACHE','COMPLETE', "Fresh!")
         else:
             self._log_an_event('CACHE','FRESH', "Was still fresh")
@@ -1492,8 +1496,10 @@ class Symbol(Base, ReprMixin):
         self.dt_feed_cols = feed_cols[:]
         self.dt_all_cols = ['indx', 'final'] + feed_cols[:]
         return atbl
-    def _generic_exception(self, point, reporter):
-        logic = getattr(self.handle, point)
+    def _generic_exception(self, point, reporter, allowraise=True):
+        logic = getattr(self.handle, point).asdict()
+        logic['raise'] = logic['raise'] and allowraise
+        logic = BitFlag(logic)
         msg = "Exception at the point of {} for {}"
         msg = msg.format(point, self.name)
         hdlrp = Handler(logic, point, msg).process()
@@ -1875,7 +1881,7 @@ class Feed(Base, ReprMixin):
         objs.add_all(tmps)
         objs.commit()
 
-    def cache(self):
+    def cache(self, allowraise):
         
         fdrp = FeedReport(self.fnum)
 
@@ -2015,7 +2021,7 @@ class Feed(Base, ReprMixin):
                 raise Exception("Unknown Source Type : {}".format(stype))
         except:
             point = "api_failure"
-            fdrp = self._generic_exception(point, fdrp)
+            fdrp = self._generic_exception(point, fdrp, allowraise)
             self.data = pd.Series()
 
         try:
@@ -2023,7 +2029,7 @@ class Feed(Base, ReprMixin):
                 raise Exception('Feed is empty')
         except:
             point = "empty_feed"
-            fdrp = self._generic_exception(point, fdrp)
+            fdrp = self._generic_exception(point, fdrp, allowraise)
 
         try:
             if not (self.data.index.is_monotonic and self.data.index.is_unique):
@@ -2033,7 +2039,7 @@ class Feed(Base, ReprMixin):
                 raise Exception(msg)
         except:
             point = "monounique"
-            fdrp = self._generic_exception(point, fdrp)
+            fdrp = self._generic_exception(point, fdrp, allowraise)
 
         # munge accordingly
         print "Munging..."
@@ -2061,10 +2067,6 @@ class Feed(Base, ReprMixin):
         
         return fdrp
 
-#            for a in mgn.methodargs:
-#                args[a.arg] = a.value
-#            self.data = munging_methods[mgn.method](self.data,**args)
-
     @property
     def meta_map(self):
         return ProxyDict(self, 'meta', FeedMeta, 'attr')
@@ -2072,8 +2074,10 @@ class Feed(Base, ReprMixin):
     @property
     def source(self):
         return " ".join([p.key + " : " + p.value for p in self.sourcing])
-    def _generic_exception(self, point, reporter):
-        logic = getattr(self.handle, point)
+    def _generic_exception(self, point, reporter, allowraise=True):
+        logic = getattr(self.handle, point).asdict()
+        logic['raise'] = logic['raise'] and allowraise
+        logic = BitFlag(logic)
         msg = "Exception for feed #{} for {} at the {} point."
         msg = msg.format(self.fnum, self.symname, point)
         hdlrp = Handler(logic, point, msg).process()
