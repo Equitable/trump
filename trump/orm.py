@@ -1018,19 +1018,20 @@ class Symbol(Base, ReprMixin):
             
             preindlen = len(data)
             indt = indexingtypes[self.index.indimp]
-            indkwargs = self.index.getkwargs()        
-            indt = indt(data, self.index.case, indkwargs)
-            data = indt.final_dataframe()
-            postindlen = len(data)
+            indkwargs = self.index.getkwargs()
+            indeximplemented = False
             
-            if postindlen == 0 and preindlen > 0:
-                raise Exception("Indexing Implementer likely poorly designed")
-                
-            data_len = len(data)
-            data['override_feed000'] = [None] * data_len
-            data['failsafe_feed999'] = [None] * data_len
-            
-    
+            if preindlen > 0 : 
+                indt = indt(data, self.index.case, indkwargs)
+                data = indt.final_dataframe()
+
+                postindlen = len(data)   
+                if postindlen == 0 and preindlen > 0:
+                    raise Exception("Indexing Implementer likely poorly designed")
+                indeximplemented = True
+            else:
+                postindlen = 0
+                        
             objs = object_session(self)
     
             qry = objs.query(Override.ind,
@@ -1044,9 +1045,6 @@ class Symbol(Base, ReprMixin):
             ords = qry.join((grb, and_(Override.ind == grb.c.ind,
                                        Override.dt_log == grb.c.max_dt_log))).all()
     
-            for row in ords:
-                data.loc[row.ind, 'override_feed000'] = row.val
-    
             qry = objs.query(FailSafe.ind,
                              func.max(FailSafe.dt_log).label('max_dt_log'))
                              
@@ -1055,11 +1053,26 @@ class Symbol(Base, ReprMixin):
             grb = qry.group_by(FailSafe.ind).subquery()
     
             qry = objs.query(FailSafe)
-            ords = qry.join((grb, and_(FailSafe.ind == grb.c.ind,
+            flsf = qry.join((grb, and_(FailSafe.ind == grb.c.ind,
                                        FailSafe.dt_log == grb.c.max_dt_log))).all()
-    
+            
+            norfs = max(len(ords), len(flsf))
+
+            data['override_feed000'] = [None] * (postindlen + norfs)
+            data['failsafe_feed999'] = [None] * (postindlen + norfs)
+            
             for row in ords:
+                data.loc[row.ind, 'override_feed000'] = row.val
+                
+            for row in flsf:
                 data.loc[row.ind, 'failsafe_feed999'] = row.val
+            
+            # This is a hail marry, it's really only a meager
+            # attempt at handling ORs and FSs, for a feed with no
+            # data...
+            if not indeximplemented and norfs > 0:
+                indt = indt(data, self.index.case, indkwargs)
+                data = indt.final_dataframe()
                 
             try:
                 data = data.fillna(value=pd.np.nan)
@@ -1090,16 +1103,16 @@ class Symbol(Base, ReprMixin):
             # if engine.dialect.has_table(session.connection(), self.name):
             #    delete(self.datatable).execute()
             self._refresh_datatable_schema()
-    
-            data.index.name = 'indx'
-            data = data.reset_index()
-            datarecords = data.to_dict(orient='records')
             
-            objs = object_session(self)
-            objs.execute(self.datatable.insert(), datarecords)
-            objs.commit()
+            if len(data) > 0:
+                data.index.name = 'indx'
+                data = data.reset_index()
+                datarecords = data.to_dict(orient='records')
+                
+                objs = object_session(self)
+                objs.execute(self.datatable.insert(), datarecords)
+                objs.commit()
             
-            self._log_an_event('CACHE','COMPLETE', "Fresh!")
             
             if checkvalidity:
                 try:
