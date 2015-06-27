@@ -4,7 +4,7 @@ monicker: default
 
 [logging]
 ; use a path and file here, or put just a file to write to the cwd
-location: //home/jnm/Desktop/trump_handle.log
+location: trump_handle.log
 
 [readwrite]
 
