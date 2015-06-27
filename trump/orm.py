@@ -1111,6 +1111,7 @@ class Symbol(Base, ReprMixin):
                 except:
                     point = "validity_check"
                     smrp = self._generic_exception(point, smrp)
+            self._log_an_event('CACHE','COMPLETE', "Fresh!")
         else:
             self._log_an_event('CACHE','FRESH', "Was still fresh")
         return smrp          
@@ -1329,7 +1330,7 @@ class Symbol(Base, ReprMixin):
         if isinstance(dtbl, Table):
             return objs.query(dtbl.c.indx, dtbl.c.final).all()
         else:
-            raise Exception("Symbol has no datatable")
+            raise Exception("Symbol has no datatable, likely need to cache first.")
 
     def _max_min(self):
         """
@@ -1373,7 +1374,11 @@ class Symbol(Base, ReprMixin):
             Dataframe of the symbol's final data.
         """
         data = self._final_data()
-    
+        
+        if len(data) == 0:
+            adf = pd.DataFrame(columns = [self.index.name, self.name])
+            return adf.set_index(self.index.name)
+            
         adf = pd.DataFrame(data)
         
         if len(adf.columns) != 2:
@@ -1515,7 +1520,7 @@ def set_symbol_or_symname(self, sym):
         setattr(self, "symbol", sym)
 
 class SymbolLogEvent(Base, ReprMixin):
-    __tablename__ = '_symbollogevents'
+    __tablename__ = '_symbol_log_events'
     evtime = Column('evtime', DateTime, primary_key=True)
     symname = Column('symname', String, ForeignKey('_symbols.name', **CC),
                      primary_key=True)
