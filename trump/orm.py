@@ -39,6 +39,7 @@ error handling and validity instructions.
 
 
 import datetime as dt
+import json
 
 from dateutil.relativedelta import relativedelta as rd
 
@@ -57,7 +58,7 @@ from validity import validitychecks
 from datadef import datadefs
 
 from trump.tools import ReprMixin, ProxyDict, isinstanceofany, \
-    BitFlag, BitFlagType, ReprObjType, DuckTypeMixin
+    BitFlag, BitFlagType, ReprObjType, DuckTypeMixin, new_alchemy_encoder
 
 from trump.extensions.symbol_aggs import FeedAggregator, sorted_feed_cols
 from trump.templating import bFeed, pab, pnab
@@ -318,6 +319,10 @@ class SymbolManager(object):
             return None
         else:
             return syms[0]
+    def existing_meta_attr(self):
+        qry = self.ses.query(SymbolMeta.attr).order_by(SymbolMeta.attr)
+        result = qry.distinct().all()
+        return [res[0] for res in result]
     def search(self, usrqry=None, name=False, desc=False, tags=False, meta=False, stronly=False, dolikelogic=True):
         """ Get a list of Symbols by searching a combination of 
         a Symbol's name, description, tags or meta values.
@@ -834,7 +839,8 @@ class Symbol(Base, ReprMixin):
         self.agg_method = agg_method
         self.datatable = None
         self.datatable_exists = False
-    
+    def to_json(self):
+        return json.dumps(self, cls=new_alchemy_encoder(), check_circular=False)
     def last_cache(self,result='COMPLETE'):
         """
         returns datetime

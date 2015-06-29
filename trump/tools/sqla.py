@@ -18,6 +18,9 @@
 """
 SQLAlchemy mixins used to implement standard repr, proxy objects
 """
+import json
+from sqlalchemy.ext.declarative import DeclarativeMeta
+from sqlalchemy.orm.dynamic import AppenderQuery
 
 class ReprMixin(object):
 
@@ -190,3 +193,36 @@ def unique_constructor(scoped_session, hashfunc, queryfunc):
 
 def isinstanceofany(obj, typs):
     return any([isinstance(obj, t) for t in typs])
+
+def new_alchemy_encoder():
+    _visited_objs = []
+    class AlchemyEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj.__class__, DeclarativeMeta):
+                # don't re-visit self
+                if obj in _visited_objs:
+                    return None
+                _visited_objs.append(obj)
+
+                # an SQLAlchemy class
+                fields = {}
+                for field in [x for x in dir(obj) if not x.startswith('_')]:
+                    if field in ('name','description','units'):
+                        fields[field] = obj.__getattribute__(field)
+                    elif field in ('meta',):
+                        metas = obj.__getattribute__(field).all()
+                        fields[field] = {meta.attr : meta.value for meta in metas}
+                    elif field in ('tags',):
+                        tags = obj.__getattribute__(field)
+                        fields[field] = [tag.tag for tag in tags]
+                        
+                    #elif field in ('feeds',):
+                    #    fields[field] = obj.__getattribute__(field)
+                    #elif field in ('sourcing', 'sourcekwargs'):
+                    #    sources = obj.__getattribute__(field).all()
+                    #    fields[field] = repr(sources)
+                # a json-encodable dict
+                return fields
+
+            return json.JSONEncoder.default(self, obj)
+    return AlchemyEncoder
