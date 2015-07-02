@@ -3,9 +3,17 @@ import sys
 import datetime as dt
 import pandas as pd
 
+try:
+    # the API for engard is in development, so this might change...
+    # validity is a pretty fringe feature, at the moment
+    from engard import ReturnSet, iloc
+    rs = ReturnSet('bool')
+except:
+    pass
+
 #imported like this, cause otherwise the docs won't build.
 series_equal = pd.util.testing.assert_series_equal
-
+    
 class ValidityCheck(object):
     def __init__(self, data, *args):
         self.data = data
@@ -15,6 +23,29 @@ class ValidityCheck(object):
     def result(self):
         return True
 
+def engarde_validity_check_maker(name, slc=None, slcd=None):
+    class aValCheck(ValidityCheck):
+        def __init__(self, data, *args):
+            self.data = data
+            func = getattr(rs, name)
+            
+            args = list(args)
+            
+            if slc and slcd:
+                self.valid = func(self.data['final'], slc, slcd, *self.args)
+            elif slc:
+                self.valid = func(self.data['final'], slc, *self.args)
+            elif slcd:
+                self.valid = func(self.data['final'], slice(None), slcd, *self.args)
+            else:
+                self.valid = func(self.data['final'], *self.args)
+        @property
+        def result(self):
+            return self.valid
+
+NoneMissing = engarde_validity_check_maker('none_missing')
+#NoneMissingRecently = engarde_validity_check_maker('none_missing', iloc[-3:])
+     
 class FeedsMatch(object):
     def __init__(self, data, left, right, lastn):
         self.data = data
