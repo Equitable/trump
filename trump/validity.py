@@ -1,12 +1,12 @@
-import inspect
-import sys
+import inspect, sys
 import datetime as dt
 import pandas as pd
 
 try:
-    # the API for engard is in development, so this might change...
+    # the API for engarde/validada is in development, so this might change...
     # validity is a pretty fringe feature, at the moment
-    from engard import ReturnSet, iloc
+    # only do this
+    from validada import ReturnSet, iloc
     rs = ReturnSet('bool')
 except:
     pass
@@ -23,29 +23,54 @@ class ValidityCheck(object):
     def result(self):
         return True
 
-def engarde_validity_check_maker(name, slc=None, slcd=None):
-    class aValCheck(ValidityCheck):
-        def __init__(self, data, *args):
-            self.data = data
-            func = getattr(rs, name)
+class NoneMissing(ValidityCheck):
+    def __init__(self, data, *args):
+        self.data = data
+        
+        if len(args) > 1:
+            self.ind = args[0]
+            self.args = args[1:]
+        elif len(args) == 1:
+            self.ind = args[0]
+            self.args = []
+        else:
+            self.ind = -25
+            self.args = []
             
-            args = list(args)
-            
-            if slc and slcd:
-                self.valid = func(self.data['final'], slc, slcd, *self.args)
-            elif slc:
-                self.valid = func(self.data['final'], slc, *self.args)
-            elif slcd:
-                self.valid = func(self.data['final'], slice(None), slcd, *self.args)
-            else:
-                self.valid = func(self.data['final'], *self.args)
-        @property
-        def result(self):
-            return self.valid
+    @property
+    def result(self):
+        return rs.none_missing(self.data, iloc[self.ind:], *self.args)
 
-NoneMissing = engarde_validity_check_maker('none_missing')
-#NoneMissingRecently = engarde_validity_check_maker('none_missing', iloc[-3:])
-     
+class NoneMissingRecently(ValidityCheck):
+    def __init__(self, data, *args):
+        self.data = data
+    @property
+    def result(self):
+        return rs.none_missing(self.data, iloc[-25:])
+        
+class HasDataPointOnDate(ValidityCheck):
+    def __init__(self, data, *args):
+        self.data = data
+        if len(args) > 1:
+            self.dt = args[0]
+            self.args = args[1:]
+        elif len(args) == 1:
+            self.dt = args[0]
+            self.args = []
+        else:
+            self.dt = 'today'
+            self.args = []
+
+        if isinstance(self.dt, (str, unicode)):
+            if self.dt == 'today':
+                self.dt = dt.date.today()
+            elif self.dt == 'yesterday':
+                self.dt = dt.date.today() - dt.timedelta(days=1)
+
+    @property
+    def result(self):
+        return rs.has_in_index(self.data, obj=self.dt, try_ix=True, try_strftime=True, check_na=True)
+            
 class FeedsMatch(object):
     def __init__(self, data, left, right, lastn):
         self.data = data
@@ -61,26 +86,6 @@ class FeedsMatch(object):
     @property
     def result(self):
         return self.match
-
-class DateExists(object):
-    def __init__(self, data, date='today'):
-        self.data = data
-        
-        if isinstance(date, (str, unicode)):
-            if date == 'today':
-                cur_date = dt.date.today()
-            elif date == 'yesterday':
-                cur_date = dt.date.today() - dt.timedelta(days=1)
-            else:
-                raise Exception("{} is not convertible to a date".format(date))
-        else:
-            cur_date = date
-        
-        self.today_exists = cur_date in self.data.index
-        
-    @property
-    def result(self):
-        return self.today_exists
         
 def _pred(aclass):
     """
