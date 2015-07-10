@@ -14,7 +14,7 @@ session = DBSession()
 
 metadata = MetaData(bind=engine)
 
-from ..reprobj import ReprObjType
+from trump.tools.reprobj import ReprObjType
 
 class ReprObjExample(Base):
     __tablename__ = 'reprobjex'

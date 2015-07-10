@@ -1,5 +1,5 @@
-from ...orm import SetupTrump, SymbolManager
-from ..metamatrix import MetaMatrix
+from trump.orm import SetupTrump, SymbolManager
+from trump.tools.metamatrix import MetaMatrix
 
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
