@@ -239,8 +239,6 @@ class SymbolManager(object):
         self.ses.delete(sym)
         self.ses.commit()
         
-   
-
     def complete(self):
         """Commits any changes to the database.
         In general, most of Trump API's auto-commits

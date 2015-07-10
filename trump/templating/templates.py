@@ -98,6 +98,42 @@ class PctChangeMT(bMunging, mixin_pab):
     def __init__(self, **kwargs):
         super(PctChangeMT, self).__init__()
         self._bld_pct_change(**kwargs)
+
+class AsFreqMT(bMunging, mixin_pab):
+    """ Example munging template, which implements pct_change."""
+    def __init__(self, **kwargs):
+        super(AsFreqMT, self).__init__()
+        self._bld_asfreq(**kwargs)
+
+class AddMT(bMunging, mixin_pab):
+    """ Example munging template, which implements addition."""
+    def __init__(self, num, **kwargs):
+        super(AddMT, self).__init__()
+        self._bld_op('add', num, **kwargs)
+
+class SubMT(bMunging, mixin_pab):
+    """ Example munging template, which implements subtraction."""
+    def __init__(self, num, **kwargs):
+        super(SubMT, self).__init__()
+        self._bld_op('sub', num, **kwargs)
+
+class MulMT(bMunging, mixin_pab):
+    """ Example munging template, which implements multiplication."""
+    def __init__(self, num, **kwargs):
+        super(MulMT, self).__init__()
+        self._bld_op('mul', num, **kwargs)
+
+class DivMT(bMunging, mixin_pab):
+    """ Example munging template, which implements division."""
+    def __init__(self, num, **kwargs):
+        super(DivMT, self).__init__()
+        self._bld_op('div', num, **kwargs)
+        
+class PowerMT(bMunging, mixin_pab):
+    """ Example munging template, which implements pct_change."""
+    def __init__(self, num, **kwargs):
+        super(PowerMT, self).__init__()
+        self._bld_op('pow', num, **kwargs)
         
 class FFillRollingMeanMT(bMunging, mixin_pab, mixin_pnab):
     """ Example munging template, which implements a ffill using the generic

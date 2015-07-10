@@ -26,16 +26,21 @@ class mixin_pab(object):
         """implements pandas .pct_change()"""
         self.pct_change = {'mtype': pab, 'kwargs': kwargs}
 
-    def _bld_add(self, **kwargs):
-        """implements pandas .add()"""
-        self.add = {'mtype': pab, 'kwargs': kwargs}
-
+    def _bld_op(self, op, num, **kwargs):
+        """implements pandas an operator"""
+        kwargs['other'] = num        
+        setattr(self, op, {'mtype': pab, 'kwargs': kwargs})
+        
+    def _bld_asfreq(self, **kwargs):
+        """implements pandas .asfreq()"""
+        self.asfreq = {'mtype': pab, 'kwargs': kwargs}
+               
     def _bld_pab_generic(self, funcname, **kwargs):
         """
         implements a generic version of an attribute based pandas function
         """
         margs = {'mtype': pab, 'kwargs': kwargs}
-        self.__setattr__(funcname, margs)
+        setattr(self, funcname, margs)
 
 pnab = 'pandas_nonattribute_based'
 
@@ -51,4 +56,4 @@ class mixin_pnab(object):
         implement's a generic version of a non-attribute based pandas function
         """
         margs = {'mtype': pnab, 'kwargs': kwargs}
-        self.__setattr__(funcname, margs)
+        setattr(self, funcname, margs)
