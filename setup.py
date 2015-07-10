@@ -6,6 +6,8 @@ import time
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 
+v = '0.0.3'
+
 cmds = sys.argv
 installing = 'install' in cmds
 
@@ -41,8 +43,6 @@ def read(*p):
     """Build a file path from paths and return the contents."""
     with open(os.path.join(*p), 'r') as fi:
         return fi.read()
-
-v = '0.0.2'
 
 setup(
   name = 'Trump',
