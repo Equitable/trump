@@ -1,5 +1,5 @@
 
-from ..templates import QuandlFT, QuandlSecureFT, \
+from trump.templating.templates import QuandlFT, QuandlSecureFT, \
                         GoogleFinanceFT, YahooFinanceFT, StLouisFEDFT, \
                         EconFT, CSVFT
 

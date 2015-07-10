@@ -1,5 +1,5 @@
 
-from ..converters import _ListConverter
+from trump.templating.converters import _ListConverter
 
 class TestConverters(object):
 

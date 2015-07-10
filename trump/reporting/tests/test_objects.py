@@ -1,4 +1,4 @@
-from ..objects import *
+from trump.reporting.objects import *
 
 class TestReportingObjects(object):
 

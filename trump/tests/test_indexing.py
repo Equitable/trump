@@ -1,4 +1,4 @@
-from ..indexing import DatetimeIndexImp
+from trump.indexing import DatetimeIndexImp
 
 from pandas.util.testing import assert_series_equal, assert_frame_equal
 

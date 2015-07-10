@@ -1,7 +1,7 @@
-from ..handling import Handler
+from trump.handling import Handler
 
 
-from ..tools.bitflags import BitFlag
+from trump.tools.bitflags import BitFlag
 
 import pytest
 

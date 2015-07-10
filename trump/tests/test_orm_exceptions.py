@@ -1,9 +1,9 @@
-from ..orm import Symbol, SetupTrump, SymbolManager, ConversionManager, \
+from trump.orm import Symbol, SetupTrump, SymbolManager, ConversionManager, \
                   SymbolLogEvent
 
-from ..reporting.objects import TrumpReport
+from trump.reporting.objects import TrumpReport
 
-from ..templating.templates import GoogleFinanceFT, YahooFinanceFT,\
+from trump.templating.templates import GoogleFinanceFT, YahooFinanceFT,\
     SimpleExampleMT, CSVFT, FFillIT, FeedsMatchVT, DateExistsVT, PctChangeMT
 
 import pandas as pd
