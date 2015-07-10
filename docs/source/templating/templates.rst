@@ -37,6 +37,8 @@ Munging
 
 .. autoclass:: trump.templating.AbsMT
 
+.. autoclass:: trump.templating.AsFreqMT
+
 .. autoclass:: trump.templating.RollingMeanMT
 
 .. autoclass:: trump.templating.FFillRollingMeanMT
