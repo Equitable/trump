@@ -121,7 +121,7 @@ class TestORM(object):
         assert df.index.freq == 'M'
 
     @requires_net
-    def test_two_symbols(self):
+    def test_two_feeds(self):
 
         sm = self.sm
 
@@ -140,7 +140,7 @@ class TestORM(object):
         # the 13th is the last row, and it should be blank because
         # we only fetched through the 10th.
         # As of now, the third column from the last, is the 'google' feed.
-        assert ans[-1][-3] is None
+        assert (ans[-1][-3] is None) or pd.isnull(ans[-1][-3])
 
         df = sym.df
 
@@ -388,6 +388,9 @@ class TestORM(object):
         assert df.onetwo['2015-12-31'] == 'f'
         
         onetwo = sm.get("onetwo")
+        
+        #Why is this needed in postgres, but not sqlite?
+        sm.complete()
         sm.delete("onetwo")
         
         sym = sm.create("onetwo", overwrite=True)
