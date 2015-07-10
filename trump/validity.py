@@ -6,7 +6,8 @@ try:
     # the API for engarde/validada is in development, so this might change...
     # validity is a pretty fringe feature, at the moment
     # only do this
-    from validada import ReturnSet, iloc
+    from validada.core import ReturnSet
+    from validada.slicers import iloc
     rs = ReturnSet('bool')
 except:
     pass
@@ -70,7 +71,12 @@ class HasDataPointOnDate(ValidityCheck):
     @property
     def result(self):
         return rs.has_in_index(self.data, obj=self.dt, try_ix=True, try_strftime=True, check_na=True)
-            
+
+class DateExists(HasDataPointOnDate):
+    @property
+    def result(self):
+        return rs.has_in_index(self.data, obj=self.dt, try_ix=True, try_strftime=True, check_na=False)
+
 class FeedsMatch(object):
     def __init__(self, data, left, right, lastn):
         self.data = data
