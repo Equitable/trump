@@ -49,7 +49,7 @@ setup(
   version = v,
   packages = find_packages(),
   description = 'Persistent Objectified Indexed Data',
-  install_requires = ['smuggle','pandas','SQLAlchemy','Quandl'],
+  install_requires = ['smuggle','pandas','SQLAlchemy','Quandl','validada'],
   long_description = read('README.rst') ,
   package_data = {'': ['config/*.cfg_sample'], 'trump.templating' : ['settings/*.cfg_sample']},
   cmdclass = {'install': TrumpInstall},

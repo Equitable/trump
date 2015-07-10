@@ -2,3 +2,4 @@ SQLalchemy>=0.9
 smuggle==0.2.0
 pandas>=0.15
 Quandl>=2.8
+validada>=0.0.1

@@ -145,9 +145,10 @@ Requirements
 
 Dependencies
 ------------
-- `Pandas <http://pandas.pydata.org/>`_ (Tested with >= 15.2)
+- `Pandas <http://pandas.pydata.org/>`_ (Tested with >= 0.16.2)
 - `SQLAlchemy <http://sqlalchemy.org/>`_ (Tested with >= 0.9)
-- `Smuggle <https://pypi.python.org/pypi/smuggle>`_ (Tested with >= 0.2.0)
+- `smuggle <https://pypi.python.org/pypi/smuggle>`_ (Tested with >= 0.2.0)
+- `validada <https://pypi.python.org/pypi/validada>`_ (Tested with >= 0.0.1)
 
 Data Source Dependencies
 ------------------------
