@@ -6,6 +6,8 @@ import time
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 
+v = '0.0.3'
+
 cmds = sys.argv
 installing = 'install' in cmds
 
@@ -42,8 +44,6 @@ def read(*p):
     with open(os.path.join(*p), 'r') as fi:
         return fi.read()
 
-v = '0.0.2'
-
 setup(
   name = 'Trump',
   version = v,
@@ -51,7 +51,11 @@ setup(
   description = 'Persistent Objectified Indexed Data',
   install_requires = ['smuggle','pandas','SQLAlchemy','Quandl','validada'],
   long_description = read('README.rst') ,
-  package_data = {'': ['config/*.cfg_sample'], 'trump.templating' : ['settings/*.cfg_sample']},
+  package_data = {'': ['config/*.cfg_sample', 'test/*.py', 'test/testdata/*.csv'], 
+                  'trump.templating' : ['settings/*.cfg_sample', 'test/*'], 
+                  'trump.extensions' : ['test/*'],
+                  'trump.reporting' : ['test/*'],
+                  'trump.tools' : ['test/*']},
   cmdclass = {'install': TrumpInstall},
   author = 'Jeffrey McLarty',
   author_email = 'jeffrey.mclarty@gmail.com',

@@ -1,4 +1,4 @@
-from ...orm import SetupTrump, SymbolManager
+from trump.orm import SetupTrump, SymbolManager
 
 class TestToolsSQLA(object):
     

@@ -10,3 +10,4 @@ docs/build/*
 *.lnk
 .spyderproject
 trump.db
+*.log

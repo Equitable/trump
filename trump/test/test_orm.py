@@ -1,19 +1,32 @@
-from ..orm import Symbol, SetupTrump, SymbolManager, ConversionManager, \
+from trump.orm import Symbol, SetupTrump, SymbolManager, ConversionManager, \
                   SymbolLogEvent
 
-from ..templating.templates import GoogleFinanceFT, YahooFinanceFT,\
+from trump.templating.templates import GoogleFinanceFT, YahooFinanceFT,\
     SimpleExampleMT, CSVFT, FFillIT, FeedsMatchVT, DateExistsVT, PctChangeMT
 
 import pandas as pd
-
 import pytest
+from pytest import mark
+skipif = mark.skipif
 
+   
 import os
-
 import datetime as dt
-
 import shutil as sh
 
+import urllib2
+
+def internet_on():
+    try:
+        response=urllib2.urlopen('http://www.google.com',timeout=5)
+        return True
+    except urllib2.URLError as err: pass
+    return False
+
+net_on = internet_on()
+def requires_net(func):
+    return skipif(not net_on, reason="Requires Internet")(func)
+    
 def floats_equal(a,b,d=4):
     return round(a,d) == round(b,d)
 
@@ -21,15 +34,17 @@ curdir = os.path.dirname(os.path.realpath(__file__))
 inspect_reports = False
 
 class TestORM(object):
-    
+    @classmethod
+    def setup_class(cls):
+        cls.eng = SetupTrump()
     def setup_method(self, test_method):
-        self.eng = SetupTrump()
         self.sm = SymbolManager(self.eng)
-
+    def teardown_method(self, test_method):
+        self.sm.complete()
     def test_setuptrump(self):
         SymbolManager("sqlite://")
         SymbolManager()
-        
+    @requires_net
     def test_symbol_creation(self):
 
         sm = self.sm
@@ -44,6 +59,7 @@ class TestORM(object):
 
         assert sym.df.ix['2015-04-10'][0] == 210.90
 
+    @requires_net
     def test_symbol_munging_mod(self):
 
         sm = self.sm
@@ -60,7 +76,8 @@ class TestORM(object):
 
         df = sym.df
         assert round(df.ix['2015-03-20'][0], 4) == round(0.031638, 4)
-
+        
+    @requires_net
     def test_symbol_pct_change_munge(self):
 
         sm = self.sm
@@ -81,6 +98,7 @@ class TestORM(object):
         
         print df.tail(5)
 
+    @requires_net
     def test_symbol_frequency_mod(self):
 
         sm = self.sm
@@ -102,7 +120,8 @@ class TestORM(object):
 
         assert df.index.freq == 'M'
 
-    def test_two_symbols(self):
+    @requires_net
+    def test_two_feeds(self):
 
         sm = self.sm
 
@@ -121,13 +140,14 @@ class TestORM(object):
         # the 13th is the last row, and it should be blank because
         # we only fetched through the 10th.
         # As of now, the third column from the last, is the 'google' feed.
-        assert ans[-1][-3] is None
+        assert (ans[-1][-3] is None) or pd.isnull(ans[-1][-3])
 
         df = sym.df
 
         assert sym.n_feeds == 2
         assert round(df.ix['2015-03-13'][0], 2) == 41.38
 
+    @requires_net
     def test_tags_and_search(self):
 
         sm = self.sm
@@ -232,7 +252,8 @@ class TestORM(object):
         syms = sm.search(s[::-1], meta=True, stronly=True)
         assert len(syms) == 1
         assert isinstance(syms[0], (str, unicode))
-        
+    
+    @requires_net
     def test_existence_deletion(self):
 
         sm = self.sm
@@ -367,6 +388,9 @@ class TestORM(object):
         assert df.onetwo['2015-12-31'] == 'f'
         
         onetwo = sm.get("onetwo")
+        
+        #Why is this needed in postgres, but not sqlite?
+        sm.complete()
         sm.delete("onetwo")
         
         sym = sm.create("onetwo", overwrite=True)
