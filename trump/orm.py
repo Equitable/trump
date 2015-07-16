@@ -37,7 +37,7 @@ error handling and validity instructions.
 #
 #        Why?
 
-
+from pdb import set_trace as bp
 import datetime as dt
 import json
 
@@ -93,10 +93,10 @@ if rbd.upper() == 'TRUE':
 else:
     rbd = None
 
+bbapi_connected = False
+bbapi = None   
 try:
-    import equitable.bpsdl as bf
-    bbapi_connected = False
-    bbapi = None
+    import equitable.bpsdl as bf   
 except:
     pass
     
@@ -1955,8 +1955,19 @@ class Feed(Base, ReprMixin):
                     
                 results = [(row[0], row[1]) for row in cur.fetchall()]
                 con.close()
-                ind, dat = zip(*results)
+                if len(results):
+                    ind, dat = zip(*results)
+                else:
+                    ind, dat = [], []
                 self.data = pd.Series(dat, ind)
+
+                try:
+                    dosum = kwargs['duphandler'] == 'sum'
+                except:
+                    dosum = False
+                if dosum:
+                    self.data = self.data.groupby(self.data.index).sum()
+
             elif stype == 'SQLAlchemy':
                 NotImplementedError("SQLAlchemy")
             elif stype == 'PyDataCSV':
@@ -2012,11 +2023,53 @@ class Feed(Base, ReprMixin):
                 if not bbapi_connected:
                     bbapi = bf.Getter.BBapi(clean=False)
                     bbapi_connected = True
-
+                
                 bbsec = bbapi.GetSecurity(kwargs['elid'])
                 self.data = bbsec.GetDataMostRecentFetchDaily(kwargs['valuefieldname'],KeepTime=False,KeepTimeZone=False)              
+                
+                try:
+                    dosum = kwargs['duphandler'] == 'sum'
+                except:
+                    dosum = False
+                if dosum:
+                     self.data = self.data.groupby(self.data.index).sum()
+
+            elif stype == 'BBFetchBulk':
+                global bbapi_connected
+                global bbapi
+                
+                if not bbapi_connected:
+                    bbapi = bf.Getter.BBapi(clean=False)
+                    bbapi_connected = True
+
+                security = bbapi.GetSecurity(kwargs['elid'])
+               
+                indexfilter = None
+                
+                if 'keep_list' in kwargs:
+                    keep_list = kwargs['keep_list'].split(", ")
+                    indexfilter = {'dividend_type' : keep_list}
+                    
+                self.data = security.GetDataMostRecentFetchBulk(kwargs['fieldname'],indexfilter=indexfilter,columntoindex=kwargs['datecol'],datacolumn=kwargs['datacol'])
+
+                try:
+                    dosum = kwargs['duphandler'] == 'sum'
+                except:
+                    dosum = False
+                if dosum:
+                    self.data = self.data.groupby(self.data.index).sum()
+                
+                try:
+                    croptime = kwargs['croptime']
+                except:
+                    croptime = False
+                
+                if croptime:
+                    self.data.index = [t.to_datetime().date() for t in self.data.index]
+                    
             else:
                 raise Exception("Unknown Source Type : {}".format(stype))
+            
         except:
             point = "api_failure"
             fdrp = self._generic_exception(point, fdrp, allowraise)
