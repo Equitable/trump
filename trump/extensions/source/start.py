@@ -163,12 +163,13 @@ def f():
     pass
 
 ex = """
-stype = {}
+stype = '{}'
 renew = True
 
 class Source(object):
-    def __init__(ses, **kwargs):
+    def __init__(self, ses, **kwargs):
 {}
-    def getseries(ses, **kwargs):
+    def getseries(self, ses, **kwargs):
 {}
+    return data
 """

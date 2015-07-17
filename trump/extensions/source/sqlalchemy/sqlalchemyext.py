@@ -1,11 +1,12 @@
 
-stype = SQLAlchemy
+stype = 'SQLAlchemy'
 renew = True
 
 class Source(object):
-    def __init__(ses, **kwargs):
-		NotImplementedError("SQLAlchemy")
+    def __init__(self, ses, **kwargs):
+        NotImplementedError("SQLAlchemy")
 
-    def getseries(ses, **kwargs):
-		NotImplementedError("SQLAlchemy")
+    def getseries(self, ses, **kwargs):
+        NotImplementedError("SQLAlchemy")
 
+    return data

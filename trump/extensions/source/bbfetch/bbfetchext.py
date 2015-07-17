@@ -1,41 +1,22 @@
 
-stype = BBFetch
+    
+stype = 'BBFetch'
 renew = True
 
 class Source(object):
-    def __init__(ses, **kwargs):
-		global bbapi_connected
-		global bbapi
+    def __init__(self, ses, **kwargs):
+        import equitable.bpsdl as bf   
+        self.bbapi = bf.Getter.BBapi(clean=False)
+    def getseries(self, ses, **kwargs):
 		
-		if not bbapi_connected:
-			bbapi = bf.Getter.BBapi(clean=False)
-			bbapi_connected = True
+        bbsec = self.bbapi.GetSecurity(kwargs['elid'])
+        data = bbsec.GetDataMostRecentFetchDaily(kwargs['valuefieldname'],KeepTime=False,KeepTimeZone=False)              
 		
-		bbsec = bbapi.GetSecurity(kwargs['elid'])
-		data = bbsec.GetDataMostRecentFetchDaily(kwargs['valuefieldname'],KeepTime=False,KeepTimeZone=False)              
-		
-		try:
-			dosum = kwargs['duphandler'] == 'sum'
-		except:
-			dosum = False
-		if dosum:
-			 data = data.groupby(data.index).sum()
-
-    def getseries(ses, **kwargs):
-		global bbapi_connected
-		global bbapi
-		
-		if not bbapi_connected:
-			bbapi = bf.Getter.BBapi(clean=False)
-			bbapi_connected = True
-		
-		bbsec = bbapi.GetSecurity(kwargs['elid'])
-		data = bbsec.GetDataMostRecentFetchDaily(kwargs['valuefieldname'],KeepTime=False,KeepTimeZone=False)              
-		
-		try:
-			dosum = kwargs['duphandler'] == 'sum'
-		except:
-			dosum = False
-		if dosum:
-			 data = data.groupby(data.index).sum()
-
+        try:
+            dosum = kwargs['duphandler'] == 'sum'
+        except:
+            dosum = False
+        if dosum:
+            data = data.groupby(data.index).sum()
+        
+        return data

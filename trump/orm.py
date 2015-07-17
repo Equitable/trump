@@ -57,6 +57,8 @@ from indexing import indexingtypes
 from validity import validitychecks
 from datadef import datadefs
 
+from extensions.loader import sources
+
 from trump.tools import ReprMixin, ProxyDict, isinstanceofany, \
     BitFlag, BitFlagType, ReprObjType, DuckTypeMixin, new_alchemy_encoder
 
@@ -93,13 +95,7 @@ if rbd.upper() == 'TRUE':
 else:
     rbd = None
 
-bbapi_connected = False
-bbapi = None   
-try:
-    import equitable.bpsdl as bf   
-except:
-    pass
-    
+
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
 
