@@ -14,7 +14,10 @@ class SourceExtension(object):
         return self.fetcher.getseries(_ses, **kwargs)
 
 sources = {}
-extension_names = os.listdir('source')
+
+curdir = os.path.dirname(os.path.realpath(__file__))
+
+extension_names = os.listdir(os.path.join(curdir,'source'))
 
 for name in extension_names:
     ext = find_module(name, ['source'])
