@@ -60,7 +60,7 @@ from datadef import datadefs
 from trump.tools import ReprMixin, ProxyDict, isinstanceofany, \
     BitFlag, BitFlagType, ReprObjType, DuckTypeMixin, new_alchemy_encoder
 
-from trump.extensions.symbol_aggs import FeedAggregator, sorted_feed_cols
+from trump.aggregation.symbol_aggs import FeedAggregator, sorted_feed_cols
 from trump.templating import bFeed, pab, pnab
 from trump.options import read_config, read_settings
 from trump.converting import FXConverter
@@ -816,7 +816,7 @@ class Symbol(Base, ReprMixin):
             a string representing the units for the data.
         agg_method : str, default PRIORITY_FILL
             the method used for aggregating feeds, see
-            trump.extensions.symbol_aggs.py for the list of available options.
+            trump.aggregation.symbol_aggs.py for the list of available options.
         indexname : str
             a proprietary name assigned to the index.
         indeximp : str
