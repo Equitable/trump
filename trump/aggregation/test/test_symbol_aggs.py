@@ -1,4 +1,4 @@
-from trump.extensions.symbol_aggs import FeedAggregator
+from trump.aggregation.symbol_aggs import FeedAggregator
 
 import pandas as pd
 

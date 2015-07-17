@@ -37,7 +37,7 @@ error handling and validity instructions.
 #
 #        Why?
 
-
+from pdb import set_trace as bp
 import datetime as dt
 import json
 
@@ -57,10 +57,12 @@ from indexing import indexingtypes
 from validity import validitychecks
 from datadef import datadefs
 
+from extensions.loader import sources
+
 from trump.tools import ReprMixin, ProxyDict, isinstanceofany, \
     BitFlag, BitFlagType, ReprObjType, DuckTypeMixin, new_alchemy_encoder
 
-from trump.extensions.symbol_aggs import FeedAggregator, sorted_feed_cols
+from trump.aggregation.symbol_aggs import FeedAggregator, sorted_feed_cols
 from trump.templating import bFeed, pab, pnab
 from trump.options import read_config, read_settings
 from trump.converting import FXConverter
@@ -93,13 +95,7 @@ if rbd.upper() == 'TRUE':
 else:
     rbd = None
 
-try:
-    import equitable.bpsdl as bf
-    bbapi_connected = False
-    bbapi = None
-except:
-    pass
-    
+
 # Bind the engine to the metadata of the Base class so that the
 # declaratives can be accessed through a DBSession instance
 
@@ -816,7 +812,7 @@ class Symbol(Base, ReprMixin):
             a string representing the units for the data.
         agg_method : str, default PRIORITY_FILL
             the method used for aggregating feeds, see
-            trump.extensions.symbol_aggs.py for the list of available options.
+            trump.aggregation.symbol_aggs.py for the list of available options.
         indexname : str
             a proprietary name assigned to the index.
         indeximp : str
@@ -1907,116 +1903,11 @@ class Feed(Base, ReprMixin):
             # For development of the handler, raise an exception...
             # raise Exception("There was a problem of somekind!")
 
-            if stype == 'Quandl':
-                import Quandl as q
-                self.data = q.get(**kwargs)
-                try:
-                    fn = kwargs['fieldname']
-                except KeyError:
-                    raise KeyError("fieldname wasn't specified in Quandl Feed")
-
-                try:
-                    self.data = self.data[fn]
-                except KeyError:
-                    kemsg = """{} was not found in list of Quandle headers:\n
-                             {}""".format(fn, str(self.data.columns))
-                    raise KeyError(kemsg)
-
-            elif stype == 'psycopg2':
-                dbargs = ['dsn', 'user', 'password', 'host', 'database', 'port']
-                import psycopg2 as db
-                con_kwargs = {k: v for k, v in kwargs.items() if k in dbargs}
-                con = db.connect(**con_kwargs)
-                raise NotImplementedError("pyscopg2")
-            elif stype == 'DBAPI':
-                dbargs = ['dsn', 'user', 'password', 'host', 'database', 'port']
-                db = __import__(self.ses.bind.driver)
-                con_kwargs = {k: v for k, v in kwargs.items() if k in dbargs}
-
-                con = db.connect(**con_kwargs)
-                cur = con.cursor()
-
-                if kwargs['dbinstype'] == 'COMMAND':
-                    qry = kwargs['command']
-                elif kwargs['dbinstype'] == 'KEYCOL':
-                    reqd = ['indexcol', 'datacol', 'table', 'keycol', 'key']
-                    rel = (kwargs[c] for c in reqd)
-                    qry = "SELECT {0},{1} FROM {2} WHERE {3} = '{4}' ORDER BY {0};"
-                    qry = qry.format(*rel)
-                elif kwargs['dbinstype'] == 'TWOKEYCOL':
-                    reqd = ['indexcol', 'datacol', 'table', 'keyacol', 'keya', 'keybcol', 'keyb']
-                    rel = (kwargs[c] for c in reqd)
-                    qry = "SELECT {0},{1} FROM {2} WHERE {3} = '{4}' AND {5} = '{6}' ORDER BY {0};"
-                    qry = qry.format(*rel)
-                else:
-                    raise NotImplementedError("The database type {} has not been created.".format(kwargs['dbinstype']))
-                   
-                cur.execute(qry)
-                    
-                results = [(row[0], row[1]) for row in cur.fetchall()]
-                con.close()
-                ind, dat = zip(*results)
-                self.data = pd.Series(dat, ind)
-            elif stype == 'SQLAlchemy':
-                NotImplementedError("SQLAlchemy")
-            elif stype == 'PyDataCSV':
-                from pandas import read_csv
-
-                col = kwargs['data_column']
-                del kwargs['data_column']
-                
-                fpob = kwargs['filepath_or_buffer']
-                del kwargs['filepath_or_buffer']
-                
-                df = read_csv(fpob, **kwargs)
-                
-                self.data = df[col]
-
-            elif stype == 'PyDataDataReaderST':
-                import pandas.io.data as pydata
-
-                fmt = "%Y-%m-%d"
-                if 'start' in kwargs:
-                    kwargs['start'] = dt.datetime.strptime(kwargs['start'], fmt)
-                if 'end' in kwargs:
-                    if kwargs['end'] == 'now':
-                        kwargs['end'] = dt.datetime.now()
-                    else:
-                        kwargs['end'] = dt.datetime.strptime(kwargs['end'], fmt)
-
-                col = kwargs['data_column']
-                del kwargs['data_column']
-
-                adf = pydata.DataReader(**kwargs)
-                self.data = adf[col]
-
-            elif stype == 'WorldBankST':
-                from pandas.io import wb
-
-                ind = str(kwargs['indicator'])
-                cc = str(kwargs['country'])
-                
-                del kwargs['indicator']
-                del kwargs['country']
-                
-                df = wb.download(indicator=ind, country=cc, errors='raise', **kwargs)
-                firstlevel = df.index.levels[0][0]
-                self.data = df.ix[firstlevel][ind]
-
-                self.data = self.data.sort_index()
-                self.data.index = self.data.index.astype(int)
-            elif stype == 'BBFetch':
-                global bbapi_connected
-                global bbapi
-                
-                if not bbapi_connected:
-                    bbapi = bf.Getter.BBapi(clean=False)
-                    bbapi_connected = True
-
-                bbsec = bbapi.GetSecurity(kwargs['elid'])
-                self.data = bbsec.GetDataMostRecentFetchDaily(kwargs['valuefieldname'],KeepTime=False,KeepTimeZone=False)              
+            if stype in sources:
+                self.data = sources[stype](self.ses, **kwargs)        
             else:
                 raise Exception("Unknown Source Type : {}".format(stype))
+            
         except:
             point = "api_failure"
             fdrp = self._generic_exception(point, fdrp, allowraise)
