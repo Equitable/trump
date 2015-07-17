@@ -9,7 +9,9 @@ class Source(object):
         con_kwargs = {k: v for k, v in kwargs.items() if k in dbargs}
     
         self.con = db.connect(**con_kwargs)
-    
+        import pandas as pd
+        self.pd = pd
+        
     def getseries(self, ses, **kwargs):
         cur = self.con.cursor()
      
@@ -31,12 +33,12 @@ class Source(object):
         cur.execute(qry)
             
         results = [(row[0], row[1]) for row in cur.fetchall()]
-        con.close()
+        
         if len(results):
             ind, dat = zip(*results)
         else:
             ind, dat = [], []
-        data = pd.Series(dat, ind)
+        data = self.pd.Series(dat, ind)
     
         try:
             dosum = kwargs['duphandler'] == 'sum'
