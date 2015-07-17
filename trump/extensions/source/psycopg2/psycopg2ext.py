@@ -17,4 +17,4 @@ class Source(object):
         con = db.connect(**con_kwargs)
         raise NotImplementedError("pyscopg2")
 
-    return data
+        return data

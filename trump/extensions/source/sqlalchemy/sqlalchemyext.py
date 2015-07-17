@@ -9,4 +9,4 @@ class Source(object):
     def getseries(self, ses, **kwargs):
         NotImplementedError("SQLAlchemy")
 
-    return data
+        return data
