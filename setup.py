@@ -6,7 +6,7 @@ import time
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 
-v = '0.0.3'
+v = '0.0.4'
 
 cmds = sys.argv
 installing = 'install' in cmds

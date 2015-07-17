@@ -31,11 +31,11 @@ engine: sqlite://
 
 ; MySQL, Microsoft SQL, Oracle, are all supported by SQLAlchemy, might work.
 
-; Not Used in Trump 0.0.3:
+; Not Used in Trump 0.0.4:
 [read]
 engine: {dialect}://{user}:{password}@{host}:{port}/{name}
 
-; Not Used in Trump 0.0.3:
+; Not Used in Trump 0.0.4:
 [options]
 raise_by_default: true
 debug: false
