@@ -1904,7 +1904,7 @@ class Feed(Base, ReprMixin):
             # raise Exception("There was a problem of somekind!")
 
             if stype in sources:
-                self.data = sources[stype](**kwargs)        
+                self.data = sources[stype](self.ses, **kwargs)        
             else:
                 raise Exception("Unknown Source Type : {}".format(stype))
             
