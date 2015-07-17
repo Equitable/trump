@@ -1,16 +1,16 @@
 def Quandl():
 	import Quandl as q
-	self.data = q.get(**kwargs)
+	data = q.get(**kwargs)
 	try:
 		fn = kwargs['fieldname']
 	except KeyError:
 		raise KeyError("fieldname wasn't specified in Quandl Feed")
 
 	try:
-		self.data = self.data[fn]
+		data = data[fn]
 	except KeyError:
 		kemsg = """{} was not found in list of Quandle headers:\n
-				 {}""".format(fn, str(self.data.columns))
+				 {}""".format(fn, str(data.columns))
 		raise KeyError(kemsg)
 
 def psycopg2():
@@ -50,14 +50,14 @@ def DBAPI():
 		ind, dat = zip(*results)
 	else:
 		ind, dat = [], []
-	self.data = pd.Series(dat, ind)
+	data = pd.Series(dat, ind)
 
 	try:
 		dosum = kwargs['duphandler'] == 'sum'
 	except:
 		dosum = False
 	if dosum:
-		self.data = self.data.groupby(self.data.index).sum()
+		data = data.groupby(data.index).sum()
 
 def SQLAlchemy():
 	NotImplementedError("SQLAlchemy")
@@ -72,7 +72,7 @@ def PyDataCSV():
 	
 	df = read_csv(fpob, **kwargs)
 	
-	self.data = df[col]
+	data = df[col]
 
 def PyDataDataReaderST():
 	import pandas.io.data as pydata
@@ -90,7 +90,7 @@ def PyDataDataReaderST():
 	del kwargs['data_column']
 
 	adf = pydata.DataReader(**kwargs)
-	self.data = adf[col]
+	data = adf[col]
 
 def WorldBankST():
 	from pandas.io import wb
@@ -103,10 +103,10 @@ def WorldBankST():
 	
 	df = wb.download(indicator=ind, country=cc, errors='raise', **kwargs)
 	firstlevel = df.index.levels[0][0]
-	self.data = df.ix[firstlevel][ind]
+	data = df.ix[firstlevel][ind]
 
-	self.data = self.data.sort_index()
-	self.data.index = self.data.index.astype(int)
+	data = data.sort_index()
+	data.index = data.index.astype(int)
 
 def BBFetch():
 	global bbapi_connected
@@ -117,14 +117,14 @@ def BBFetch():
 		bbapi_connected = True
 	
 	bbsec = bbapi.GetSecurity(kwargs['elid'])
-	self.data = bbsec.GetDataMostRecentFetchDaily(kwargs['valuefieldname'],KeepTime=False,KeepTimeZone=False)              
+	data = bbsec.GetDataMostRecentFetchDaily(kwargs['valuefieldname'],KeepTime=False,KeepTimeZone=False)              
 	
 	try:
 		dosum = kwargs['duphandler'] == 'sum'
 	except:
 		dosum = False
 	if dosum:
-		 self.data = self.data.groupby(self.data.index).sum()
+		 data = data.groupby(data.index).sum()
 
 def BBFetchBulk():
 	global bbapi_connected
@@ -142,14 +142,14 @@ def BBFetchBulk():
 		keep_list = kwargs['keep_list'].split(", ")
 		indexfilter = {'dividend_type' : keep_list}
 		
-	self.data = security.GetDataMostRecentFetchBulk(kwargs['fieldname'],indexfilter=indexfilter,columntoindex=kwargs['datecol'],datacolumn=kwargs['datacol'])
+	data = security.GetDataMostRecentFetchBulk(kwargs['fieldname'],indexfilter=indexfilter,columntoindex=kwargs['datecol'],datacolumn=kwargs['datacol'])
 
 	try:
 		dosum = kwargs['duphandler'] == 'sum'
 	except:
 		dosum = False
 	if dosum:
-		self.data = self.data.groupby(self.data.index).sum()
+		data = data.groupby(data.index).sum()
 	
 	try:
 		croptime = kwargs['croptime']
@@ -157,7 +157,10 @@ def BBFetchBulk():
 		croptime = False
 	
 	if croptime:
-		self.data.index = [t.to_datetime().date() for t in self.data.index]
+		data.index = [t.to_datetime().date() for t in data.index]
+
+def f():
+    pass
 
 ex = """
 stype = {}
@@ -165,7 +168,7 @@ renew = True
 
 class Source(object):
     def __init__(ses, **kwargs):
-        {}
+{}
     def getseries(ses, **kwargs):
-        {}
+{}
 """
