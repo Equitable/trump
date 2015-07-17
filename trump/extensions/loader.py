@@ -18,7 +18,7 @@ sources = {}
 curdir = os.path.dirname(os.path.realpath(__file__))
 sourcedir = os.path.join(curdir,'source')
 
-extension_names = os.listdir(sourcedir)
+extension_names = [n for n in os.listdir(sourcedir) if os.path.isdir(os.path.join(sourcedir, n)) ]
 
 for name in extension_names:
     ext = find_module(name, [sourcedir])
