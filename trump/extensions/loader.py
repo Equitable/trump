@@ -16,10 +16,11 @@ class SourceExtension(object):
 sources = {}
 
 curdir = os.path.dirname(os.path.realpath(__file__))
+sourcedir = os.path.join(curdir,'source')
 
-extension_names = os.listdir(os.path.join(curdir,'source'))
+extension_names = os.listdir(sourcedir)
 
 for name in extension_names:
-    ext = find_module(name, ['source'])
+    ext = find_module(name, [sourcedir])
     mod = load_module(name, *ext)
     sources[mod.stype] = SourceExtension(mod)
