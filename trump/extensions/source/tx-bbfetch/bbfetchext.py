@@ -1,4 +1,15 @@
+"""
+Required kwargs:
 
+- 'elid' 
+- 'bbtype' = ['COMMON', 'BULK'], then a few relevant kwargs depending on each.
+
+Optional kwargs:
+
+- 'duphandler' - 'sum'
+- 'croptime' - boolean
+
+"""
     
 stype = 'BBFetch'
 renew = True

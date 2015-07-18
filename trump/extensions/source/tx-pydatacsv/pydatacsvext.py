@@ -1,4 +1,13 @@
+"""
+All kwargs are passed to panda's read_csv function.
 
+Additional required kwargs:
+
+- 'filepath_or_buffer' - should be an absolute path.  Relative will only work, if caching is only
+performed by a python script which can access the relative path.
+
+- 'data_column' - the specific column required, so to turn the dataframe into a series.
+"""
 stype = 'PyDataCSV'
 renew = False
 

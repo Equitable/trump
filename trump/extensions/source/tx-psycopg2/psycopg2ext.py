@@ -1,4 +1,9 @@
+"""
+Started extension for a Postgres-specifc source.
 
+Not fully implemented.
+
+"""
 stype = 'psycopg2'
 renew = True
 

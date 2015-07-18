@@ -55,6 +55,15 @@ Template Classes
    
    templating/templates
 
+Source Extensions
+-----------------
+
+.. toctree::
+   :maxdepth: 4
+   
+   sourceext/understanding
+   sourceext/preinstalled
+
 User Interface
 --------------
 

@@ -1,4 +1,13 @@
+"""
+This uses pandas.io.data.DataReader, all kwargs get passed to that.
 
+start and end are optional, but must be of the form 'YYYY-MM-DD'.
+
+Will default to since the beginning of available data, and run through "today".
+
+data_column is required to be specified as well.
+
+"""
 stype = 'PyDataDataReaderST'
 renew = True
 

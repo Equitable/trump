@@ -1,3 +1,8 @@
+"""
+a SQLAlchemy based implementation...so an engine string could be used.
+
+Not fully implemented
+"""
 
 stype = 'SQLAlchemy'
 renew = True

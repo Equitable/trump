@@ -1,4 +1,12 @@
+"""
+Uses pandas.io.wb.download to query indicators, for a specific country.
 
+country, must be a world bank country code.
+
+Some assumptions as implied about the indicator and the first level of the index.  This 
+may not work for all worldbank indicators.
+
+"""
 stype = 'WorldBankST'
 renew = False
 

@@ -1,4 +1,10 @@
+"""
+All kwargs are passed to Quandl's API quandl.get()
 
+An additional 'fieldname' is available to select a specific column if a specifc quandl DB,
+doesn't support quandl's version of the same feature.
+
+"""
 stype = 'Quandl'
 renew = True
 

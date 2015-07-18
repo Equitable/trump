@@ -1,4 +1,32 @@
+"""
+The DBAPI driver, will use by default the same driver SQLAlchemy is using for trump. 
+There is currently no way to change this default.  It's assumed that the driver
+is DBAPI 2.0 compliant.
 
+Required kwargs include:
+
+- 'dbinsttype' which must be one of 'COMMAND', 'KEYCOL', 'TWOKEYCOL'
+- 'dsn', 'user', 'password', 'host', 'database', 'port'
+
+Optional kwargs include:
+
+- duphandler ['sum'] which just groups duplicate index values together via the sum.
+
+Additional kwargs:
+
+Required based on 'dbinsttype' chosen:
+
+'COMMAND' : 
+- 'command' which is just a SQL string, where the first column becomes the index, and the second
+column becomes the data.
+
+'KEYCOL' :
+- ['indexcol', 'datacol', 'table', 'keycol', 'key']
+
+'TWOKEYCOL' :
+- ['indexcol', 'datacol', 'table', 'keyacol', 'keya', 'keybcol', 'keyb']
+
+"""
 stype = 'DBAPI'
 renew = True
 
