@@ -43,13 +43,13 @@ the override datapoint, if it exists, and the value at index -1, is always
 the failsafe datapoint, if it exists.  Everything else, that is, the feeds,
 are in columns 1 through n, where n is the number of feeds.
 
-.. automethod:: trump.extensions.symbol_aggs.ApplyRow.priority_fill
+.. automethod:: trump.aggregation.symbol_aggs.ApplyRow.priority_fill
 
-.. automethod:: trump.extensions.symbol_aggs.ApplyRow.mean_fill
+.. automethod:: trump.aggregation.symbol_aggs.ApplyRow.mean_fill
 
-.. automethod:: trump.extensions.symbol_aggs.ApplyRow.median_fill
+.. automethod:: trump.aggregation.symbol_aggs.ApplyRow.median_fill
 
-.. automethod:: trump.extensions.symbol_aggs.ApplyRow.custom
+.. automethod:: trump.aggregation.symbol_aggs.ApplyRow.custom
 
 .. note::
 
@@ -68,11 +68,11 @@ They all still apply overrides and failsafes on a row-by-row basis.
 
 The datatable, as a Dataframe, is passed to these methods in  a single call.
 
-.. automethod:: trump.extensions.symbol_aggs.ChooseCol.most_populated
+.. automethod:: trump.aggregation.symbol_aggs.ChooseCol.most_populated
 
-.. automethod:: trump.extensions.symbol_aggs.ChooseCol.most_recent
+.. automethod:: trump.aggregation.symbol_aggs.ChooseCol.most_recent
 
-.. automethod:: trump.extensions.symbol_aggs.ChooseCol.custom
+.. automethod:: trump.aggregation.symbol_aggs.ChooseCol.custom
 
 .. note::
 

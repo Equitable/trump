@@ -9,18 +9,22 @@ An fragmented illustration of the ORM is presented in the three figures below.
 Supporting objects store details persistently about error handling, sourcing, munging, and validation, so that a :py:class:`~trump.orm.Symbol` can :py:meth:`~trump.orm.Symbol.cache`
 the data provided from the various :py:class:`~trump.orm.Feed` objects,
 in a single datatable or serve up a fresh pandas.Series at anytime. A symbol's it's :py:class:`~trump.orm.Index`, can further enhance the intelligence that Trump can serve via pandas.
+
+.. figure:: full-orm.png
+
+   The full ORM, excludes the symbol's datatable.
    
 .. figure:: symbol-orm.png
 
-   The symbol portion of the ORM, excludes the symbol's datatable.
+   The Symbol portion of the ORM, excludes the symbol's datatable.
 
 .. figure:: feed-orm.png
 
-   The feed portion of the ORM.
+   The Feed, FailSafe & Override portion of the ORM
 
-.. figure:: orfs-orm.png
+.. figure:: index-orm.png
 
-   The override and fail safe portion of the ORM, are unlinked to any other object, by design.
+   The Index portion of the ORM.
 
 .. note::
 
