@@ -113,8 +113,8 @@ You're now ready to create a SymbolManager, which will help you create your firs
 	...
 	mysymbol = sm.create('MyFirstSymbol') # should run without error.
 
-Configuring Data Sources (Optional)
-===================================
+Configuring Data Sources
+------------------------
 Data feed source template classes map to their respective .cfg file in the templating/settings directory,
 as discussed in Step 3.
 
@@ -177,10 +177,22 @@ during caching from the appropriate section in the cfg file.
 
 This means that the cfg file values can be changed post symbol creation, outside of Trump.
 
+Testing the Installation
+------------------------
+
+After Trump has been configured, and pointed at a database via an engine string using 
+a config file, one can run the py.test enabled test suite.  The tests require network
+access, but will skip certain tests without it.  The testing suite makes a mess, and doesn't clean
+up after itself.  So, be prepared to run it on a database which can be delete immediately after.
+
+Insight into compatibility with databases other SQLite and PostGres, are of interest to the maintainers.
+So, if you run the test suite on some other database, and it all works, do let us know via a GitHub issue or e-mail.
+If it doesn't, please let us know that as well!
+
 Uninstall
 =========
 
-1. Delete all tables Trump created. (There is a script, which attempts to do that for you.  See uninstall.py.
+#. Delete all tables Trump created. (There is a script, which attempts to do that for you.  See uninstall.py.
 This will (attempt to) remove all tables created by Trump. The file will likely require minor changes
 if you use anything other than PostgreSQL, or if it hasn't been updated to reflect newer tables in Trump.)
-2. Delete site-packages/trump and all it's subdirectories.
+#. Delete site-packages/trump and all it's subdirectories.

@@ -20,7 +20,7 @@ with open('preinstalled.rst','w+') as f:
             """.. Editing it, is silly, as it will be overwritten.  The docstring\n""" + \
             """.. of the modules should themselves be edited.\n\n""")
     f.write("Pre-Installed Source Extensions\n")
-    f.write("===============================\n\n")
+    f.write("-------------------------------\n\n")
 
     for name in extension_names:
         title = sources[name].stype
@@ -30,7 +30,7 @@ with open('preinstalled.rst','w+') as f:
             f.write(s + "\n")
             
         wl(title)
-        wl("-" * len(title))
+        wl("^" * len(title))
         wl(".. code-block:: python")
         wl("")
         wl("   # the directory is %s" % name)

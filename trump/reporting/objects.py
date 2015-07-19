@@ -61,10 +61,13 @@ class FeedReport(object):
         else:
             return pd.DataFrame()
     def add_handlepoint(self, hpreport):
+        """Appends a HandlePointReport"""
         self.handlepoints.append(hpreport)
     def add_reportpoint(self, rpoint):
+        """Appends a ReportPoint"""
         self.reportpoints.append(rpoint)
     def asodict(self, handlepoints=True, reportpoints=True):
+        """Returns an ordered dictionary of handle/report points"""
         out = odict()
         if handlepoints:
             for hp in self.handlepoints:
@@ -117,12 +120,16 @@ class SymbolReport(object):
     
         return df
     def add_feedreport(self, freport):
+        """Appends a FeedReport"""
         self.freports.append(freport)
     def add_handlepoint(self, hpreport):
+        """Appends a HandlePointReport"""
         self.handlepoints.append(hpreport)
     def add_reportpoint(self, rpoint):
+        """Appends a ReportPoint"""
         self.reportpoints.append(rpoint)
     def asodict(self, freports=True, handlepoints=True, reportpoints=True):
+        """Returns an ordered dictionary of feed, and handle/report points"""
         out = odict()
         if freports:
             for fr in self.freports:

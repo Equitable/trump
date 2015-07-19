@@ -1,4 +1,4 @@
-Object-relational Model
+Object-Relational Model
 =======================
 
 Trump's persistent object model, made possible by it's object-relational model (ORM), all starts with
@@ -122,6 +122,35 @@ index in the datatable, the failsafe is ignored.
 .. autoclass:: trump.orm.FailSafe
    :members:
 
+Reporting
+---------
+
+During the cache process, information comes back from validity checks, and any exceptions.  
+This area of Trump's code base is currently WIP, however the basic idea is that the caching of a 
+Feed, returns a :py:class:`~trump.reporting.objects.FeedReport`.  For each cached Feed, there would
+be one report, all of which would get aggregated up into, and combined with the symbol-level information,
+in a :py:class:`~trump.reporting.objects.SymbolReport`. When the SymbolManager caches one or more
+symbols, it aggregates SymbolReports into one big and final 
+:py:class:`~trump.reporting.objects.TrumpReport`.  
+
+.. autoclass:: trump.reporting.objects.FeedReport
+   :members: add_handlepoint, add_reportpoint, asodict
+   
+.. autoclass:: trump.reporting.objects.SymbolReport
+   :members: add_feedreport, add_handlepoint, add_reportpoint, asodict
+
+.. autoclass:: trump.reporting.objects.TrumpReport
+   :members: add_symbolreport
+
+Each of the three levels of reports, have the appropriate aggregated results, 
+plus collections of their own HandlePointReport and ReportPoint objects.
+
+.. autoclass:: trump.reporting.objects.HandlePointReport
+   :members:
+
+.. autoclass:: trump.reporting.objects.ReportPoint
+   :members:
+   
 Error Handling
 --------------
 

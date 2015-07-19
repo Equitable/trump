@@ -1,8 +1,10 @@
+=====
 Trump
 =====
 
+************
 Introduction
-------------
+************
 
 Trump is a framework for objectifying data, with the goal of centralizing the management
 of data feeds to enable quicker deployment of analytics, applications, 
@@ -27,8 +29,9 @@ With a focus on business processes, Trump's long run goals enable data feeds to 
 * **Aggregated**, *intelligently* - on a symbol by symbol basis, feeds can be combined and used in an extensible number of ways.
 * **Customized**, *dynamically* - extensibility is possible at the templating, munging, aggregation, and validity steps.
 
+***************
 Getting Started
----------------
+***************
 
 .. toctree::
    :maxdepth: 2
@@ -36,9 +39,10 @@ Getting Started
    
    install
    usage
-   
+
+************
 Object Model
-------------
+************
 
 .. toctree::
    :maxdepth: 4
@@ -47,25 +51,27 @@ Object Model
    dataflow
    aggregation
 
+****************
 Template Classes
-----------------
+****************
 
 .. toctree::
    :maxdepth: 4
    
    templating/templates
 
+*****************
 Source Extensions
------------------
+*****************
 
 .. toctree::
    :maxdepth: 4
    
-   sourceext/understanding
-   sourceext/preinstalled
+   sourceext
 
+**************
 User Interface
---------------
+**************
 
 .. toctree::
    :maxdepth: 2
