@@ -10,19 +10,38 @@ The web UI was born out of Flask, Jinja2 and Bootstrap "hello world".
 
 Some screen shots, of the beginning, are below.
    
-.. figure:: ui-symbol-browser.png
+.. figure:: ui-search.png
 
-   (For now) all symbols available are listed alphabetically to the left.
-   Symbols can be searched by name, tags, meta, and description.  
+   SQL-like search, is straight forward and as expected. 
 
-.. figure:: ui-symbol-example.png
+.. figure:: ui-tsla.png
 
    An example of symbol page, for a symbol with two feeds.  
 
-.. figure:: ui-menu.png
+.. figure:: ui-analyze.png
 
-   Some of the menus, are starting to take shape.  One can generate a plot, or download data to excel.
+   View the index, data, and do common analysis.
+   Or, download to excel/csv...
 
+.. figure:: ui-charting.png
+
+   Histograms and basic charting are available.
+
+.. figure:: ui-orfs.png
+
+   Overrides and failsafes, are what makes Trump amazing for business processes.
+
+.. figure:: ui-symbol-status.png
+
+   The last time a symbol was attempted, and successfully cached, are available.
+   
+.. figure:: ui-tags.png
+
+   Browse and cache sets of symbols, based on tags...
+
+And, much, much more, coming soon...
+
+   
 Search
 ------
 
@@ -31,6 +50,11 @@ Trump's SymbolManager object, has basic/expected SQL-enabled search functionalit
 The Trump UI prototype is boosted by an ElasticSearch server with a single index consisting
 of symbol, tag, description, and meta data.  To add a symbol to the index, use the 
 json created from Symbol.to_json().
+
+.. figure:: ui-search-fuzzy.png
+
+   ElasticSearch, makes searching much cooler...
+   
 
 Background Caching
 ------------------

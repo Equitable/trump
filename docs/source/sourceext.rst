@@ -77,7 +77,7 @@ Noticed that the two variables, stype & renew, as well as the Source class, are 
 instantiation.
 
 Source Extension Standard Form
-==============================
+------------------------------
 
 Any extension module needs 3 things; an stype variable, renew variable, and Source class.
 
