@@ -49,7 +49,7 @@ Symbols
 -------
 
 .. autoclass:: trump.orm.Symbol
-   :members: cache, describe, update_handle, add_feed, add_tags, add_validator, set_indexing, check_validity, isvalid
+   :members: cache, describe, update_handle, add_feed, add_tags, add_validator, set_indexing, check_validity, isvalid, to_json, lacst_cache
 
 .. autoclass:: trump.orm.SymbolTag
 

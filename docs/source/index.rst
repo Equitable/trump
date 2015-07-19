@@ -51,9 +51,9 @@ Object Model
    dataflow
    aggregation
 
-****************
-Template Classes
-****************
+**********
+Templating
+**********
 
 .. toctree::
    :maxdepth: 4

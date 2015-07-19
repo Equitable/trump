@@ -1,9 +1,12 @@
-Interface
----------
+UI Prototype
+============
 
 A preliminary user interface for Trump is being prototyped.
 
-It was born out of Flask, Jinja2 and Bootstrap "hello world".
+Web Interface
+-------------
+
+The web UI was born out of Flask, Jinja2 and Bootstrap "hello world".
 
 Some screen shots, of the beginning, are below.
    
@@ -37,4 +40,4 @@ one or more symbols, requires a background process in order for the web interfac
 stay responsive.
 
 A very simple RabbitMQ consumer application, is included with the UI, which listens 
-for the instruction to command.  The python pika package is required.
+for the instruction to cache.  The python pika package is required.

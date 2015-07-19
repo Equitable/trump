@@ -834,10 +834,23 @@ class Symbol(Base, ReprMixin):
         self.datatable = None
         self.datatable_exists = False
     def to_json(self):
+        """Returns the json representation of a Symbol object's tags, description, and meta data"""
         return json.dumps(self, cls=new_alchemy_encoder(), check_circular=False)
     def last_cache(self,result='COMPLETE'):
         """
-        returns datetime
+        The date and time of the previous cache.
+
+        Parameters
+        ----------
+        result : string, default 'COMPLETE'
+            A string to choose which point in the log,
+            should be returned.
+            - COMPLETE - the last time a cache was completed
+            - STARTED - the last time a cache was started
+        Returns
+        -------
+        datetime.datetime
+
         """
         crit = and_(SymbolLogEvent.event == 'CACHE',
                     SymbolLogEvent.evresult == result)

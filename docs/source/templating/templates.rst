@@ -1,8 +1,5 @@
-Templating
-==========
-
-Bases
------
+Template Base Classes
+---------------------
 
 .. automodule:: trump.templating.bases
       
@@ -18,11 +15,11 @@ Bases
 
 .. autoclass:: trump.templating.bIndex
 
-Templates
----------
+Template Classes
+----------------
 
-Tags
-~~~~
+Tag Templates
+~~~~~~~~~~~~~
 
 .. autoclass:: trump.templating.AssetTT
 
@@ -32,8 +29,8 @@ Tags
 
 .. autoclass:: trump.templating.SimpleTT
 
-Munging
-~~~~~~~
+Munging Templates
+~~~~~~~~~~~~~~~~~
 
 .. autoclass:: trump.templating.AbsMT
 
@@ -49,8 +46,8 @@ Munging
 
 .. autoclass:: trump.templating.MultiExampleMT
 
-Sources
-~~~~~~~
+Source Templates
+~~~~~~~~~~~~~~~~
 
 .. autoclass:: trump.templating.DBapiST
 
@@ -58,8 +55,8 @@ Sources
 
 .. autoclass:: trump.templating.PyDataCSVST
 
-Feeds
-~~~~~
+Feed Templates
+~~~~~~~~~~~~~~
 
 .. autoclass:: trump.templating.DBapiFT
 
@@ -77,13 +74,13 @@ Feeds
 
 .. autoclass:: trump.templating.CSVFT
 
-Indicies
-~~~~~~~~
+Index Templates
+~~~~~~~~~~~~~~~
 
 .. autoclass:: trump.templating.FFillIT
 
-Validity
-~~~~~~~
+Validity Templates
+~~~~~~~~~~~~~~~~~~
 
 .. autoclass:: trump.templating.FeedsMatchVT
 

@@ -1,8 +1,5 @@
-Source Extensions
-=================
-
 Creating & Modifying Source Extensions
---------------------------------------
+======================================
 
 This section of the docs is really only intended for those who want to write, or modify,
 their own source extensions.  But, it can be helpful to understand how they work, even for those who
@@ -80,7 +77,7 @@ Noticed that the two variables, stype & renew, as well as the Source class, are 
 instantiation.
 
 Source Extension Standard Form
-------------------------------
+==============================
 
 Any extension module needs 3 things; an stype variable, renew variable, and Source class.
 
@@ -114,10 +111,10 @@ returns a dataframe.
 .. of the modules should themselves be edited.
 
 Pre-Installed Source Extensions
--------------------------------
+===============================
 
 BBFetch
-^^^^^^^
+-------
 .. code-block:: python
 
    # the directory is tx-bbfetch
@@ -137,7 +134,7 @@ Optional kwargs:
 
 
 DBAPI
-^^^^^
+-----
 .. code-block:: python
 
    # the directory is tx-dbapi
@@ -174,7 +171,7 @@ column becomes the data.
 
 
 psycopg2
-^^^^^^^^
+--------
 .. code-block:: python
 
    # the directory is tx-psycopg2
@@ -188,7 +185,7 @@ Not fully implemented.
 
 
 PyDataCSV
-^^^^^^^^^
+---------
 .. code-block:: python
 
    # the directory is tx-pydatacsv
@@ -206,7 +203,7 @@ performed by a python script which can access the relative path.
 
 
 PyDataDataReaderST
-^^^^^^^^^^^^^^^^^^
+------------------
 .. code-block:: python
 
    # the directory is tx-pydatadatareaderst
@@ -224,7 +221,7 @@ data_column is required to be specified as well.
 
 
 Quandl
-^^^^^^
+------
 .. code-block:: python
 
    # the directory is tx-quandl
@@ -239,7 +236,7 @@ doesn't support quandl's version of the same feature.
 
 
 SQLAlchemy
-^^^^^^^^^^
+----------
 .. code-block:: python
 
    # the directory is tx-sqlalchemy
@@ -252,7 +249,7 @@ Not fully implemented
 
 
 WorldBankST
-^^^^^^^^^^^
+-----------
 .. code-block:: python
 
    # the directory is tx-worldbankst
