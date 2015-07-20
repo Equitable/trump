@@ -201,3 +201,31 @@ SQLAlchemy the ability to create columns, and handle them appropriately, contain
   :members: bin, bin_str, asdict, __and__, __or__
 
 .. autoclass:: trump.tools.bitflags.BitFlagType
+
+
+The likely values assigned, will commonly be from the list below.  Use Bitwise logic operators to make other
+combinations.  
+
++-------------------+----------------------------------------------------------------------------------+---------------------------------------+---------------------------------------------+
+| Desired Effect    | BitFlag Instantiation                                                            | Description                           | BitFlag String Representation               |
++-------------------+----------------------------------------------------------------------------------+---------------------------------------+---------------------------------------------+
+| Raise-Only        | BitFlag(1)                                                                       | Raise an Exception                    | RAISE warn email dblog txtlog stdout report |
++-------------------+----------------------------------------------------------------------------------+---------------------------------------+---------------------------------------------+
+| Warn-Only         | BitFlag(2)                                                                       | Raise a Warning                       | raise WARN email dblog txtlog stdout report |
++-------------------+----------------------------------------------------------------------------------+---------------------------------------+---------------------------------------------+
+| Email-Only        | BitFlag(4)                                                                       | Send an E-mail (Not Implemented)      | raise warn EMAIL dblog txtlog stdout report |
++-------------------+----------------------------------------------------------------------------------+---------------------------------------+---------------------------------------------+
+| DBLog-Only        | BitFlag(8)                                                                       | Log to the Database (Not Implemented) | raise warn email DBLOG txtlog stdout report |
++-------------------+----------------------------------------------------------------------------------+---------------------------------------+---------------------------------------------+
+| TxtLog-Only       | BitFlag(16)                                                                      | Text Log                              | raise warn email dblog TXTLOG stdout report |
++-------------------+----------------------------------------------------------------------------------+---------------------------------------+---------------------------------------------+
+| StdOut-Only       | BitFlag(32)                                                                      | Standard Output Stream ie. print()    | raise warn email dblog txtlog STDOUT report |
++-------------------+----------------------------------------------------------------------------------+---------------------------------------+---------------------------------------------+
+| Report-Only       | BitFlag(64)                                                                      | Report                                | raise warn email dblog txtlog stdout REPORT |
++-------------------+----------------------------------------------------------------------------------+---------------------------------------+---------------------------------------------+
+| TxtLog and StdOut | BitFlag(16) | BitFlag(32) 
+which is syntactically the same as...
+BitFlag(48)     | Print & Log                           | raise warn email dblog TXTLOG STDOUT report |
++-------------------+----------------------------------------------------------------------------------+---------------------------------------+---------------------------------------------+
+
+If you're asking "Why such a confusing implementation"? The answer is because of speed. There are (4 + 7 x # of Feeds), per symbol.  So they are serialized into Integers, rather than having (4 + 7 x # of Feeds) x 7 boolean database columns.
