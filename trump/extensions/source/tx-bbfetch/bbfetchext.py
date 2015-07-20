@@ -31,7 +31,7 @@ class Source(object):
                 keep_list = kwargs['keep_list'].split(", ")
                 indexfilter = {'dividend_type' : keep_list}
                 
-            data = security.GetDataMostRecentFetchBulk(kwargs['fieldname'],indexfilter=indexfilter,columntoindex=kwargs['datecol'],datacolumn=kwargs['datacol'])
+            data = bbsec.GetDataMostRecentFetchBulk(kwargs['fieldname'],indexfilter=indexfilter,columntoindex=kwargs['datecol'],datacolumn=kwargs['datacol'])
             
         try:
             dosum = kwargs['duphandler'] == 'sum'
