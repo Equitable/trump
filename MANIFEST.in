@@ -1,1 +1,4 @@
-include *.csv *.cfg_sample
+include trump/templating/settings *.cfg_sample
+include trump/config *.cfg_sample
+include trump/test/testdata *
+recursive-include trump/extensions/source *
