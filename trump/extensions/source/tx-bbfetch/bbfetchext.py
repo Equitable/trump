@@ -29,7 +29,7 @@ class Source(object):
 
         if kwargs['bbtype'] == 'COMMON':
             # Bloomberg raises an exception, when there is no data returned.
-            # Trump, checks for the "no data", case using the "empty_feed" handle point.
+            # Trump, has validity functionality, that should be used to catch empty feeds that data should exist for.
             # So, just pass it on, and let it go get caught/logged/whatever, at the handle point...
             try:
                 data = bbsec.GetDataMostRecentFetchDaily(kwargs['valuefieldname'],KeepTime=False,KeepTimeZone=False)
