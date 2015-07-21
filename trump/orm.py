@@ -1856,7 +1856,7 @@ class Feed(Base, ReprMixin):
         :param chkpnt_settings, dict:
             a dictionary where the keys are stings representing
             individual handle checkpoint names, for a Feed
-            (eg. api_failure, empty_feed, index_type_problem...)
+            (eg. api_failure, feed_type, monounique...)
             See FeedHandle.__table__.columns for the
             current list.
 
@@ -1910,38 +1910,42 @@ class Feed(Base, ReprMixin):
         fdrp.add_reportpoint(rp)
         
         try:
-            # Depending on the feed type, use the kwargs appropriately to
-            # populate a dataframe, self.data.
-
-            # For development of the handler, raise an exception...
-            # raise Exception("There was a problem of somekind!")
-
             if stype in sources:
                 self.data = sources[stype](self.ses, **kwargs)        
             else:
-                raise Exception("Unknown Source Type : {}".format(stype))
-            
+                msg = "Unknown Source Type : {} in {} Feed #{}"
+                raise Exception(msg.format(stype, self.symname, self.fnum))
         except:
             point = "api_failure"
             fdrp = self._generic_exception(point, fdrp, allowraise)
             self.data = pd.Series()
 
         try:
-            if len(self.data) == 0 or self.data.empty:
-                raise Exception('Feed is empty')
+            if self.data is None:
+                raise Exception('{} Feed #{} is {}'.format(self.symname, self.fnum))
+            if not isinstance(self.data, pd.Series):
+                raise Exception('{} Feed #{} did not return a Series ({})'.format(self.symname, self.fnum, type(self.data)))
         except:
-            point = "empty_feed"
+            point = "feed_type"
             fdrp = self._generic_exception(point, fdrp, allowraise)
-
+            self.data = pd.Series()
+           
         try:
-            if not (self.data.index.is_monotonic and self.data.index.is_unique):
-                dtstr = str(self.data)
-                indstr = str(self.data.index)
-                msg = 'Feed index is not uniquely monotonic:' + dtstr + indstr
-                raise Exception(msg)
+            if not self.data.index.is_unique:
+                dtstr, indstr = str(self.data), str(self.data.index)
+                msg = 'Feed #{} in {} index is not unique:' + dtstr + indstr
+                raise Exception(msg.format(self.fnum, self.symname))
+            if not self.data.index.is_monotonic:
+                dtstr, indstr = str(self.data), str(self.data.index)
+                msg = 'Feed #{} in {} index is not monotonic:' + dtstr + indstr
+                raise Exception(msg.format(self.fnum, self.symname))
         except:
             point = "monounique"
             fdrp = self._generic_exception(point, fdrp, allowraise)
+            self.data = pd.Series()
+        
+        #TODO
+        #Put a check
 
         # munge accordingly
         print "Munging..."
@@ -2167,7 +2171,7 @@ class FeedHandle(Base, ReprMixin):
     fnum = Column('fnum', Integer, primary_key=True)
 
     api_failure = Column('api_failure', BitFlagType)
-    empty_feed = Column('empty_feed', BitFlagType)
+    feed_type = Column('feed_type', BitFlagType)
     index_type_problem = Column('index_type_problem', BitFlagType)
     index_property_problem = Column('index_property_problem', BitFlagType)
     data_type_problem = Column('data_type_problem', BitFlagType)
@@ -2190,7 +2194,7 @@ class FeedHandle(Base, ReprMixin):
         self.feed = feed
 
         self.api_failure = rbd or BitFlag(['raise'])
-        self.empty_feed = rbd or BitFlag(['stdout', 'report'])
+        self.feed_type = rbd or BitFlag(['stdout', 'report'])
         self.index_type_problem = rbd or BitFlag(['stdout', 'report'])
         self.index_property_problem = rbd or BitFlag(['stdout'])
         self.data_type_problem = rbd or BitFlag(['stdout', 'report'])

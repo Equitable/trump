@@ -175,7 +175,7 @@ The Symbol's possible exception-inducing handle-points include:
 The Feed's possible exception-inducing handle-points include:
 
 - api_failure
-- empty_feed
+- feed_type
 - index_type_problem
 - index_property_problem
 - data_type_problem
