@@ -206,25 +206,25 @@ SQLAlchemy the ability to create columns, and handle them appropriately, contain
 The likely values assigned, will commonly be from the list below.  Use Bitwise logic operators to make other
 combinations.  
 
-+-------------------+------------------------+---------------------------------------+---------------------------------------------+
-| Desired Effect    | BitFlag Instantiation  | Description                           | BitFlag String Representation               |
-+===================+========================+=======================================+=============================================+
-| Raise-Only        | BitFlag(1)             | Raise an Exception                    | RAISE warn email dblog txtlog stdout report |
-+-------------------+------------------------+---------------------------------------+---------------------------------------------+
-| Warn-Only         | BitFlag(2)             | Raise a Warning                       | raise WARN email dblog txtlog stdout report |
-+-------------------+------------------------+---------------------------------------+---------------------------------------------+
-| * Email-Only      | BitFlag(4)             | Send an E-mail                        | raise warn EMAIL dblog txtlog stdout report |
-+-------------------+------------------------+---------------------------------------+---------------------------------------------+
-| * DBLog-Only      | BitFlag(8)             | Log to the Database                   | raise warn email DBLOG txtlog stdout report |
-+-------------------+------------------------+---------------------------------------+---------------------------------------------+
-| TxtLog-Only       | BitFlag(16)            | Text Log                              | raise warn email dblog TXTLOG stdout report |
-+-------------------+------------------------+---------------------------------------+---------------------------------------------+
-| StdOut-Only       | BitFlag(32)            | Standard Output Stream                | raise warn email dblog txtlog STDOUT report |
-+-------------------+------------------------+---------------------------------------+---------------------------------------------+
-| Report-Only       | BitFlag(64)            | Report                                | raise warn email dblog txtlog stdout REPORT |
-+-------------------+------------------------+---------------------------------------+---------------------------------------------+
-| TxtLog and StdOut | BitFlag(48)            | Print & Log                           | raise warn email dblog TXTLOG STDOUT report |
-+-------------------+------------------------+---------------------------------------+---------------------------------------------+
++-------------------+------------------------+--------------------------+
+| Desired Effect    | BitFlag Instantiation  | Description              |
++===================+========================+==========================+
+| Raise-Only        | BitFlag(1)             | Raise an Exception       |
++-------------------+------------------------+--------------------------+
+| Warn-Only         | BitFlag(2)             | Raise a Warning          |
++-------------------+------------------------+--------------------------+
+| Email-Only *      | BitFlag(4)             | Send an E-mail           |
++-------------------+------------------------+--------------------------+
+| DBLog-Only *      | BitFlag(8)             | Log to the Database      |
++-------------------+------------------------+--------------------------+
+| TxtLog-Only       | BitFlag(16)            | Text Log                 |
++-------------------+------------------------+--------------------------+
+| StdOut-Only       | BitFlag(32)            | Standard Output Stream   |
++-------------------+------------------------+--------------------------+
+| Report-Only       | BitFlag(64)            | Report                   |
++-------------------+------------------------+--------------------------+
+| TxtLog and StdOut | BitFlag(48)            | Print & Log              |
++-------------------+------------------------+--------------------------+
 
 * Denotes Features not implemented, yet.
 
