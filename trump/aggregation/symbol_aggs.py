@@ -186,7 +186,30 @@ class ChooseCol(object):
                               adf.failsafe_feed999], axis=1)
         final_df = final_df.apply(_row_wise_priority, axis=1)
         return final_df
+    @staticmethod
+    def build_tri(adf):
+        """
+        Looks at each column, and chooses the feed with the most recent data
+        point. Honours the Trump override/failsafe logic. """
+        # just look at the capital (price), in "feed one", and income (dividend), in "feed two"
+        
+        cap, inc = adf.columns[1:3]
+        
+        data = adf[[cap,inc]]
 
+        # find the feeds with the most recent data...
+        inc_pct = data[inc].div(data[cap].shift(1))
+        
+        cap_pct = data[cap].pct_change(1)
+        
+        pre_final = inc_pct + cap_pct
+        
+        # create the final, applying the override and failsafe logic...
+        final_df = pd.concat([adf.override_feed000,
+                              pre_final,
+                              adf.failsafe_feed999], axis=1)
+        final_df = final_df.apply(_row_wise_priority, axis=1)
+        return final_df
     @staticmethod
     def custom(adf):
         """
