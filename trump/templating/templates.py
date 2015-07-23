@@ -182,7 +182,14 @@ class SimpleExampleMT(bMunging, mixin_pnab, mixin_pab):
 
 from trump.templating.source_helpers import mixin_dbCon, mixin_dbIns
 
-
+# This template is not in the docs, because it would be confusing to new users.
+class TrumpST(bSource):
+    def __init__(self, symname, enginestr=None, cache_first=True, sourcing_key=None):
+        super(TrumpST, self).__init__()
+        self.symname = symname
+        self.enginestr = enginestr
+        self.cache_first = cache_first
+        
 class DBapiST(bSource, mixin_dbCon, mixin_dbIns):
     """ implements the generic source information for a DBAPI 2.0 driver """
     def __init__(self, dsn=None, user=None, password=None, host=None,
@@ -279,9 +286,25 @@ class DateExistsVT(bValidity):
 #
 # *****************************************************************************
 
-
 SKEY = 'explicit'
 
+#This isn't in the docs, because it'd be confusing to new users...
+class TrumpFT(bFeed):
+    def __init__(self, symname, enginestr=None, cache_first=True, sourcing_key=None):
+        super(DBapiFT, self).__init__()
+        self._set_stype()
+        if sourcing_key:
+            self._set_sourcing_key(sourcing_key)
+        self.s = TrumpST(dsn, symname, enginestr, cache_first, sourcing_key)
+        self._refresh_sourcing()
+    def _refresh_sourcing(self):    
+        self.sourcing = self.s.as_dict
+
+    def _set_stype(self):
+        self.meta['stype'] = 'Trump'
+
+    def _set_sourcing_key(self, sourcing_key):
+        self.meta['sourcing_key'] = sourcing_key
 
 class DBapiFT(bFeed):
     """ Feed template for DBAPI 2.0, which collects up everything it needs

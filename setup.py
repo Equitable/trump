@@ -55,7 +55,7 @@ setup(
                   'trump.templating' : ['settings/*.cfg_sample', 'test/*'], 
                   'trump.aggregation' : ['test/*'],
                   #'trump.extensions.source' : ['*'],
-                  'trump.extensions' : ['*.py'] + ['source/{}/tx-*'.format(f) for f in ['bbfetch', 'dbapi', 'psycopg2', 'pydatacsv', 'pydatadatareaderst', 'quandl', 'sqlalchemy', 'worldbankst']],
+                  'trump.extensions' : ['*.py'] + ['source/{}/tx-*'.format(f) for f in ['bbfetch', 'dbapi', 'psycopg2', 'pydatacsv', 'pydatadatareaderst', 'quandl', 'sqlalchemy', 'worldbankst', 'trump']],
                   'trump.reporting' : ['test/*'],
                   'trump.tools' : ['test/*']},
   cmdclass = {'install': TrumpInstall},

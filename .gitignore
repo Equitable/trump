@@ -11,3 +11,4 @@ docs/build/*
 .spyderproject
 trump.db
 *.log
+trump_handle.log
