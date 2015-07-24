@@ -317,6 +317,53 @@ class SymbolManager(object):
         qry = self.ses.query(SymbolMeta.attr).order_by(SymbolMeta.attr)
         result = qry.distinct().all()
         return [res[0] for res in result]
+    def search_meta(self, attr, value=None, stronly=False):
+        """ Get a list of Symbols by searching a specific meta
+        attribute, and optionally the value.  
+
+        Parameters
+        ----------
+        attr : str
+            The meta attribute to query.
+        value : None, str or list
+            The meta attribute to query.  If you pass a float, or an int,
+            it'll be converted to a string, prior to searching.
+        stronly : bool, optional, default True
+            Return only a list of symbol names, as opposed
+            to the (entire) Symbol objects.
+        
+        Returns
+        -------
+        List of Symbols or empty list
+        
+        """        
+        if stronly:
+            qry = self.ses.query(Symbol.name).join(SymbolMeta)
+        else:
+            qry = self.ses.query(Symbol).join(SymbolMeta)
+            
+        crits = []
+        
+        if isinstance(value, None):
+            crits.append(SymbolMeta.attr == attr) 
+        else:
+            if isinstance(value, str):
+                values = [value]
+            elif isinstance(value, (tuple, list)):
+                values = value
+            
+            for v in values:
+                crits.append(and_(SymbolMeta.attr == attr, SymbolMeta.value.like(value))) 
+
+        if len(crits):
+            qry = qry.filter(or_(*crits))
+        
+        qry = qry.order_by(Symbol.name)
+
+        if stronly:
+            return [sym[0] for sym in qry.distinct()]
+        else:
+            return [sym for sym in qry.distinct()]
     def search(self, usrqry=None, name=False, desc=False, tags=False, meta=False, stronly=False, dolikelogic=True):
         """ Get a list of Symbols by searching a combination of 
         a Symbol's name, description, tags or meta values.

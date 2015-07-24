@@ -37,7 +37,7 @@ Symbol Manager
 --------------
 
 .. autoclass:: trump.orm.SymbolManager
-   :members: create, delete, get, complete, finish, search, search_tag, build_view_from_tag, add_override, add_fail_safe
+   :members: create, delete, get, complete, finish, search, search_tag, search_meta, search_meta_specific, build_view_from_tag, add_override, add_fail_safe
 
 Conversion Manager
 ------------------
