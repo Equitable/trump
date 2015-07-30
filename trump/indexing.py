@@ -45,51 +45,51 @@ class IndexImplementer(object):
         self.case = case
         self.kwargs = kwargs
 
-    def final_series(self):
-        """
-        Should only be called when serving the final
-        result.  In this case, at instantiation, df_or_s
-        should be a pandas.Series,
-
-        :return: pandas.Series
-        """
-
-        # When Trump is serving up the final data,
-        # it should be impossible that df_or_s isn't
-        # a Series.  If, for any reason that it isn't,
-        # it should be converted into one here.
-
-        return self.data
-
-    def final_dataframe(self):
-        """
-        Should only be called when caching the feeds.
-        In this case, at instantiation, df_or_s
-        should be a pandas.Dataframe,
-
-        :return: pd.Dataframe
-        """
-
-        # if it's possible that df_or_s isn't a
-        # pandas.Dataframe, at the time of instatiation of the
-        # IndexImplementer, than it should be converted
-        # into one here.
-
-        if isinstance(self.data, pd.Series):
-            return self.data.to_frame()
-        else:
-            return self.data
-            
-    def raw_data(self):
-        """
-        returns the raw dataframe or series, after
-        it's been cleaned up by the index implementer.
-        
-        Should only be used via validation
-
-        :return: pd.Dataframe
-        """
-        return self.data      
+#    def final_series(self):
+#        """
+#        Should only be called when serving the final
+#        result.  In this case, at instantiation, df_or_s
+#        should be a pandas.Series,
+#
+#        :return: pandas.Series
+#        """
+#
+#        # When Trump is serving up the final data,
+#        # it should be impossible that df_or_s isn't
+#        # a Series.  If, for any reason that it isn't,
+#        # it should be converted into one here.
+#
+#        return self.data
+#
+#    def final_dataframe(self):
+#        """
+#        Should only be called when caching the feeds.
+#        In this case, at instantiation, df_or_s
+#        should be a pandas.Dataframe,
+#
+#        :return: pd.Dataframe
+#        """
+#
+#        # if it's possible that df_or_s isn't a
+#        # pandas.Dataframe, at the time of instatiation of the
+#        # IndexImplementer, than it should be converted
+#        # into one here.
+#
+#        if isinstance(self.data, pd.Series):
+#            return self.data.to_frame()
+#        else:
+#            return self.data
+#            
+#    def raw_data(self):
+#        """
+#        returns the raw dataframe or series, after
+#        it's been cleaned up by the index implementer.
+#        
+#        Should only be used via validation
+#
+#        :return: pd.Dataframe
+#        """
+#        return self.data      
 class DateIndexImp(IndexImplementer):
     sqlatyp = sqla.Date
     pytyp = dt.date
