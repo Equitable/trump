@@ -1524,9 +1524,15 @@ class Symbol(Base, ReprMixin):
 
     def _refresh_datatable_schema(self):
         objs = object_session(self)
+        
+        if objs.connection().engine.dialect.name == 'postgresql': 
+            objs.execute("DROP TABLE IF EXISTS {} CASCADE;".format(self.name))
+            objs.commit()
+        
+        # We still             
         self.datatable = self._datatable_factory()
         self.datatable.drop(checkfirst=True)
-        self.datatable.create()
+        self.datatable.create(checkfirst=True)
         self.datatable_exists = True
         objs.commit()
 
