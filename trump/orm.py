@@ -1060,6 +1060,10 @@ class Symbol(Base, ReprMixin):
     
             try:
                 datt = datadefs[self.dtype.datadef]
+
+                indtt = indexingtypes[self.index.indimp]
+                indkwargs = self.index.getkwargs()
+                indt = indtt(self.index.case, **indkwargs)
                 
                 rp = ReportPoint('datadef', 'class', datt)
                 smrp.add_reportpoint(rp)
@@ -1068,6 +1072,7 @@ class Symbol(Base, ReprMixin):
                     fdrp = afeed.cache(allowraise)
                     smrp.add_feedreport(fdrp)
                     tmp = datt(afeed.data).converted
+                    tmp = indt.process_post_feed_cache(tmp)
                     data.append(tmp)
                     cols.append(afeed.data.name)
             except:
@@ -1080,19 +1085,22 @@ class Symbol(Base, ReprMixin):
                 point = "concatenation"
                 smrp = self._generic_exception(point, smrp, allowraise)
             
-            preindlen = len(data)
-            indtt = indexingtypes[self.index.indimp]
-            indkwargs = self.index.getkwargs()
+            # We shouldn't need to do anything here, as the concatenation
+            # should be smooth...
             
-            if preindlen > 0 : 
-                indt = indtt(data, self.index.case, indkwargs)
-                data = indt.final_dataframe()
-
-                postindlen = len(data)   
-                if postindlen == 0 and preindlen > 0:
-                    raise Exception("Indexing Implementer likely poorly designed")
-            else:
-                postindlen = 0
+#            preindlen = len(data)
+#
+#                     
+#            if preindlen > 0 : 
+#                #indt = indtt(data, self.index.case, indkwargs)
+#                #data = indt.final_dataframe()
+#                data = indt.process_post_concat(data)
+#
+#                postindlen = len(data)   
+#                if postindlen == 0 and preindlen > 0:
+#                    raise Exception("Indexing Implementer likely poorly designed")
+#            else:
+#                postindlen = 0
             
             
             def build_hi_df(which, colname):
@@ -1113,9 +1121,7 @@ class Symbol(Base, ReprMixin):
                 if len(ords):
                     orind = [row.ind for row in ords]
                     orval = [row.val for row in ords]
-                    ordf = pd.DataFrame(data=orval, index=orind, columns=[colname])
-                    indt = indtt(ordf, self.index.case, indkwargs)
-                    ordf = indt.final_dataframe()
+                    ordf = indt.build_ordf(orind, orval, colname)
                 else:
                     ordf = pd.DataFrame(columns=[colname])
                 return ordf
@@ -1125,6 +1131,8 @@ class Symbol(Base, ReprMixin):
             
             orfsdf = pd.merge(ordf, fsdf, how='outer', left_index=True, right_index=True)
             data = pd.merge(orfsdf, data, how='outer', left_index=True, right_index=True)
+            
+            data = indt.process_post_orfs(data)
 
             try:
                 data = data.fillna(value=pd.np.nan)

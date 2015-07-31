@@ -148,16 +148,9 @@ class DatetimeIndexImp(IndexImplementer):
         return obj
     def create_empty(self):
         return self.pindt([])
-    def for_loc(self, obj):
-        return obj
-    def apply_orfs(self, df, obj, value, orfs='OVERRIDE'):
-        # TODO handle extending the index, if appropriate, here.
-        if 'OVERRIDE':
-            col = 'override_feed000'
-        elif 'FAILSAFE':
-            col = 'failsafe_feed999'
-        df.loc[obj,col] = value
-        return df  
+    def build_ordf(self, orval, orind, colname):
+        ordf = pd.DataFrame(data=orval, index=orind, columns=[colname])
+        return self._common_passthrough(ordf)
     def _common_passthrough(self, obj):
         try:
             return getattr(self, '_' + self.case)(obj)
@@ -175,9 +168,9 @@ class DatetimeIndexImp(IndexImplementer):
     def process_post_db(self, dat, ind):
         df = pd.DataFrame(data=dat, index=ind)
         return self._common_passthrough(df)
-    def process_post_source(self, s):
+    def process_post_feed_cache(self, s):
         return self._common_passthrough(s)
-    def process_post_concat(self, df):
+    def process_post_orfs(self, df):
         return self._common_passthrough(df)
     def _asis(self, obj):
         if isinstance(obj.index, pdDatetimeIndex):
