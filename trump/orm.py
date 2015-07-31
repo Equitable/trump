@@ -1482,7 +1482,7 @@ class Symbol(Base, ReprMixin):
                 adf = adf.set_index(self.index.name)
                 
             indtt = indexingtypes[self.index.indimp]
-            indt = indtt(self.index.case, self.index.getkwargs())
+            indt = indtt(self.index.case, **self.index.getkwargs())
             adf = indt.process_post_db(adf)
             
             if adf.index.name == "UNNAMED":
