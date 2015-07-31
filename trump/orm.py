@@ -1459,46 +1459,38 @@ class Symbol(Base, ReprMixin):
             msg = msg.format(self.name)
             raise Exception(msg)
         adf.columns = [self.index.name, self.name]
-        
-        datt = datadefs[self.dtype.datadef]       
-        adf[self.name] = datt(adf[self.name]).converted
-        
-        adf = adf.set_index(self.index.name)
-
-        indt = indexingtypes[self.index.indimp]
-        indt = indt(adf, self.index.case, self.index.getkwargs())
-        adf = indt.final_series()
-
-        if adf.index.name == "UNNAMED":
-            adf.index.name = None
-
-        return adf
+        return self._finish_df(adf, 'FINAL')
 
     @property
     def datatable_df(self):
         """ returns the dataframe representation of the symbol's final data """
         data = self._all_datatable_data()
         adf = pd.DataFrame(data)
-        
         adf.columns = self.dt_all_cols
-        
-        datt = datadefs[self.dtype.datadef]
-        
-        for col in adf.columns:
-            adf[col] = datt(adf[col]).converted
-        
-        adf = adf.set_index('indx')
+        return self._finish_df(adf, 'ALL')
 
-        indt = indexingtypes[self.index.indimp]
-        indt = indt(adf, self.index.case, self.index.getkwargs())
-        adf = indt.raw_data()
-        
-        if adf.index.name == "UNNAMED":
-            adf.index.name = None
-        else:
-            adf.index.name = self.index.name
+    def _finish_df(self, adf, mode):
+
+            datt = datadefs[self.dtype.datadef]
             
-        return adf
+            if mode == 'ALL':
+                for col in adf.columns:
+                    adf[col] = datt(adf[col]).converted
+                adf = adf.set_index('indx')
+            elif mode == 'FINAL':     
+                adf[self.name] = datt(adf[self.name]).converted
+                adf = adf.set_index(self.index.name)
+                
+            indtt = indexingtypes[self.index.indimp]
+            indt = indtt(self.index.case, self.index.getkwargs())
+            adf = indt.process_post_db(adf)
+            
+            if adf.index.name == "UNNAMED":
+                adf.index.name = None
+            else:
+                adf.index.name = self.index.name
+                
+            return adf
         
     def del_feed(self):
         """ remove a feed """
@@ -1977,7 +1969,7 @@ class Feed(Base, ReprMixin):
 
         try:
             if self.data is None:
-                raise Exception('{} Feed #{} is {}'.format(self.symname, self.fnum))
+                raise Exception('{} Feed #{} is None'.format(self.symname, self.fnum))
             if not isinstance(self.data, pd.Series):
                 raise Exception('{} Feed #{} did not return a Series ({})'.format(self.symname, self.fnum, type(self.data)))
         except:
@@ -1998,9 +1990,6 @@ class Feed(Base, ReprMixin):
             point = "monounique"
             fdrp = self._generic_exception(point, fdrp, allowraise)
             self.data = pd.Series()
-        
-        #TODO
-        #Put a check
 
         # munge accordingly
         print "Munging..."
