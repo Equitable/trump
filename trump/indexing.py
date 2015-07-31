@@ -40,6 +40,36 @@ class IndexImplementer(object):
                 
         self.case = case
         self.k = kwargs
+    def orfs_ind_from_str(self, userinput):
+        ui = {}
+        exec("ui = " + userinput)
+        obj = self.pytyp(**ui)
+        return obj
+    def create_empty(self):
+        return self.pindt([])
+    def build_ordf(self, orind, orval, colname):
+        ordf = pd.DataFrame(index=orind, data=orval, columns=[colname])
+        return self._common_passthrough(ordf)
+    def _common_passthrough(self, obj):
+        try:
+            return getattr(self, '_' + self.case)(obj)
+        except AttributeError:
+            self._notimp_error()
+    def _notimp_error(self):
+        msg = "Indexing case '{}' unsupported for Index Implementer {}"
+        msg = msg.format(self.case, self.__class__.__name__)
+        raise NotImplementedError(msg)        
+    def _notimpobj_error(self, obj):
+        msg = "Object of type '{}' unsupported for Index Implementer {}, case {}"
+        msg = msg.format(type(obj), self.__class__.__name__, self.case)
+        raise TypeError(msg)
+
+    def process_post_db(self, df):
+        return self._common_passthrough(df)
+    def process_post_feed_cache(self, s):
+        return self._common_passthrough(s)
+    def process_post_orfs(self, df):
+        return self._common_passthrough(df)
    
 class DateIndexImp(IndexImplementer):
     sqlatyp = sqla.Date
@@ -86,36 +116,6 @@ class DatetimeIndexImp(IndexImplementer):
     sqlatyp = sqla.DateTime
     pytyp = dt.datetime
     pindt = pd.DatetimeIndex
-    def orfs_ind_from_str(self, userinput):
-        ui = {}
-        exec("ui = " + userinput)
-        obj = self.pytyp(**ui)
-        return obj
-    def create_empty(self):
-        return self.pindt([])
-    def build_ordf(self, orind, orval, colname):
-        ordf = pd.DataFrame(index=orind, data=orval, columns=[colname])
-        return self._common_passthrough(ordf)
-    def _common_passthrough(self, obj):
-        try:
-            return getattr(self, '_' + self.case)(obj)
-        except AttributeError:
-            self._notimp_error()
-    def _notimp_error(self):
-        msg = "Indexing case '{}' unsupported for Index Implementer {}"
-        msg = msg.format(self.case, self.__class__.__name__)
-        raise NotImplementedError(msg)        
-    def _notimpobj_error(self, obj):
-        msg = "Object of type '{}' unsupported for Index Implementer {}, case {}"
-        msg = msg.format(type(obj), self.__class__.__name__, self.case)
-        raise TypeError(msg)
-
-    def process_post_db(self, df):
-        return self._common_passthrough(df)
-    def process_post_feed_cache(self, s):
-        return self._common_passthrough(s)
-    def process_post_orfs(self, df):
-        return self._common_passthrough(df)
 
     def _asis(self, obj):
         if isinstance(obj.index, pdDatetimeIndex):
