@@ -75,7 +75,7 @@ class DateIndexImp(IndexImplementer):
     sqlatyp = sqla.Date
     pytyp = dt.date
     pindt = pd.Index
-    def __init__(self, dfors, case, kwargs):
+    def __init__(self, case, **kwargs):
         raise NotImplemented()
         
 class DatetimeIndexImp(IndexImplementer):
@@ -176,10 +176,8 @@ class PeriodIndexImp(IndexImplementer):
     sqlatyp = sqla.DateTime
     pytyp = pd.Period
     pindt = pd.PeriodIndex
-
-    def __init__(self, dfors, case, kwargs):
+    def __init__(self, case, **kwargs):
         raise NotImplementedError()
-
 
 class IntIndexImp(IndexImplementer):
     """
@@ -211,14 +209,16 @@ class StrIndexImp(IndexImplementer):
     """
     Implements a pandas Index consisting of string objects.
 
-    NotImplemented, yet.
+    Only method, is "asis"
     """
     sqlatyp = sqla.String
     pytyp = str
     pindt = pd.Index
 
-    def __init__(self, dfors, case, kwargs):
-        raise NotImplementedError()
+    def _asis(self, obj):
+        if isinstance(obj.index, pdCoreIndex):
+            return obj
+        self._notimp_error()
 
 
 def _pred(aclass):
