@@ -217,7 +217,7 @@ class SymbolManager(object):
         ----------
         symbol : str or Symbol
         """
-        if isinstance(symbol, str):
+        if isinstance(symbol, (str, unicode)):
             sym = self.get(symbol)
         elif isinstance(symbol, Symbol):
             sym = symbol
@@ -344,7 +344,7 @@ class SymbolManager(object):
             
         crits = []
         
-        if isinstance(value, None):
+        if value is None:
             crits.append(SymbolMeta.attr == attr) 
         else:
             if isinstance(value, str):
@@ -485,7 +485,7 @@ class SymbolManager(object):
             return list(set(syms))
         return syms
 
-    def search_meta(self, **avargs):
+    def search_meta_specific(self, **avargs):
         """Search list of Symbol objects by by querying specific 
         meta attributes and their respective values.
         
