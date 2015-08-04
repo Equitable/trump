@@ -7,7 +7,7 @@ pdDatetimeIndex = pd.tseries.index.DatetimeIndex
 pdInt64Index = pd.core.index.Int64Index
 pdCoreIndex = pd.core.index.Index
 
-from sqlalchemy import DateTime, Integer, String
+import sqlalchemy as sqla
 
 import datetime as dt
 
@@ -26,68 +26,57 @@ class IndexImplementer(object):
     indempotent, and dataframe/series agnostic.
     """
 
-    sqlatyp = Integer
+    sqlatyp = sqla.Integer
+    pytyp = int
+    pindt = pd.Index
 
-    def __init__(self, df_or_s, case, kwargs):
+    def __init__(self, case, **kwargs):
         """
-        :param df_or_s:
-            A pandas.Dataframe or pandas.Series, used
-            with caution as to the point in time of use.
         :param case: str
             This should match a case used to switch
             the logic created in each subclass of IndexImplementer
-
         :param kwargs: dict
         """
-        self.data = df_or_s
+                
         self.case = case
-        self.kwargs = kwargs
+        self.k = kwargs
+    def orfs_ind_from_str(self, userinput):
+        ui = {}
+        exec("ui = " + userinput)
+        obj = self.pytyp(**ui)
+        return obj
+    def create_empty(self):
+        return self.pindt([])
+    def build_ordf(self, orind, orval, colname):
+        ordf = pd.DataFrame(index=orind, data=orval, columns=[colname])
+        return self._common_passthrough(ordf)
+    def _common_passthrough(self, obj):
+        try:
+            return getattr(self, '_' + self.case)(obj)
+        except AttributeError:
+            self._notimp_error()
+    def _notimp_error(self):
+        msg = "Indexing case '{}' unsupported for Index Implementer {}"
+        msg = msg.format(self.case, self.__class__.__name__)
+        raise NotImplementedError(msg)        
+    def _notimpobj_error(self, obj):
+        msg = "Object of type '{}' unsupported for Index Implementer {}, case {}"
+        msg = msg.format(type(obj), self.__class__.__name__, self.case)
+        raise TypeError(msg)
 
-    def final_series(self):
-        """
-        Should only be called when serving the final
-        result.  In this case, at instantiation, df_or_s
-        should be a pandas.Series,
-
-        :return: pandas.Series
-        """
-
-        # When Trump is serving up the final data,
-        # it should be impossible that df_or_s isn't
-        # a Series.  If, for any reason that it isn't,
-        # it should be converted into one here.
-
-        return self.data
-
-    def final_dataframe(self):
-        """
-        Should only be called when caching the feeds.
-        In this case, at instantiation, df_or_s
-        should be a pandas.Dataframe,
-
-        :return: pd.Dataframe
-        """
-
-        # if it's possible that df_or_s isn't a
-        # pandas.Dataframe, at the time of instatiation of the
-        # IndexImplementer, than it should be converted
-        # into one here.
-
-        if isinstance(self.data, pd.Series):
-            return self.data.to_frame()
-        else:
-            return self.data
-            
-    def raw_data(self):
-        """
-        returns the raw dataframe or series, after
-        it's been cleaned up by the index implementer.
-        
-        Should only be used via validation
-
-        :return: pd.Dataframe
-        """
-        return self.data      
+    def process_post_db(self, df):
+        return self._common_passthrough(df)
+    def process_post_feed_cache(self, s):
+        return self._common_passthrough(s)
+    def process_post_orfs(self, df):
+        return self._common_passthrough(df)
+   
+class DateIndexImp(IndexImplementer):
+    sqlatyp = sqla.Date
+    pytyp = dt.date
+    pindt = pd.Index
+    def __init__(self, case, **kwargs):
+        raise NotImplemented()
         
 class DatetimeIndexImp(IndexImplementer):
     """
@@ -124,57 +113,58 @@ class DatetimeIndexImp(IndexImplementer):
     pandas.DatetimeIndex constructor.
 
     """
-    sqlatyp = DateTime
+    sqlatyp = sqla.DateTime
+    pytyp = dt.datetime
+    pindt = pd.DatetimeIndex
 
-    def __init__(self, dfors, case, kwargs):
-        
-        
-        self.data = dfors
-	  
-        if case == 'asis':
-            if isinstance(self.data.index, pdDatetimeIndex):
-                pass
-            elif isinstance(self.data.index, pdInt64Index):
-                if all(len(str(i)) == 4 for i in self.data.index):
-                    #safe to assume we meant years...
-                    newind = [dt.date(y, 12, 31) for y in self.data.index]
-                    self.data.index = newind
-                    self.data.index = self.data.index.to_datetime()
-            elif isinstance(self.data.index, pdCoreIndex):
-                if isinstance(self.data.index[0], dt.date):
-                    newind = pdDatetimeIndex(self.data.index)
-                    self.data.index = newind
-            else:
-                self.default(**kwargs)
-
-        elif case == 'asfreq':
-            if isinstance(self.data.index, pdDatetimeIndex):
-                self.data = self.data.asfreq(**kwargs)
-            elif isinstance(self.data.index, pdInt64Index):
-                if all(len(str(i)) == 4 for i in self.data.index):
-                    #safe to assume we meant years...
-                    newind = [dt.date(y, 12, 31) for y in self.data.index]
-                    self.data.index = newind
-                    self.data.index = self.data.index.to_datetime()
-                    self.data = self.data.asfreq(**kwargs)
-            elif isinstance(self.data.index[0], (str, unicode)):
-                newind = pd.DatetimeIndex(self.data.index)
-                self.data.index = newind
-                self.data = self.data.asfreq(**kwargs)
-            else:
-                self.default(**kwargs)
-        elif case == 'guess':
-            raise NotImplementedError()
-        elif case == 'guess_post':
-            raise NotImplementedError()
+    def _asis(self, obj):
+        if isinstance(obj.index, pdDatetimeIndex):
+            return obj
+        elif isinstance(obj.index, pdInt64Index):
+            if all(len(str(i)) == 4 for i in obj.index):
+                #safe to assume we meant years...
+                newind = [dt.date(y, 12, 31) for y in obj.index]
+                obj.index = newind
+                obj.index = obj.index.to_datetime()
+                return obj
+            self._notimpobj_error(obj)
+        elif isinstance(obj.index, pdCoreIndex):
+            if isinstance(obj.index[0], dt.date):
+                newind = pdDatetimeIndex(obj.index)
+                obj.index = newind
+                return obj
+            self._notimpobj_error(obj)
         else:
-            raise Exception("Indexing case '{}' unsupported".format(case))
-
-    def default(self, **kwargs):
-        start = pd.to_datetime(self.data.index[0])
-        end = pd.to_datetime(self.data.index[-1])
+            return self._default(obj, **self.k)
+        
+    def _asfreq(self, obj):
+        if isinstance(obj.index, pdDatetimeIndex):
+            obj = obj.asfreq(**self.k)
+            return obj
+        elif isinstance(obj.index, pdInt64Index):
+            if all(len(str(i)) == 4 for i in obj.index):
+                #safe to assume we meant years...
+                newind = [dt.date(y, 12, 31) for y in obj.index]
+                obj.index = newind
+                obj.index = obj.index.to_datetime()
+                obj = obj.asfreq(**self.k)
+                return obj
+            self._notimpobj_error(obj)
+        elif isinstance(obj.index[0], (str, unicode)):
+            newind = pd.DatetimeIndex(obj.index)
+            obj.index = newind
+            obj = obj.asfreq(**self.k)
+            return obj
+        else:
+            return self._default(obj, **self.k)
+            
+    @staticmethod
+    def _default(obj, **kwargs):
+        start = pd.to_datetime(obj.index[0])
+        end = pd.to_datetime(obj.index[-1])
         newind = pdDatetimeIndex(start=start, end=end, **kwargs)
-        self.data = self.data.reindex(newind)
+        obj = obj.reindex(newind)
+        return obj
 
 
 class PeriodIndexImp(IndexImplementer):
@@ -183,11 +173,11 @@ class PeriodIndexImp(IndexImplementer):
 
     NotImplemented, yet.
     """
-    sqlatyp = DateTime
-
-    def __init__(self, dfors, case, kwargs):
+    sqlatyp = sqla.DateTime
+    pytyp = pd.Period
+    pindt = pd.PeriodIndex
+    def __init__(self, case, **kwargs):
         raise NotImplementedError()
-
 
 class IntIndexImp(IndexImplementer):
     """
@@ -199,40 +189,36 @@ class IntIndexImp(IndexImplementer):
       without applying any logic.  Use this, if the index
       is already integers, or unique and integer-like.
 
-    * **force** - Not Implemented Yet...
-      Will force floats into integers, dropping rows
-      based on kwargs...
-
-    In the event that a case hasn't implemented the logic
-    to handle a specific data type, the index will be dropped via
-    the .reset_index() method.
+    * **drop** - will drop the pandas index, to reset it.
 
     """
 
-    sqlatyp = Integer
+    sqlatyp = sqla.Integer
+    pytyp = int
+    pindt = pd.Index
 
-    def __init__(self, dfors, case, kwargs):
-        self.data = dfors
-        if case == 'asis':
-            if isinstance(self.data.index, pdInt64Index):
-                pass
-            else:
-                self.data = self.data.reset_index(drop=True)
-        elif case == 'force':
-            raise NotImplementedError("force not implemented, yet.")
-        else:
-            raise Exception("Indexing case '{}' unsupported".format(case))
-
+    def _asis(self, obj):
+        if isinstance(obj.index, pdInt64Index):
+            return obj
+        self._notimp_error()
+    def _drop(self, obj):
+        obj = obj.reset_index(drop=True)
+        return obj
+            
 class StrIndexImp(IndexImplementer):
     """
     Implements a pandas Index consisting of string objects.
 
-    NotImplemented, yet.
+    Only method, is "asis"
     """
-    sqlatyp = String
+    sqlatyp = sqla.String
+    pytyp = str
+    pindt = pd.Index
 
-    def __init__(self, dfors, case, kwargs):
-        raise NotImplementedError()
+    def _asis(self, obj):
+        if isinstance(obj.index, pdCoreIndex):
+            return obj
+        self._notimp_error()
 
 
 def _pred(aclass):

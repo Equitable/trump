@@ -1060,6 +1060,10 @@ class Symbol(Base, ReprMixin):
     
             try:
                 datt = datadefs[self.dtype.datadef]
+
+                indtt = indexingtypes[self.index.indimp]
+                indkwargs = self.index.getkwargs()
+                indt = indtt(self.index.case, **indkwargs)
                 
                 rp = ReportPoint('datadef', 'class', datt)
                 smrp.add_reportpoint(rp)
@@ -1068,6 +1072,7 @@ class Symbol(Base, ReprMixin):
                     fdrp = afeed.cache(allowraise)
                     smrp.add_feedreport(fdrp)
                     tmp = datt(afeed.data).converted
+                    tmp = indt.process_post_feed_cache(tmp)
                     data.append(tmp)
                     cols.append(afeed.data.name)
             except:
@@ -1080,19 +1085,22 @@ class Symbol(Base, ReprMixin):
                 point = "concatenation"
                 smrp = self._generic_exception(point, smrp, allowraise)
             
-            preindlen = len(data)
-            indtt = indexingtypes[self.index.indimp]
-            indkwargs = self.index.getkwargs()
+            # We shouldn't need to do anything here, as the concatenation
+            # should be smooth...
             
-            if preindlen > 0 : 
-                indt = indtt(data, self.index.case, indkwargs)
-                data = indt.final_dataframe()
-
-                postindlen = len(data)   
-                if postindlen == 0 and preindlen > 0:
-                    raise Exception("Indexing Implementer likely poorly designed")
-            else:
-                postindlen = 0
+#            preindlen = len(data)
+#
+#                     
+#            if preindlen > 0 : 
+#                #indt = indtt(data, self.index.case, indkwargs)
+#                #data = indt.final_dataframe()
+#                data = indt.process_post_concat(data)
+#
+#                postindlen = len(data)   
+#                if postindlen == 0 and preindlen > 0:
+#                    raise Exception("Indexing Implementer likely poorly designed")
+#            else:
+#                postindlen = 0
             
             
             def build_hi_df(which, colname):
@@ -1113,9 +1121,7 @@ class Symbol(Base, ReprMixin):
                 if len(ords):
                     orind = [row.ind for row in ords]
                     orval = [row.val for row in ords]
-                    ordf = pd.DataFrame(data=orval, index=orind, columns=[colname])
-                    indt = indtt(ordf, self.index.case, indkwargs)
-                    ordf = indt.final_dataframe()
+                    ordf = indt.build_ordf(orind, orval, colname)
                 else:
                     ordf = pd.DataFrame(columns=[colname])
                 return ordf
@@ -1125,6 +1131,8 @@ class Symbol(Base, ReprMixin):
             
             orfsdf = pd.merge(ordf, fsdf, how='outer', left_index=True, right_index=True)
             data = pd.merge(orfsdf, data, how='outer', left_index=True, right_index=True)
+            
+            data = indt.process_post_orfs(data)
 
             try:
                 data = data.fillna(value=pd.np.nan)
@@ -1451,46 +1459,38 @@ class Symbol(Base, ReprMixin):
             msg = msg.format(self.name)
             raise Exception(msg)
         adf.columns = [self.index.name, self.name]
-        
-        datt = datadefs[self.dtype.datadef]       
-        adf[self.name] = datt(adf[self.name]).converted
-        
-        adf = adf.set_index(self.index.name)
-
-        indt = indexingtypes[self.index.indimp]
-        indt = indt(adf, self.index.case, self.index.getkwargs())
-        adf = indt.final_series()
-
-        if adf.index.name == "UNNAMED":
-            adf.index.name = None
-
-        return adf
+        return self._finish_df(adf, 'FINAL')
 
     @property
     def datatable_df(self):
         """ returns the dataframe representation of the symbol's final data """
         data = self._all_datatable_data()
         adf = pd.DataFrame(data)
-        
         adf.columns = self.dt_all_cols
-        
-        datt = datadefs[self.dtype.datadef]
-        
-        for col in adf.columns:
-            adf[col] = datt(adf[col]).converted
-        
-        adf = adf.set_index('indx')
+        return self._finish_df(adf, 'ALL')
 
-        indt = indexingtypes[self.index.indimp]
-        indt = indt(adf, self.index.case, self.index.getkwargs())
-        adf = indt.raw_data()
-        
-        if adf.index.name == "UNNAMED":
-            adf.index.name = None
-        else:
-            adf.index.name = self.index.name
+    def _finish_df(self, adf, mode):
+
+            datt = datadefs[self.dtype.datadef]
             
-        return adf
+            if mode == 'ALL':
+                for col in adf.columns:
+                    adf[col] = datt(adf[col]).converted
+                adf = adf.set_index('indx')
+            elif mode == 'FINAL':     
+                adf[self.name] = datt(adf[self.name]).converted
+                adf = adf.set_index(self.index.name)
+                
+            indtt = indexingtypes[self.index.indimp]
+            indt = indtt(self.index.case, **self.index.getkwargs())
+            adf = indt.process_post_db(adf)
+            
+            if adf.index.name == "UNNAMED":
+                adf.index.name = None
+            else:
+                adf.index.name = self.index.name
+                
+            return adf
         
     def del_feed(self):
         """ remove a feed """
@@ -1524,9 +1524,15 @@ class Symbol(Base, ReprMixin):
 
     def _refresh_datatable_schema(self):
         objs = object_session(self)
+        
+        if objs.connection().engine.dialect.name == 'postgresql': 
+            objs.execute("DROP TABLE IF EXISTS {} CASCADE;".format(self.name))
+            objs.commit()
+        
+        # We still             
         self.datatable = self._datatable_factory()
         self.datatable.drop(checkfirst=True)
-        self.datatable.create()
+        self.datatable.create(checkfirst=True)
         self.datatable_exists = True
         objs.commit()
 
@@ -1969,7 +1975,7 @@ class Feed(Base, ReprMixin):
 
         try:
             if self.data is None:
-                raise Exception('{} Feed #{} is {}'.format(self.symname, self.fnum))
+                raise Exception('{} Feed #{} is None'.format(self.symname, self.fnum))
             if not isinstance(self.data, pd.Series):
                 raise Exception('{} Feed #{} did not return a Series ({})'.format(self.symname, self.fnum, type(self.data)))
         except:
@@ -1990,9 +1996,6 @@ class Feed(Base, ReprMixin):
             point = "monounique"
             fdrp = self._generic_exception(point, fdrp, allowraise)
             self.data = pd.Series()
-        
-        #TODO
-        #Put a check
 
         # munge accordingly
         print "Munging..."
