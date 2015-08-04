@@ -30,8 +30,36 @@ class TestDateTimeIndexImp(object):
         assert_frame_equal(dii.process_post_orfs(tst_df), exp_df,
                            check_index_type=True)
 
-    def test_asis(self):
-        pass
+    def test_iiasis(self):
+        
+        ind = [dt.date(2015,1,i) for i in range(1,30)]
+        S1 = pd.Series(index=ind, data=range(len(ind)))
+    
+        ind = [dt.datetime(2015,1,i,0,0,0) for i in range(1,30)]
+        S2 = pd.Series(index=ind, data=range(len(ind)))
+        
+        dtii = DatetimeIndexImp('asis')
+        
+        S1 = dtii.process_post_feed_cache(S1)
+        S2 = dtii.process_post_feed_cache(S2)
+        
+        assert len(pd.concat([S1,S2],axis=1)) == 29
+
+    def test_iiasis_with_time(self):
+        
+        ind = [dt.date(2015,1,i) for i in range(1,30)]
+        S1 = pd.Series(index=ind, data=range(len(ind)))
+    
+        ind = [dt.datetime(2015,1,i,0,0,1) for i in range(1,30)]
+        S2 = pd.Series(index=ind, data=range(len(ind)))
+        
+        dtii = DatetimeIndexImp('asis')
+        
+        S1 = dtii.process_post_feed_cache(S1)
+        S2 = dtii.process_post_feed_cache(S2)
+        
+        assert len(pd.concat([S1,S2],axis=1)) == 29 * 2
+        
     def test_guess(self):
         pass
     def test_guess_post(self):
