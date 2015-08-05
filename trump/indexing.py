@@ -52,7 +52,11 @@ class IndexImplementer(object):
         return self._common_passthrough(ordf)
     def _common_passthrough(self, obj):
         try:
-            return getattr(self, '_' + self.case)(obj)
+            if len(obj.index) > 0:
+                return getattr(self, '_' + self.case)(obj)
+            else:
+                obj.index = self.create_empty()
+                return obj
         except AttributeError:
             self._notimp_error()
     def _notimp_error(self):
