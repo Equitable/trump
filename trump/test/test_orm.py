@@ -609,6 +609,6 @@ class TestORM(object):
                          second = tikr[1:],
                          third = 'three')
         
-        syms = sm.search_meta(third='three')
+        syms = sm.search_meta_specific(third='three')
         assert len(syms) == 3
         
