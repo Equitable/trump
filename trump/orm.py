@@ -51,7 +51,7 @@ from sqlalchemy.orm import sessionmaker, relationship, aliased
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.exc import ProgrammingError, NoSuchTableError
 from sqlalchemy.sql import and_, or_
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, distinct
 
 from indexing import indexingtypes
 from validity import validitychecks
@@ -521,6 +521,19 @@ class SymbolManager(object):
 
         qry = qry.order_by(Symbol.name)
         return qry.all()
+    def tag_counts(self):
+        """ Get a list of tags and the number of each.
+
+        Returns
+        -------
+        List of tuples, in order (tag, # of Symbols w/Tag)
+        
+        """                    
+        qry = self.ses.query(SymbolTag.tag, func.count(SymbolTag.tag))
+        qry = qry.group_by(SymbolTag.tag)
+        qry = qry.order_by(SymbolTag.tag)
+        tags = list(qry.all())
+        return tags
 
     def bulk_cache_of_tag(self, tag):
         """ Caches all the symbols by a certain tag.
