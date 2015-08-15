@@ -12,3 +12,4 @@ docs/build/*
 trump.db
 *.log
 trump_handle.log
+*.*~
