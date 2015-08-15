@@ -2,3 +2,11 @@ include trump/templating/settings *.cfg_sample
 include trump/config *.cfg_sample
 include trump/test/testdata *
 recursive-include trump/extensions/source *
+recursive-include trump/extensions/source/tx-bbfetch *.py
+recursive-include trump/extensions/source/tx-dbapi *.py
+recursive-include trump/extensions/source/tx-psycopg2 *.py
+recursive-include trump/extensions/source/tx-pydatacsv *.py
+recursive-include trump/extensions/source/tx-pydatadatareaders *.py
+recursive-include trump/extensions/source/tx-quandl *.py
+recursive-include trump/extensions/source/tx-trump *.py
+recursive-include trump/extensions/source/tx-worldbankst *.py
