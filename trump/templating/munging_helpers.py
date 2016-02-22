@@ -34,6 +34,10 @@ class mixin_pab(object):
     def _bld_asfreq(self, **kwargs):
         """implements pandas .asfreq()"""
         self.asfreq = {'mtype': pab, 'kwargs': kwargs}
+
+    def _bld_shift(self, **kwargs):
+        """implements pandas.Series.shift() or pandas.DataFrame.shift()"""
+        self.shift = {'mtype': pab, 'kwargs': kwargs}
                
     def _bld_pab_generic(self, funcname, **kwargs):
         """
