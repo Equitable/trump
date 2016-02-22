@@ -105,6 +105,12 @@ class AsFreqMT(bMunging, mixin_pab):
         super(AsFreqMT, self).__init__()
         self._bld_asfreq(**kwargs)
 
+class IndexShiftMT(bMunging, mixin_pab):
+    """Example munging template, which implements shift (Shift your index any number of periods)."""
+    def __init__(self, **kwargs):
+        super(IndexShiftMT, self).__init__()
+        self._bld_shift(**kwargs)
+
 class AddMT(bMunging, mixin_pab):
     """ Example munging template, which implements addition."""
     def __init__(self, num, **kwargs):
