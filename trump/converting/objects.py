@@ -107,8 +107,9 @@ class FXConverter(object):
         #print recip(pair) in self.data.columns
         
         pairs = self.data.columns
-        
-        if denom == to:
+
+        # if 'LOC' (local currency), simply use default Trump units
+        if denom == to or denom == 'LOC':
             tmp = data
         elif pair in pairs:
             tmp = data.div(self.data[pair], axis=0)
